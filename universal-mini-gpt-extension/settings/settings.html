@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EasyAI Chat Settings</title>
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <div class="settings-container">
+    <h2 style="font-weight:900; color:#2563eb; letter-spacing:0.01em; display:flex; align-items:center; gap:8px;">EasyAI <span style='color:#10a37f;'>Chat</span> Settings</h2>
+    <p style="font-size:1.08em; color:#444; margin-bottom:18px; text-align:center;">Effortless AI chat, anywhere.</p>
+    <form id="settings-form">
+      <label for="provider">Provider:</label>
+      <select id="provider" name="provider">
+        <option value="openai">OpenAI</option>
+        <option value="gemini">Gemini</option>
+      </select>
+      <label for="apiKey">API Key:</label>
+      <input type="password" id="apiKey" name="apiKey" placeholder="Enter your API key" required />
+      <label for="model">Model:</label>
+      <input type="text" id="model" name="model" placeholder="e.g. gpt-3.5-turbo or gemini-2.0-flash" />
+      <div class="toggle-group">
+        <label><input type="checkbox" id="darkMode" name="darkMode"> Dark Mode</label>
+        <label><input type="checkbox" id="chatHistory" name="chatHistory"> Enable Chat History</label>
+      </div>
+      <button type="submit">Save Settings</button>
+      <div id="status"></div>
+    </form>
+  </div>
+  <script src="settings.js"></script>
+</body>
+</html> 

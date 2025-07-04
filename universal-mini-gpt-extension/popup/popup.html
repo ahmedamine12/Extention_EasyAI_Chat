@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EasyAI Chat</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <div class="logo">🤖</div>
+    <h2 style="font-weight:900; color:#2563eb; letter-spacing:0.01em; display:flex; align-items:center; gap:8px;">💡 EasyAI <span style='color:#10a37f;'>Chat</span></h2>
+    <p style="font-size:1.08em; color:#444; margin-bottom:18px; text-align:center;">Effortless AI chat, anywhere.</p>
+    <button id="open-bubble">Open Chat Bubble</button>
+    <button id="settingsBtn" class="settings-btn" type="button" aria-label="Settings">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:8px;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 5 15.4a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 5 8.6a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 8 5.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 16 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.31.22.65.22 1v.09A1.65 1.65 0 0 0 21 12c0 .35-.08.69-.22 1z"/></svg>
+      Settings
+    </button>
+    <div class="instructions">
+      <small>💡 The chat bubble should appear automatically on most pages. Use this button if it's hidden.</small>
+    </div>
+  </div>
+  <div class="chat-header">
+
+  </div>
+  <div class="settings-modal" id="settingsModal" style="display:none;">
+    <div class="settings-modal-content">
+      <div class="settings-card">
+        <h3>Settings</h3>
+        <form id="popupSettingsForm">
+          <div class="provider-block">
+            <div class="provider-label-row">
+              <span class="provider-logo" title="OpenAI" aria-label="OpenAI">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="14" r="12" fill="#10a37f"/><text x="14" y="19" text-anchor="middle" font-size="13" fill="#fff" font-family="Arial" font-weight="bold">O</text></svg>
+              </span>
+              <label for="popupApiKeyOpenAI">OpenAI API Key</label>
+            </div>
+            <div class="input-eye-wrapper">
+              <input type="password" id="popupApiKeyOpenAI" placeholder="Enter your OpenAI API key" aria-label="OpenAI API Key" />
+              <button type="button" class="toggle-eye" id="toggleOpenAIEye" aria-label="Show/Hide OpenAI API key">
+                <svg id="openai-eye-show" width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <path d="M1 12C3.5 7 8.5 4 12 4s8.5 3 11 8c-2.5 5-7.5 8-11 8s-8.5-3-11-8z" stroke="#aaa" stroke-width="2"/>
+                  <circle cx="12" cy="12" r="3" stroke="#aaa" stroke-width="2"/>
+                </svg>
+                <svg id="openai-eye-hide" width="22" height="22" viewBox="0 0 24 24" fill="none" style="display:none;">
+                  <path d="M1 12C3.5 7 8.5 4 12 4s8.5 3 11 8c-2.5 5-7.5 8-11 8s-8.5-3-11-8z" stroke="#aaa" stroke-width="2"/>
+                  <circle cx="12" cy="12" r="3" stroke="#aaa" stroke-width="2"/>
+                  <line x1="4" y1="20" x2="20" y2="4" stroke="#aaa" stroke-width="2"/>
+                </svg>
+              </button>
+            </div>
+            <a href="https://platform.openai.com/api-keys" id="popupApiKeyLinkOpenAI" target="_blank" rel="noopener">Get your API key</a>
+          </div>
+          <div class="provider-block">
+            <div class="provider-label-row">
+              <span class="provider-logo" title="Gemini" aria-label="Gemini">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="14" r="12" fill="#2563eb"/><text x="14" y="19" text-anchor="middle" font-size="13" fill="#fff" font-family="Arial" font-weight="bold">G</text></svg>
+              </span>
+              <label for="popupApiKeyGemini">Gemini API Key</label>
+            </div>
+            <div class="input-eye-wrapper">
+              <input type="password" id="popupApiKeyGemini" placeholder="Enter your Gemini API key" aria-label="Gemini API Key" />
+              <button type="button" class="toggle-eye" id="toggleGeminiEye" aria-label="Show/Hide Gemini API key">
+                <svg id="gemini-eye-show" width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <path d="M1 12C3.5 7 8.5 4 12 4s8.5 3 11 8c-2.5 5-7.5 8-11 8s-8.5-3-11-8z" stroke="#aaa" stroke-width="2"/>
+                  <circle cx="12" cy="12" r="3" stroke="#aaa" stroke-width="2"/>
+                </svg>
+                <svg id="gemini-eye-hide" width="22" height="22" viewBox="0 0 24 24" fill="none" style="display:none;">
+                  <path d="M1 12C3.5 7 8.5 4 12 4s8.5 3 11 8c-2.5 5-7.5 8-11 8s-8.5-3-11-8z" stroke="#aaa" stroke-width="2"/>
+                  <circle cx="12" cy="12" r="3" stroke="#aaa" stroke-width="2"/>
+                  <line x1="4" y1="20" x2="20" y2="4" stroke="#aaa" stroke-width="2"/>
+                </svg>
+              </button>
+            </div>
+            <a href="https://aistudio.google.com/apikey" id="popupApiKeyLinkGemini" target="_blank" rel="noopener">Get your API key</a>
+          </div>
+          <div class="settings-modal-actions">
+            <button type="submit" id="popupSaveBtn">Save</button>
+            <span id="popupSaveSuccess" style="display:none; margin-left:10px; color:#22c55e; font-size:1.3em;">✔️</span>
+          </div>
+          <div id="popupSettingsStatus"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html> 
