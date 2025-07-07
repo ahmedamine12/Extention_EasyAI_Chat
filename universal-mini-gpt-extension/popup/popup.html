@@ -10,13 +10,18 @@
     <div class="logo">🤖</div>
     <h2 style="font-weight:900; color:#2563eb; letter-spacing:0.01em; display:flex; align-items:center; gap:8px;">💡 EasyAI <span style='color:#10a37f;'>Chat</span></h2>
     <p style="font-size:1.08em; color:#444; margin-bottom:18px; text-align:center;">Effortless AI chat, anywhere.</p>
-    <button id="open-bubble">Open Chat Bubble</button>
-    <button id="settingsBtn" class="settings-btn" type="button" aria-label="Settings">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:8px;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 5 15.4a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 5 8.6a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 8 5.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 16 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.31.22.65.22 1v.09A1.65 1.65 0 0 0 21 12c0 .35-.08.69-.22 1z"/></svg>
-      Settings
+    <button id="settingsBtn" class="settings-btn" type="button" aria-label="Set Up API Key & Settings" title="Configure your API keys to unlock chat features."
+    onclick="window.open('settings/settings.html', '_blank')"
+    >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" 
+      stroke-linejoin="round" style="vertical-align:middle;margin-right:8px;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 5 15.4a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 5 8.6a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 8 5.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 16 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.31.22.65.22 1v.09A1.65 1.65 0 0 0 21 12c0 .35-.08.69-.22 1z"/></svg>
+      Set Up API Key & Settings
     </button>
+    <div id="no-api-key-msg" style="display:none; color:#eab308; font-size:1em; margin:10px 0 0 0; text-align:center;">
+      <b>To start chatting, please set up your API key in Settings below.</b>
+    </div>
     <div class="instructions">
-      <small>💡 The chat bubble should appear automatically on most pages. Use this button if it's hidden.</small>
+      <small>💡 The chat bubble will appear automatically on most pages if you have set up an API key. Use the button below to configure your API keys and settings.</small>
     </div>
   </div>
   <div class="chat-header">
@@ -24,6 +29,7 @@
   </div>
   <div class="settings-modal" id="settingsModal" style="display:none;">
     <div class="settings-modal-content">
+      <button class="settings-modal-close" aria-label="Close" style="position:absolute;top:12px;right:12px;font-size:1.5em;background:none;border:none;cursor:pointer;">×</button>
       <div class="settings-card">
         <h3>Settings</h3>
         <form id="popupSettingsForm">
@@ -74,10 +80,11 @@
             <a href="https://aistudio.google.com/apikey" id="popupApiKeyLinkGemini" target="_blank" rel="noopener">Get your API key</a>
           </div>
           <div class="settings-modal-actions">
-            <button type="submit" id="popupSaveBtn">Save</button>
-            <span id="popupSaveSuccess" style="display:none; margin-left:10px; color:#22c55e; font-size:1.3em;">✔️</span>
+            <button type="submit" id="popupSaveBtn" class="primary-btn">Save</button>
+            <button type="button" class="settings-modal-close secondary-btn">Return</button>
           </div>
           <div id="popupSettingsStatus"></div>
+          <div id="popupToast" class="popup-toast" style="display:none;"></div>
         </form>
       </div>
     </div>

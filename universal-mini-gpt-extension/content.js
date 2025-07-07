@@ -7,9 +7,16 @@ if (!window.__miniGptAgentInjected) {
   bubble.id = 'mini-gpt-bubble';
   bubble.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
   bubble.style.position = 'fixed';
-  bubble.style.bottom = '32px';
   bubble.style.right = '32px';
+  bubble.style.bottom = '32px';
+  bubble.style.left = '';
+  bubble.style.top = '';
   bubble.style.zIndex = '999999';
+  // Ensure bubble is always on top when chat is closed
+  bubble.style.pointerEvents = 'auto';
+  
+  // Store original position for restoration
+  const originalBubblePosition = { bottom: '32px', right: '32px' };
   bubble.style.width = '60px';
   bubble.style.height = '60px';
   bubble.style.background = 'linear-gradient(135deg, #2563eb 60%, #10a37f 100%)';
@@ -40,93 +47,15 @@ if (!window.__miniGptAgentInjected) {
   // Update SVG icon color to white
   bubble.querySelector('svg').setAttribute('stroke', '#fff');
 
-  // Drag logic
-  let isDragging = false, offsetX = 0, offsetY = 0;
-  bubble.addEventListener('mousedown', (e) => {
-    isDragging = true;
-    offsetX = e.clientX - bubble.getBoundingClientRect().left;
-    offsetY = e.clientY - bubble.getBoundingClientRect().top;
-    document.body.style.userSelect = 'none';
-  });
-  function clampChatPosition(left, top, chatHeight, bubbleHeight, offset) {
-    const minLeft = 8;
-    const chatWidth = chatContainer.offsetWidth || 350;
-    const maxLeft = window.innerWidth - chatWidth - 8;
-    let clampedLeft = Math.max(minLeft, Math.min(left, maxLeft));
-    // If not enough space above, show below the bubble
-    let showBelow = (top - chatHeight - offset < 8);
-    let clampedTop = showBelow
-      ? Math.min(window.innerHeight - chatHeight - 8, top + bubbleHeight + offset)
-      : Math.max(8, top - chatHeight - offset);
-    return { left: clampedLeft, top: clampedTop };
-  }
-
-  function clampBubblePosition(left, top, bubbleWidth, bubbleHeight) {
-    const minLeft = 8;
-    const minTop = 8;
-    const maxLeft = window.innerWidth - bubbleWidth - 8;
-    const maxTop = window.innerHeight - bubbleHeight - 8;
-    let clampedLeft = Math.max(minLeft, Math.min(left, maxLeft));
-    let clampedTop = Math.max(minTop, Math.min(top, maxTop));
-    // Prevent overlap with chat window
-    if (chatContainer.style.display === 'flex') {
-      const chatRect = chatContainer.getBoundingClientRect();
-      const bubbleRect = { left: clampedLeft, top: clampedTop, right: clampedLeft + bubbleWidth, bottom: clampedTop + bubbleHeight };
-      const overlap = !(chatRect.right < bubbleRect.left ||
-                       chatRect.left > bubbleRect.right ||
-                       chatRect.bottom < bubbleRect.top ||
-                       chatRect.top > bubbleRect.bottom);
-      if (overlap) {
-        // Try to move bubble below chat
-        let newTop = chatRect.bottom + 12;
-        if (newTop + bubbleHeight > window.innerHeight - 8) {
-          // Not enough space below, move above
-          newTop = chatRect.top - bubbleHeight - 12;
-          if (newTop < 8) newTop = 8;
-        }
-        clampedTop = newTop;
-      }
-    }
-    return { left: clampedLeft, top: clampedTop };
-  }
-
-  document.addEventListener('mousemove', (e) => {
-    if (isDragging) {
-      let left = e.clientX - offsetX;
-      let top = e.clientY - offsetY;
-      // Clamp bubble position
-      const bubbleWidth = bubble.offsetWidth || 60;
-      const bubbleHeight = bubble.offsetHeight || 60;
-      const { left: clampedLeft, top: clampedTop } = clampBubblePosition(left, top, bubbleWidth, bubbleHeight);
-      bubble.style.right = 'auto';
-      bubble.style.bottom = 'auto';
-      bubble.style.left = `${clampedLeft}px`;
-      bubble.style.top = `${clampedTop}px`;
-      // Move chat window with bubble if open
-      if (chatContainer.style.display === 'flex') {
-        chatContainer.style.right = 'auto';
-        chatContainer.style.bottom = 'auto';
-        const chatHeight = chatContainer.offsetHeight || 400;
-        const bubbleHeight = bubble.offsetHeight || 60;
-        const offset = 20;
-        const { left: clampedChatLeft, top: clampedChatTop } = clampChatPosition(clampedLeft, clampedTop, chatHeight, bubbleHeight, offset);
-        chatContainer.style.left = `${clampedChatLeft}px`;
-        chatContainer.style.top = `${clampedChatTop}px`;
-      }
-    }
-  });
-  document.addEventListener('mouseup', () => {
-    isDragging = false;
-    document.body.style.userSelect = '';
-  });
-
   // Chat UI
   const chatContainer = document.createElement('div');
   chatContainer.id = 'mini-gpt-chat-container';
   chatContainer.style.display = 'none'; // Always hidden on page load
   chatContainer.style.position = 'fixed';
-  chatContainer.style.bottom = '90px';
   chatContainer.style.right = '32px';
+  chatContainer.style.bottom = '92px'; // 32px (bubble) + 60px (bubble height)
+  chatContainer.style.left = '';
+  chatContainer.style.top = '';
   chatContainer.style.width = '400px';
   chatContainer.style.maxWidth = '98vw';
   chatContainer.style.minWidth = '320px';
@@ -198,8 +127,12 @@ if (!window.__miniGptAgentInjected) {
       const openaiKey = data.apiKey_openai;
       const geminiKey = data.apiKey_gemini;
       // Disable options without API key
-      providerList.querySelector('.mini-gpt-provider-option[data-provider="openai"]').classList.toggle('disabled', !openaiKey);
-      providerList.querySelector('.mini-gpt-provider-option[data-provider="gemini"]').classList.toggle('disabled', !geminiKey);
+      const openaiOption = providerList.querySelector('.mini-gpt-provider-option[data-provider="openai"]');
+      const geminiOption = providerList.querySelector('.mini-gpt-provider-option[data-provider="gemini"]');
+      openaiOption.classList.toggle('disabled', !openaiKey);
+      geminiOption.classList.toggle('disabled', !geminiKey);
+      openaiOption.title = openaiKey ? '' : 'Set your API key in Settings to enable this provider.';
+      geminiOption.title = geminiKey ? '' : 'Set your API key in Settings to enable this provider.';
       // Set current provider
       let provider = data.provider || (openaiKey ? 'openai' : geminiKey ? 'gemini' : 'openai');
       if (!data[`apiKey_${provider}`]) provider = openaiKey ? 'openai' : geminiKey ? 'gemini' : 'openai';
@@ -295,37 +228,21 @@ if (!window.__miniGptAgentInjected) {
   const origBubbleOnClick = bubble.onclick;
   bubble.onclick = () => {
     if (chatContainer.style.display === 'flex') {
-      // If already open, close and save session
       saveCurrentSession();
       chatContainer.style.display = 'none';
     } else {
-      // If opening, start a new session
       resetSession();
-      // Position chat above or below bubble
-      const bubbleRect = bubble.getBoundingClientRect();
-      chatContainer.style.right = 'auto';
-      chatContainer.style.bottom = 'auto';
-      // Set a temporary display to measure height
       chatContainer.style.display = 'flex';
-      chatContainer.style.visibility = 'hidden';
-      setTimeout(() => {
-        const chatHeight = chatContainer.offsetHeight || 400;
-        const bubbleHeight = bubble.offsetHeight || 60;
-        const offset = 20;
-        const { left: clampedLeft, top: clampedTop } = clampChatPosition(bubbleRect.left, bubbleRect.top, chatHeight, bubbleHeight, offset);
-        chatContainer.style.left = `${clampedLeft}px`;
-        chatContainer.style.top = `${clampedTop}px`;
-        chatContainer.style.visibility = '';
-        chatContainer.style.animation = 'mini-gpt-fadein 0.22s';
-        setTimeout(() => { chatContainer.style.animation = ''; }, 250);
-        ensureBubbleVisibleAfterChatMove();
-      }, 0);
+      chatContainer.style.visibility = '';
+      chatContainer.style.animation = 'mini-gpt-fadein 0.22s';
+      setTimeout(() => { chatContainer.style.animation = ''; }, 250);
     }
     if (origBubbleOnClick) origBubbleOnClick();
   };
   const origCloseOnClick = chatContainer.querySelector('#mini-gpt-close').onclick;
   chatContainer.querySelector('#mini-gpt-close').onclick = () => {
     saveCurrentSession();
+    chatContainer.style.display = 'none';
     if (origCloseOnClick) origCloseOnClick();
   };
 
@@ -532,6 +449,13 @@ if (!window.__miniGptAgentInjected) {
   // Also re-check on page background changes
   setInterval(applyDarkMode, 2000);
 
+  // Handle window resize to ensure proper positioning
+  window.addEventListener('resize', () => {
+    if (chatContainer.style.display === 'flex') {
+      ensureBubbleVisibleAfterChatMove();
+    }
+  });
+
   // 1. Add history button to header
   const header = chatContainer.querySelector('.mini-gpt-header');
   const historyBtn = document.createElement('button');
@@ -577,24 +501,14 @@ if (!window.__miniGptAgentInjected) {
   }
   updateResizeBtn();
   function ensureBubbleVisibleAfterChatMove() {
-    // Get bounding rects
-    const chatRect = chatContainer.getBoundingClientRect();
+    // Use the improved positioning logic
     const bubbleRect = bubble.getBoundingClientRect();
-    // If chat overlaps bubble, shift chat down (or up if not enough space)
-    const overlap = !(chatRect.right < bubbleRect.left ||
-                     chatRect.left > bubbleRect.right ||
-                     chatRect.bottom < bubbleRect.top ||
-                     chatRect.top > bubbleRect.bottom);
-    if (overlap) {
-      // Try to move chat down below the bubble
-      let newTop = bubbleRect.bottom + 20;
-      if (newTop + chatRect.height > window.innerHeight - 8) {
-        // Not enough space below, move above
-        newTop = bubbleRect.top - chatRect.height - 20;
-        if (newTop < 8) newTop = 8;
-      }
-      chatContainer.style.top = newTop + 'px';
-    }
+    const chatWidth = chatContainer.offsetWidth || 400;
+    const chatHeight = chatContainer.offsetHeight || 400;
+    const { left, top } = getSafeChatPosition(bubbleRect, chatWidth, chatHeight);
+    chatContainer.style.left = `${left}px`;
+    chatContainer.style.top = `${top}px`;
+    ensureBubbleAlwaysVisible();
   }
 
   // Call after resizing
@@ -608,11 +522,6 @@ if (!window.__miniGptAgentInjected) {
       chatContainer.style.maxWidth = maxWidth + 'px';
       chatContainer.style.maxHeight = maxHeight + 'px';
       chatContainer.style.height = maxHeight + 'px';
-      const left = parseInt(chatContainer.style.left, 10) || 0;
-      const top = parseInt(chatContainer.style.top, 10) || 0;
-      const { left: clampedLeft, top: clampedTop } = clampChatPosition(left, top, maxHeight, bubble.offsetHeight || 60, 20);
-      chatContainer.style.left = clampedLeft + 'px';
-      chatContainer.style.top = clampedTop + 'px';
       ensureBubbleVisibleAfterChatMove();
     } else {
       chatContainer.style.width = '400px';
@@ -620,11 +529,6 @@ if (!window.__miniGptAgentInjected) {
       chatContainer.style.maxWidth = '98vw';
       chatContainer.style.maxHeight = '60vh';
       chatContainer.style.height = '';
-      const left = parseInt(chatContainer.style.left, 10) || 0;
-      const top = parseInt(chatContainer.style.top, 10) || 0;
-      const { left: clampedLeft, top: clampedTop } = clampChatPosition(left, top, 400, bubble.offsetHeight || 60, 20);
-      chatContainer.style.left = clampedLeft + 'px';
-      chatContainer.style.top = clampedTop + 'px';
       ensureBubbleVisibleAfterChatMove();
     }
     updateResizeBtn();
@@ -769,4 +673,47 @@ if (!window.__miniGptAgentInjected) {
 
   document.body.appendChild(bubble);
   document.body.appendChild(chatContainer);
+
+  // Hide bubble and chat in fullscreen mode
+  function handleFullscreenChange() {
+    if (
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.mozFullScreenElement ||
+      document.msFullscreenElement
+    ) {
+      bubble.style.display = 'none';
+      chatContainer.style.display = 'none'; // Optionally hide chat too
+    } else {
+      bubble.style.display = '';
+    }
+  }
+  document.addEventListener('fullscreenchange', handleFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+  document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+  document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+  // Always inject bubble and chat, but control their visibility based on API key presence
+  function updateBubbleVisibility() {
+    chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini'], (data) => {
+      const hasKey = (data.apiKey_openai && data.apiKey_openai.trim()) || (data.apiKey_gemini && data.apiKey_gemini.trim());
+      const bubble = document.getElementById('mini-gpt-bubble');
+      const chat = document.getElementById('mini-gpt-chat-container');
+      if (hasKey) {
+        if (bubble) bubble.style.display = '';
+        if (chat) chat.style.display = 'none'; // Hide chat by default
+      } else {
+        if (bubble) bubble.style.display = 'none';
+        if (chat) chat.style.display = 'none';
+      }
+    });
+  }
+  // Initial check
+  updateBubbleVisibility();
+  // Listen for storage changes
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && (changes.apiKey_openai || changes.apiKey_gemini)) {
+      updateBubbleVisibility();
+    }
+  });
 } 

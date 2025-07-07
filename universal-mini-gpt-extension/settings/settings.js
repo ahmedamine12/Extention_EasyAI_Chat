@@ -54,6 +54,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     status.textContent = 'Settings saved!';
     setTimeout(() => status.textContent = '', 1800);
+    // Notify all tabs to update the chat bubble dynamically
+    if (chrome && chrome.tabs && chrome.tabs.query && chrome.tabs.sendMessage) {
+      chrome.tabs.query({}, function(tabs) {
+        for (let tab of tabs) {
+          chrome.tabs.sendMessage(tab.id, { type: 'EASYAI_APIKEY_UPDATED' });
+        }
+      });
+    }
   });
 
   // Optionally, update model placeholder based on provider

@@ -5,16 +5,29 @@ document.addEventListener('DOMContentLoaded', function() {
   const popupSettingsStatus = document.getElementById('popupSettingsStatus');
   const toggleOpenAIEye = document.getElementById('toggleOpenAIEye');
   const toggleGeminiEye = document.getElementById('toggleGeminiEye');
-  const popupSaveSuccess = document.getElementById('popupSaveSuccess');
   const openaiEyeShow = document.getElementById('openai-eye-show');
   const openaiEyeHide = document.getElementById('openai-eye-hide');
   const geminiEyeShow = document.getElementById('gemini-eye-show');
   const geminiEyeHide = document.getElementById('gemini-eye-hide');
+  const settingsBtn = document.getElementById('settingsBtn');
+  const settingsModal = document.getElementById('settingsModal');
+  const popupSaveBtn = document.getElementById('popupSaveBtn');
+  const popupToast = document.getElementById('popupToast');
+
+  // Enable Save button only if at least one API key is entered
+  function updateSaveBtnState() {
+    const hasKey = popupApiKeyOpenAI.value.trim() || popupApiKeyGemini.value.trim();
+    popupSaveBtn.disabled = !hasKey;
+  }
+  popupApiKeyOpenAI.addEventListener('input', updateSaveBtnState);
+  popupApiKeyGemini.addEventListener('input', updateSaveBtnState);
+  updateSaveBtnState();
 
   // Load saved API keys on popup open
   chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini'], (data) => {
     popupApiKeyOpenAI.value = data.apiKey_openai || '';
     popupApiKeyGemini.value = data.apiKey_gemini || '';
+    updateSaveBtnState();
     // Auto-focus on first empty field
     if (!popupApiKeyOpenAI.value) {
       popupApiKeyOpenAI.focus();
@@ -41,19 +54,54 @@ document.addEventListener('DOMContentLoaded', function() {
     e.preventDefault();
     const apiKeyOpenAI = popupApiKeyOpenAI.value;
     const apiKeyGemini = popupApiKeyGemini.value;
-    console.log('Saving keys:', apiKeyOpenAI, apiKeyGemini);
     chrome.storage.local.set({
       apiKey_openai: apiKeyOpenAI,
       apiKey_gemini: apiKeyGemini
     }, () => {
-      console.log('chrome.storage.local.set called');
-      popupSettingsStatus.textContent = 'Settings saved!';
-      popupSaveSuccess.style.display = 'inline-block';
+      popupSettingsStatus.textContent = '';
+      // Show modern toast
+      popupToast.innerHTML = '<span class="toast-icon">✔️</span>Settings saved!';
+      popupToast.style.display = 'block';
+      popupToast.style.animation = 'none';
+      // Restart animation
+      void popupToast.offsetWidth;
+      popupToast.style.animation = '';
       setTimeout(() => {
-        popupSaveSuccess.style.display = 'none';
-      }, 1200);
+        popupToast.style.display = 'none';
+      }, 2600);
     });
   };
+
+  // Modal logic for settings
+  if (settingsBtn && settingsModal) {
+    settingsBtn.onclick = () => {
+      settingsModal.style.display = 'block';
+      setTimeout(() => {
+        if (!popupApiKeyOpenAI.value) {
+          popupApiKeyOpenAI.focus();
+        } else {
+          popupApiKeyGemini.focus();
+        }
+      }, 200);
+    };
+    // Close modal when clicking outside or pressing Escape
+    settingsModal.addEventListener('click', (e) => {
+      if (e.target === settingsModal) {
+        settingsModal.style.display = 'none';
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (settingsModal.style.display === 'block' && e.key === 'Escape') {
+        settingsModal.style.display = 'none';
+      }
+    });
+    // All close/return buttons close the modal
+    Array.from(settingsModal.querySelectorAll('.settings-modal-close')).forEach(btn => {
+      btn.onclick = () => {
+        settingsModal.style.display = 'none';
+      };
+    });
+  }
 });
 
 document.getElementById('open-bubble').onclick = () => {
