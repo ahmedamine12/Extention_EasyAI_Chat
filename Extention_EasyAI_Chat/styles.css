@@ -950,4 +950,53 @@
 }
 .mini-gpt-dark .mini-gpt-clear-modal-actions #mini-gpt-clear-confirm:hover {
   background: #b91c1c;
+}
+
+/* Markdown formatting styles for bot messages */
+.mini-gpt-msg-bot p {
+  margin: 10px 0 10px 0;
+  line-height: 1.7;
+}
+.mini-gpt-msg-bot strong {
+  font-weight: 700;
+  color: inherit;
+}
+.mini-gpt-msg-bot em {
+  font-style: italic;
+  color: inherit;
+}
+.mini-gpt-msg-bot ul {
+  margin: 14px 0 14px 24px;
+  padding-left: 18px;
+  list-style-type: disc;
+}
+.mini-gpt-msg-bot li {
+  margin: 7px 0;
+  line-height: 1.6;
+}
+.mini-gpt-msg-bot br {
+  margin: 4px 0;
+}
+
+/* Dark mode markdown styles */
+.mini-gpt-dark .mini-gpt-msg-bot p {
+  margin: 10px 0 10px 0;
+  line-height: 1.7;
+}
+.mini-gpt-dark .mini-gpt-msg-bot strong {
+  font-weight: 700;
+  color: inherit;
+}
+.mini-gpt-dark .mini-gpt-msg-bot em {
+  font-style: italic;
+  color: inherit;
+}
+.mini-gpt-dark .mini-gpt-msg-bot ul {
+  margin: 14px 0 14px 24px;
+  padding-left: 18px;
+  list-style-type: disc;
+}
+.mini-gpt-dark .mini-gpt-msg-bot li {
+  margin: 7px 0;
+  line-height: 1.6;
 } 

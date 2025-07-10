@@ -246,11 +246,56 @@ if (!window.__miniGptAgentInjected) {
     if (origCloseOnClick) origCloseOnClick();
   };
 
+  // Enhanced markdown to HTML converter with paragraph and spacing support
+  function convertMarkdownToHTML(text) {
+    if (!text) return '';
+
+    // Convert double newlines to paragraphs (but not inside lists)
+    let html = text
+      // Convert **bold** to <strong>bold</strong> (non-greedy)
+      .replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>')
+      // Convert *italic* to <em>italic</em> (but not bullet points or bold)
+      .replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, '<em>$1</em>')
+      // Convert bullet points (* item) to <li>item</li>
+      .replace(/^\s*\*\s+(.+)$/gm, '<li>$1</li>');
+
+    // Wrap consecutive <li> elements in <ul>
+    html = html.replace(/(<li>.*?<\/li>)/gs, function(match) {
+      // Only wrap if not already in a <ul>
+      if (!/^<ul>/.test(match)) {
+        return '<ul>' + match + '</ul>';
+      }
+      return match;
+    });
+
+    // Convert double newlines to paragraphs, but avoid wrapping <ul> blocks
+    html = html
+      .split(/\n{2,}/)
+      .map(block => {
+        // If block is a list, don't wrap in <p>
+        if (/^\s*<ul>/.test(block)) return block;
+        // If block is empty, skip
+        if (!block.trim()) return '';
+        return `<p>${block.trim()}</p>`;
+      })
+      .join('');
+
+    // Convert single newlines to <br> (but not inside <ul> or <li>)
+    html = html.replace(/([^>])\n([^<])/g, '$1<br>$2');
+
+    // Clean up any remaining markdown artifacts
+    html = html.replace(/\*\*/g, '').replace(/\*/g, '');
+
+    return html;
+  }
+
   function appendMessage(text, from) {
     const msg = document.createElement('div');
     msg.className = from === 'user' ? 'mini-gpt-msg-user' : 'mini-gpt-msg-bot';
     if (from === 'bot') {
-      msg.innerHTML = text; // allow HTML formatting for bot answers
+      // Convert markdown to HTML for bot messages
+      const formattedText = convertMarkdownToHTML(text);
+      msg.innerHTML = formattedText;
     } else {
       msg.textContent = text;
     }

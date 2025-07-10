@@ -79,6 +79,13 @@ const MINI_GPT_ACTIONS = [
 chrome.runtime.onInstalled.addListener(() => {
   // Remove old context menus first
   chrome.contextMenus.removeAll(() => {
+    // Add a non-clickable header at the top
+    chrome.contextMenus.create({
+      id: 'mini-gpt-header',
+      title: 'EasyAI Chat (short answers)',
+      contexts: ['selection'],
+      enabled: false
+    });
     // Add new context menu items for each action
     MINI_GPT_ACTIONS.forEach(action => {
       chrome.contextMenus.create({
