@@ -456,85 +456,182 @@ if (!window.__miniGptAgentInjected) {
     }
   });
 
-  // 1. Add history button to header
+  // --- Modernized Chat Header Bar ---
   const header = chatContainer.querySelector('.mini-gpt-header');
+  header.style.background = 'rgba(245, 247, 250, 0.98)';
+  header.style.borderBottom = '1.5px solid #e5e7eb';
+  header.style.borderTopLeftRadius = '16px';
+  header.style.borderTopRightRadius = '16px';
+  header.style.boxShadow = '0 2px 8px rgba(37,99,235,0.08)';
+  header.style.display = 'flex';
+  header.style.alignItems = 'center';
+  header.style.justifyContent = 'space-between';
+  header.style.padding = '0 10px 0 18px';
+  header.style.height = '54px';
+
+  // Remove all existing header buttons
+  Array.from(header.querySelectorAll('button')).forEach(btn => btn.remove());
+
+  // Modern action bar
+  const actionsBar = document.createElement('div');
+  actionsBar.style.display = 'flex';
+  actionsBar.style.alignItems = 'center';
+  actionsBar.style.gap = '8px';
+  actionsBar.style.height = '100%';
+
+  // History button
   const historyBtn = document.createElement('button');
   historyBtn.id = 'mini-gpt-history-btn';
   historyBtn.title = 'Show chat history';
-  historyBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 9 9"/><polyline points="3 12 3 16 7 16"/></svg>`;
-  header.appendChild(historyBtn);
+  historyBtn.setAttribute('aria-label', 'Show chat history');
+  historyBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 9 9"/><polyline points="3 12 3 16 7 16"/></svg>`;
+  historyBtn.style.background = 'none';
+  historyBtn.style.border = 'none';
+  historyBtn.style.padding = '6px';
+  historyBtn.style.borderRadius = '8px';
+  historyBtn.style.cursor = 'pointer';
+  historyBtn.style.transition = 'background 0.18s';
+  historyBtn.onmouseenter = () => historyBtn.style.background = '#e8f0fe';
+  historyBtn.onmouseleave = () => historyBtn.style.background = 'none';
+  actionsBar.appendChild(historyBtn);
 
-  // Add New Chat button to header
+  // New Chat button
   const newChatBtn = document.createElement('button');
   newChatBtn.id = 'mini-gpt-newchat-btn';
   newChatBtn.title = 'New Chat';
-  newChatBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`;
-  header.appendChild(newChatBtn);
+  newChatBtn.setAttribute('aria-label', 'Start new chat');
+  newChatBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`;
+  newChatBtn.style.background = 'none';
+  newChatBtn.style.border = 'none';
+  newChatBtn.style.padding = '6px';
+  newChatBtn.style.borderRadius = '8px';
+  newChatBtn.style.cursor = 'pointer';
+  newChatBtn.style.transition = 'background 0.18s';
+  newChatBtn.onmouseenter = () => newChatBtn.style.background = '#e8f0fe';
+  newChatBtn.onmouseleave = () => newChatBtn.style.background = 'none';
+  actionsBar.appendChild(newChatBtn);
 
-  // Remove close button and add resize button
-  const oldCloseBtn = header.querySelector('button#mini-gpt-close');
-  if (oldCloseBtn) oldCloseBtn.remove();
+  // Expand/Shrink button with modern icons
   const resizeBtn = document.createElement('button');
   resizeBtn.id = 'mini-gpt-resize-btn';
+  resizeBtn.setAttribute('aria-label', 'Expand chat window');
   resizeBtn.title = 'Expand chat window';
-  // Style the button for icon visibility
   resizeBtn.style.background = 'none';
   resizeBtn.style.border = 'none';
-  resizeBtn.style.padding = '4px';
-  resizeBtn.style.marginLeft = '4px';
+  resizeBtn.style.padding = '6px';
+  resizeBtn.style.borderRadius = '8px';
   resizeBtn.style.cursor = 'pointer';
-  resizeBtn.style.display = 'flex';
-  resizeBtn.style.alignItems = 'center';
-  resizeBtn.style.justifyContent = 'center';
-  resizeBtn.style.width = '32px';
-  resizeBtn.style.height = '32px';
-  resizeBtn.style.borderRadius = '6px';
-  resizeBtn.style.transition = 'background 0.2s';
-  // Diagonal arrows for expand
-  const expandSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><line x1="14" y1="10" x2="21" y2="3"/><polyline points="9 21 3 21 3 15"/><line x1="10" y1="14" x2="3" y2="21"/></svg>`;
-  // Diagonal arrows for shrink
-  const shrinkSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><line x1="10" y1="10" x2="3" y2="3"/><polyline points="15 21 21 21 21 15"/><line x1="14" y1="14" x2="21" y2="21"/></svg>`;
+  resizeBtn.style.transition = 'background 0.18s';
+  resizeBtn.onmouseenter = () => resizeBtn.style.background = '#e8f0fe';
+  resizeBtn.onmouseleave = () => resizeBtn.style.background = 'none';
+  const maximizeSVG = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><polyline points="8 3 8 8 3 8"/><polyline points="16 21 16 16 21 16"/></svg>`;
+  const restoreSVG = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="14" height="14" rx="3"/><rect x="3" y="3" width="14" height="14" rx="3"/></svg>`;
   let expanded = false;
   function updateResizeBtn() {
-    resizeBtn.innerHTML = expanded ? shrinkSVG : expandSVG;
-    resizeBtn.title = expanded ? 'Shrink chat window' : 'Expand chat window';
+    resizeBtn.innerHTML = expanded ? restoreSVG : maximizeSVG;
+    resizeBtn.setAttribute('aria-label', expanded ? 'Restore chat window' : 'Expand chat window');
+    resizeBtn.title = expanded ? 'Restore chat window' : 'Expand chat window';
   }
   updateResizeBtn();
-  function ensureBubbleVisibleAfterChatMove() {
-    // Use the improved positioning logic
-    const bubbleRect = bubble.getBoundingClientRect();
-    const chatWidth = chatContainer.offsetWidth || 400;
-    const chatHeight = chatContainer.offsetHeight || 400;
-    const { left, top } = getSafeChatPosition(bubbleRect, chatWidth, chatHeight);
-    chatContainer.style.left = `${left}px`;
-    chatContainer.style.top = `${top}px`;
-    ensureBubbleAlwaysVisible();
-  }
-
-  // Call after resizing
   resizeBtn.onclick = () => {
     expanded = !expanded;
     if (expanded) {
-      const maxWidth = Math.min(700, window.innerWidth - 16);
-      const maxHeight = Math.min(window.innerHeight - 32, 700);
-      chatContainer.style.width = maxWidth + 'px';
-      chatContainer.style.minWidth = maxWidth + 'px';
-      chatContainer.style.maxWidth = maxWidth + 'px';
-      chatContainer.style.maxHeight = maxHeight + 'px';
-      chatContainer.style.height = maxHeight + 'px';
-      ensureBubbleVisibleAfterChatMove();
+      chatContainer.style.width = 'min(98vw, 700px)';
+      chatContainer.style.height = 'min(98vh, 700px)';
+      chatContainer.style.right = '32px';
+      chatContainer.style.bottom = '92px';
+      chatContainer.style.left = '';
+      chatContainer.style.top = '';
+      chatContainer.style.maxWidth = '98vw';
+      chatContainer.style.maxHeight = '98vh';
+      chatContainer.style.minWidth = '320px';
+      chatContainer.style.minHeight = '320px';
+      chatContainer.style.borderRadius = '18px';
+      chatContainer.style.boxShadow = '0 8px 32px rgba(37,99,235,0.13), 0 1.5px 8px rgba(16,163,127,0.06)';
     } else {
       chatContainer.style.width = '400px';
-      chatContainer.style.minWidth = '320px';
+      chatContainer.style.height = '';
       chatContainer.style.maxWidth = '98vw';
       chatContainer.style.maxHeight = '60vh';
-      chatContainer.style.height = '';
+      chatContainer.style.minWidth = '320px';
+      chatContainer.style.right = '32px';
+      chatContainer.style.bottom = '92px';
+      chatContainer.style.left = '';
+      chatContainer.style.top = '';
+      chatContainer.style.borderRadius = '16px';
+      chatContainer.style.boxShadow = '0 4px 24px rgba(0,0,0,0.18)';
+      // Re-attach to bubble
       ensureBubbleVisibleAfterChatMove();
     }
     updateResizeBtn();
   };
+  actionsBar.appendChild(resizeBtn);
 
-  // Attach event listeners after buttons are in the DOM
+  // Close button
+  const closeBtn = document.createElement('button');
+  closeBtn.id = 'mini-gpt-close';
+  closeBtn.setAttribute('aria-label', 'Close chat');
+  closeBtn.title = 'Close chat';
+  closeBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+  closeBtn.style.background = 'none';
+  closeBtn.style.border = 'none';
+  closeBtn.style.padding = '6px';
+  closeBtn.style.borderRadius = '8px';
+  closeBtn.style.cursor = 'pointer';
+  closeBtn.style.transition = 'background 0.18s';
+  closeBtn.onmouseenter = () => closeBtn.style.background = '#e8f0fe';
+  closeBtn.onmouseleave = () => closeBtn.style.background = 'none';
+  actionsBar.appendChild(closeBtn);
+
+  // Keyboard accessibility
+  [historyBtn, newChatBtn, resizeBtn, closeBtn].forEach(btn => {
+    btn.tabIndex = 0;
+    btn.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') btn.click();
+    };
+  });
+
+  // Update action bar button styles for compact, title-matching icons
+  [historyBtn, newChatBtn, resizeBtn, closeBtn].forEach(btn => {
+    btn.style.width = '28px';
+    btn.style.height = '28px';
+    btn.style.padding = '2px';
+    btn.style.display = 'flex';
+    btn.style.alignItems = 'center';
+    btn.style.justifyContent = 'center';
+    btn.style.fontSize = '0';
+    btn.style.background = 'none';
+    btn.style.border = 'none';
+    btn.style.borderRadius = '8px';
+    btn.style.cursor = 'pointer';
+    btn.style.transition = 'background 0.18s';
+    btn.onmouseenter = () => {
+      if (chatContainer.classList.contains('mini-gpt-dark')) {
+        btn.style.background = '#2563eb22';
+      } else {
+        btn.style.background = '#e8f0fe';
+      }
+      // Make SVG icon color high-contrast on hover
+      const svg = btn.querySelector('svg');
+      if (svg) svg.style.stroke = chatContainer.classList.contains('mini-gpt-dark') ? '#fff' : '#2563eb';
+    };
+    btn.onmouseleave = () => {
+      btn.style.background = 'none';
+      // Restore SVG icon color
+      const svg = btn.querySelector('svg');
+      if (svg) svg.style.stroke = chatContainer.classList.contains('mini-gpt-dark') ? '#e8f0fe' : '#23272f';
+    };
+    // Set initial SVG color and size
+    const svg = btn.querySelector('svg');
+    if (svg) svg.style.stroke = chatContainer.classList.contains('mini-gpt-dark') ? '#e8f0fe' : '#23272f';
+    svg.style.width = '22px';
+    svg.style.height = '22px';
+  });
+
+  // Insert the modern action bar into the header
+  header.appendChild(actionsBar);
+
+  // Attach event listeners
   historyBtn.onclick = showHistoryPanel;
   newChatBtn.onclick = () => {
     if (currentSession.messages.length > 0) {
@@ -543,6 +640,10 @@ if (!window.__miniGptAgentInjected) {
       resetSession();
     }
     messagesDiv.innerHTML = '';
+  };
+  closeBtn.onclick = () => {
+    saveCurrentSession();
+    chatContainer.style.display = 'none';
   };
 
   // 2. Add history side panel HTML and overlay
@@ -668,8 +769,6 @@ if (!window.__miniGptAgentInjected) {
   }
   historyPanel.querySelector('#mini-gpt-history-panel-clear').onclick = showClearModal;
   historyOverlay.onclick = hideHistoryPanel;
-
-  header.appendChild(resizeBtn);
 
   document.body.appendChild(bubble);
   document.body.appendChild(chatContainer);

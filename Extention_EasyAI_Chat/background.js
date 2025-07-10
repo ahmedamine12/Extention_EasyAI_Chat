@@ -107,7 +107,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
       const model = provider === 'openai' ? 'gpt-3.5-turbo' : 'gemini-2.0-flash';
       chrome.scripting.executeScript({
         target: { tabId: tab.id },
-        func: (q, provider, model, apiKey) => {
+        func: (q, provider, model, apiKey, actionId, selectionText) => {
           // Open chat bubble and add user message + Thinking...
           const bubble = document.getElementById('mini-gpt-bubble');
           const chat = document.getElementById('mini-gpt-chat-container');
@@ -121,7 +121,12 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
             if (messagesDiv) {
               const userMsg = document.createElement('div');
               userMsg.className = 'mini-gpt-msg-user';
-              userMsg.textContent = q;
+              // Show a clean label for the action, or just the selection text
+              let displayText = selectionText;
+              if (actionId === 'summarize') displayText = 'Summarize: ' + selectionText;
+              else if (actionId === 'correct') displayText = 'Correct: ' + selectionText;
+              else if (actionId === 'explain') displayText = 'Explain: ' + selectionText;
+              userMsg.textContent = displayText;
               userMsg.style.margin = '8px 0';
               userMsg.style.maxWidth = '80%';
               userMsg.style.padding = '8px 12px';
@@ -160,7 +165,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
           // Send provider/model/apiKey with the message
           window.postMessage({ type: 'MINI_GPT_ASK', question: q, provider, model, apiKey }, '*');
         },
-        args: [question, provider, model, apiKey]
+        args: [question, provider, model, apiKey, action.id, info.selectionText]
       });
     });
   }
