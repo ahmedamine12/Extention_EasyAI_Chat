@@ -179,10 +179,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 });
 
 // Listen for messages from content script
-console.log('Mini-GPT Agent background service worker loaded');
-
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  console.log('Received message:', msg);
   if (msg.type === 'MINI_GPT_ASK') {
     const provider = msg.provider || 'openai';
     const model = msg.model || (provider === 'openai' ? 'gpt-3.5-turbo' : 'gemini-2.0-flash');

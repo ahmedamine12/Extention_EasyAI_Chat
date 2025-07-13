@@ -66,18 +66,38 @@ if (!window.__miniGptAgentInjected) {
   chatContainer.style.zIndex = '999999';
   chatContainer.style.overflow = 'hidden';
   chatContainer.style.flexDirection = 'column';
+  // Force hide the chat container to override any CSS
+  chatContainer.style.visibility = 'hidden';
+  chatContainer.style.opacity = '0';
 
   chatContainer.innerHTML = `
-    <div class="mini-gpt-header" style="font-weight:900; color:#2563eb; letter-spacing:0.01em; display:flex; align-items:center; gap:8px; font-size:1.18em;">
-      <span style="display:flex; align-items:center; gap:6px;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        EasyAI <span style='color:#10a37f; margin-left:2px;'>Chat</span>
-      </span>
-      <button id='mini-gpt-close' aria-label='Close'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="mini-gpt-header mini-gpt-header-modern">
+      <div class="mini-gpt-header-title">
+        <span>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          EasyAI <span class="brand-accent">Chat</span>
+        </span>
+      </div>
+      <div class="mini-gpt-actions-bar">
+        <button class="mini-gpt-action-btn" id="mini-gpt-history-btn" title="Show chat history" aria-label="Show chat history">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 9 9"/><polyline points="3 12 3 16 7 16"/></svg>
+        </button>
+        <button class="mini-gpt-action-btn" id="mini-gpt-newchat-btn" title="New Chat" aria-label="Start new chat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        </button>
+        <button class="mini-gpt-action-btn" id="mini-gpt-close" title="Close chat" aria-label="Close chat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
     </div>
-    <div id="mini-gpt-provider-row"></div>
-    <div id="mini-gpt-messages"></div>
-    <form id="mini-gpt-form"><textarea id="mini-gpt-input" placeholder="Ask anything..." autocomplete="off" rows="1" style="resize:none;"></textarea><button type="submit" aria-label="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button></form>
+    <div id="mini-gpt-provider-row" class="mini-gpt-provider-row-enhanced"></div>
+    <div id="mini-gpt-messages" class="mini-gpt-messages-enhanced"></div>
+    <form id="mini-gpt-form" class="mini-gpt-form-enhanced">
+      <textarea id="mini-gpt-input" class="mini-gpt-input-enhanced" placeholder="Ask anything..." autocomplete="off" rows="1"></textarea>
+      <button type="submit" class="mini-gpt-send-btn" aria-label="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </form>
   `;
 
   // Provider selector row with logos
@@ -203,6 +223,22 @@ if (!window.__miniGptAgentInjected) {
   const form = chatContainer.querySelector('#mini-gpt-form');
   const input = chatContainer.querySelector('#mini-gpt-input');
 
+  // Add empty chat placeholder
+  function showEmptyPlaceholder() {
+    if (!messagesDiv.querySelector('.mini-gpt-empty-placeholder')) {
+      const placeholder = document.createElement('div');
+      placeholder.className = 'mini-gpt-empty-placeholder';
+      placeholder.textContent = '👋 Welcome! This is EasyAI Chat. Ask anything, anytime.';
+      messagesDiv.appendChild(placeholder);
+    }
+  }
+  function hideEmptyPlaceholder() {
+    const placeholder = messagesDiv.querySelector('.mini-gpt-empty-placeholder');
+    if (placeholder) placeholder.remove();
+  }
+  // Show placeholder initially
+  showEmptyPlaceholder();
+
   // --- Session-based chat history ---
   let currentSession = { messages: [], date: '', preview: '' };
   function resetSession() {
@@ -216,24 +252,33 @@ if (!window.__miniGptAgentInjected) {
     }
     resetSession();
   }
-  // Patch appendMessage to track session (but do NOT save after every bot reply)
+  // Patch appendMessage to hide placeholder when a message is added
   const origAppendMessage = appendMessage;
   appendMessage = function(text, from) {
+    hideEmptyPlaceholder();
     origAppendMessage(text, from);
     if (from === 'user' || from === 'bot') {
       currentSession.messages.push({ role: from, text });
     }
   };
+  // Also show placeholder if chat is cleared
+  function clearChatMessages() {
+    messagesDiv.innerHTML = '';
+    showEmptyPlaceholder();
+  }
   // Save session when chat is closed or a new session is started
   const origBubbleOnClick = bubble.onclick;
   bubble.onclick = () => {
-    if (chatContainer.style.display === 'flex') {
+    if (chatContainer.style.display === 'flex' || chatContainer.style.visibility === 'visible') {
       saveCurrentSession();
       chatContainer.style.display = 'none';
+      chatContainer.style.visibility = 'hidden';
+      chatContainer.style.opacity = '0';
     } else {
       resetSession();
       chatContainer.style.display = 'flex';
-      chatContainer.style.visibility = '';
+      chatContainer.style.visibility = 'visible';
+      chatContainer.style.opacity = '1';
       chatContainer.style.animation = 'mini-gpt-fadein 0.22s';
       setTimeout(() => { chatContainer.style.animation = ''; }, 250);
     }
@@ -243,6 +288,8 @@ if (!window.__miniGptAgentInjected) {
   chatContainer.querySelector('#mini-gpt-close').onclick = () => {
     saveCurrentSession();
     chatContainer.style.display = 'none';
+    chatContainer.style.visibility = 'hidden';
+    chatContainer.style.opacity = '0';
     if (origCloseOnClick) origCloseOnClick();
   };
 
@@ -556,62 +603,6 @@ if (!window.__miniGptAgentInjected) {
   newChatBtn.onmouseleave = () => newChatBtn.style.background = 'none';
   actionsBar.appendChild(newChatBtn);
 
-  // Expand/Shrink button with modern icons
-  const resizeBtn = document.createElement('button');
-  resizeBtn.id = 'mini-gpt-resize-btn';
-  resizeBtn.setAttribute('aria-label', 'Expand chat window');
-  resizeBtn.title = 'Expand chat window';
-  resizeBtn.style.background = 'none';
-  resizeBtn.style.border = 'none';
-  resizeBtn.style.padding = '6px';
-  resizeBtn.style.borderRadius = '8px';
-  resizeBtn.style.cursor = 'pointer';
-  resizeBtn.style.transition = 'background 0.18s';
-  resizeBtn.onmouseenter = () => resizeBtn.style.background = '#e8f0fe';
-  resizeBtn.onmouseleave = () => resizeBtn.style.background = 'none';
-  const maximizeSVG = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><polyline points="8 3 8 8 3 8"/><polyline points="16 21 16 16 21 16"/></svg>`;
-  const restoreSVG = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="14" height="14" rx="3"/><rect x="3" y="3" width="14" height="14" rx="3"/></svg>`;
-  let expanded = false;
-  function updateResizeBtn() {
-    resizeBtn.innerHTML = expanded ? restoreSVG : maximizeSVG;
-    resizeBtn.setAttribute('aria-label', expanded ? 'Restore chat window' : 'Expand chat window');
-    resizeBtn.title = expanded ? 'Restore chat window' : 'Expand chat window';
-  }
-  updateResizeBtn();
-  resizeBtn.onclick = () => {
-    expanded = !expanded;
-    if (expanded) {
-      chatContainer.style.width = 'min(98vw, 700px)';
-      chatContainer.style.height = 'min(98vh, 700px)';
-      chatContainer.style.right = '32px';
-      chatContainer.style.bottom = '92px';
-      chatContainer.style.left = '';
-      chatContainer.style.top = '';
-      chatContainer.style.maxWidth = '98vw';
-      chatContainer.style.maxHeight = '98vh';
-      chatContainer.style.minWidth = '320px';
-      chatContainer.style.minHeight = '320px';
-      chatContainer.style.borderRadius = '18px';
-      chatContainer.style.boxShadow = '0 8px 32px rgba(37,99,235,0.13), 0 1.5px 8px rgba(16,163,127,0.06)';
-    } else {
-      chatContainer.style.width = '400px';
-      chatContainer.style.height = '';
-      chatContainer.style.maxWidth = '98vw';
-      chatContainer.style.maxHeight = '60vh';
-      chatContainer.style.minWidth = '320px';
-      chatContainer.style.right = '32px';
-      chatContainer.style.bottom = '92px';
-      chatContainer.style.left = '';
-      chatContainer.style.top = '';
-      chatContainer.style.borderRadius = '16px';
-      chatContainer.style.boxShadow = '0 4px 24px rgba(0,0,0,0.18)';
-      // Re-attach to bubble
-      ensureBubbleVisibleAfterChatMove();
-    }
-    updateResizeBtn();
-  };
-  actionsBar.appendChild(resizeBtn);
-
   // Close button
   const closeBtn = document.createElement('button');
   closeBtn.id = 'mini-gpt-close';
@@ -629,7 +620,7 @@ if (!window.__miniGptAgentInjected) {
   actionsBar.appendChild(closeBtn);
 
   // Keyboard accessibility
-  [historyBtn, newChatBtn, resizeBtn, closeBtn].forEach(btn => {
+  [historyBtn, newChatBtn, closeBtn].forEach(btn => {
     btn.tabIndex = 0;
     btn.onkeydown = (e) => {
       if (e.key === 'Enter' || e.key === ' ') btn.click();
@@ -637,7 +628,7 @@ if (!window.__miniGptAgentInjected) {
   });
 
   // Update action bar button styles for compact, title-matching icons
-  [historyBtn, newChatBtn, resizeBtn, closeBtn].forEach(btn => {
+  [historyBtn, newChatBtn, closeBtn].forEach(btn => {
     btn.style.width = '28px';
     btn.style.height = '28px';
     btn.style.padding = '2px';
@@ -685,10 +676,18 @@ if (!window.__miniGptAgentInjected) {
       resetSession();
     }
     messagesDiv.innerHTML = '';
+    // Ensure chat stays visible when starting new chat
+    if (chatContainer.style.display === 'none') {
+      chatContainer.style.display = 'flex';
+      chatContainer.style.visibility = 'visible';
+      chatContainer.style.opacity = '1';
+    }
   };
   closeBtn.onclick = () => {
     saveCurrentSession();
     chatContainer.style.display = 'none';
+    chatContainer.style.visibility = 'hidden';
+    chatContainer.style.opacity = '0';
   };
 
   // 2. Add history side panel HTML and overlay
@@ -845,10 +844,18 @@ if (!window.__miniGptAgentInjected) {
       const chat = document.getElementById('mini-gpt-chat-container');
       if (hasKey) {
         if (bubble) bubble.style.display = '';
-        if (chat) chat.style.display = 'none'; // Hide chat by default
+        if (chat) {
+          chat.style.display = 'none'; // Hide chat by default
+          chat.style.visibility = 'hidden';
+          chat.style.opacity = '0';
+        }
       } else {
         if (bubble) bubble.style.display = 'none';
-        if (chat) chat.style.display = 'none';
+        if (chat) {
+          chat.style.display = 'none';
+          chat.style.visibility = 'hidden';
+          chat.style.opacity = '0';
+        }
       }
     });
   }

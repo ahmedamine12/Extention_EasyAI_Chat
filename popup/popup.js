@@ -50,6 +50,16 @@ document.addEventListener('DOMContentLoaded', function() {
     geminiEyeHide.style.display = show ? '' : 'none';
   };
 
+  // Add privacy note to settings UI
+  const privacyNote = document.createElement('div');
+  privacyNote.style.fontSize = '0.98em';
+  privacyNote.style.color = '#888';
+  privacyNote.style.margin = '10px 0 18px 0';
+  privacyNote.style.textAlign = 'center';
+  privacyNote.textContent = 'Your API keys are stored only on your device and never leave your computer.';
+  const form = document.getElementById('popupSettingsForm');
+  if (form) form.insertBefore(privacyNote, form.firstChild);
+
   popupSettingsForm.onsubmit = (e) => {
     e.preventDefault();
     const apiKeyOpenAI = popupApiKeyOpenAI.value;

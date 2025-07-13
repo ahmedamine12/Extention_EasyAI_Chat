@@ -1,43 +1,47 @@
-# Universal Mini-GPT Agent Chrome Extension
+# EasyAI Chat – Your Effortless AI Companion for the Web
 
-A floating, always-available GPT-powered chatbot for any webpage. Ask questions, get suggestions, or correct phrases anywhere in your browser.
+EasyAI Chat is a modern, floating AI assistant for your browser. Instantly access powerful AI (OpenAI, Gemini, and more) on any webpage—ask questions, get suggestions, or improve your writing, all without leaving your current tab.
 
-## Features
-- Floating, draggable chat bubble on every page
-- Modern, clean chat UI
-- Powered by OpenAI GPT (cloud API)
-- Context menu: right-click selected text to ask the agent
-- Popup for quick access
+## ✨ Features
+- **Floating Chat Bubble:** Always available, never in the way. Click to open, close, or move it anywhere on the page.
+- **Beautiful, Minimal UI:** Clean, responsive design with light and dark mode support.
+- **Multi-Provider:** Works with OpenAI, Gemini, and more—just add your API key.
+- **Context Menu Integration:** Right-click any text to ask the AI about it.
+- **Secure & Private:** Your API keys are stored only on your device and never leave your computer.
 
-## Setup
-1. **Clone or download this repository.**
-2. **Get your OpenAI API key:**
-   - Go to https://platform.openai.com/account/api-keys
-   - Click "Create new secret key" and copy it
-3. **Add your API key:**
-   - Open `background.js`
-   - Replace `YOUR_OPENAI_API_KEY` with your actual key
-4. **Add icons:**
-   - Replace the placeholder PNGs in `icons/` with your own 16x16, 32x32, 48x48, and 128x128 icons (optional)
+## 🚀 Getting Started
 
-## Load the Extension
-1. Go to `chrome://extensions` in your browser.
-2. Enable "Developer mode" (top right).
-3. Click "Load unpacked" and select the `universal-mini-gpt-extension` folder.
+### 1. Clone or Download
+Clone this repo or download the ZIP and extract it to a folder.
 
-## Usage
-- The 💬 chat bubble appears on every page. Click to open the chat UI.
-- Type your question and press Enter. The agent will reply using GPT.
-- Right-click any selected text and choose "Ask Mini-GPT Agent" to send it to the agent.
-- Use the extension popup to open the chat bubble if it's hidden.
+### 2. Add Your API Keys
+- Get your API key from your provider (e.g., [OpenAI](https://platform.openai.com/account/api-keys), [Gemini](https://aistudio.google.com/apikey)).
+- Click the chat bubble, open **Settings**, and paste your API key(s).
 
-## Configuration
-- **API Model:** The default is `gpt-3.5-turbo`. You can change this in `background.js`.
-- **API Endpoint:** The extension uses OpenAI's API by default. You can adapt it for other LLM APIs if needed.
+### 3. Load the Extension
+1. Go to `chrome://extensions` (or your browser's extensions page).
+2. Enable **Developer mode** (top right).
+3. Click **Load unpacked** and select the project folder.
 
-## Security
-- Your API key is stored only in the extension's background script and is never sent to any third party except the LLM API endpoint you configure.
+## 💡 How to Use
+- Click the 💬 bubble on any page to open the chat.
+- Type your question or prompt and press Enter.
+- Right-click selected text and choose "Ask EasyAI Chat" for instant context-aware help.
+- Access settings and history from the chat UI or popup.
+
+## ⚙️ Configuration
+- **Model Selection:** Choose your preferred AI model in Settings.
+- **Multiple Providers:** Add keys for OpenAI, Gemini, or both—switch anytime.
+- **Customizable UI:** Light/dark mode adapts to your page or system theme.
+
+## 🔒 Security & Privacy
+- **Your API keys are stored only on your device and never leave your computer.**
+- The extension never sends your keys to any third party except the official AI API endpoints you configure.
+- For maximum security, keep your device and browser profile safe.
+
+## 🛠️ Contributing
+Pull requests and suggestions are welcome! Please open an issue or PR for feature requests, bug fixes, or improvements.
 
 ---
 
-**Enjoy your universal, always-available AI assistant!** 
+**Enjoy seamless, secure, and beautiful AI chat—anywhere on the web!** 
