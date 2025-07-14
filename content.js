@@ -92,10 +92,13 @@ if (!window.__miniGptAgentInjected) {
     </div>
     <div id="mini-gpt-provider-row" class="mini-gpt-provider-row-enhanced"></div>
     <div id="mini-gpt-messages" class="mini-gpt-messages-enhanced"></div>
-    <form id="mini-gpt-form" class="mini-gpt-form-enhanced">
-      <textarea id="mini-gpt-input" class="mini-gpt-input-enhanced" placeholder="Ask anything..." autocomplete="off" rows="1"></textarea>
+    <form id="mini-gpt-form" class="mini-gpt-form-enhanced" style="position:relative;display:flex;align-items:flex-end;">
+      <textarea id="mini-gpt-input" class="mini-gpt-input-enhanced" placeholder="Ask anything..." autocomplete="off" rows="1" style="flex:1;"></textarea>
       <button type="submit" class="mini-gpt-send-btn" aria-label="Send">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+      <button id="mini-gpt-quick-actions-btn" type="button" title="Quick Actions" aria-label="Quick Actions" style="background:none;border:none;padding:4px 8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:#2563eb;position:relative;margin-left:4px;">
+        <span style="font-size:20px;">⚡</span>
       </button>
     </form>
   `;
@@ -750,6 +753,139 @@ if (!window.__miniGptAgentInjected) {
     chatContainer.style.visibility = 'hidden';
     chatContainer.style.opacity = '0';
   };
+
+  // After chatContainer.innerHTML is set up
+  // --- Quick Actions Dropdown ---
+  const quickActionsBtn = chatContainer.querySelector('#mini-gpt-quick-actions-btn');
+  let quickActionsDropdown = null;
+
+  // Helper to check if page is suitable for quick actions
+  function isPageContentValid() {
+    const text = getMainPageText();
+    if (!text || text.length < 120) return false;
+    const lower = text.toLowerCase();
+    // Add more error keywords as needed
+    if (lower.includes('error') || lower.includes('problem loading') || lower.includes('javascript') || lower.includes('cache') || lower.includes('cookie')) return false;
+    return true;
+  }
+
+  function updateQuickActionsBtnState() {
+    if (!isPageContentValid()) {
+      quickActionsBtn.disabled = true;
+      quickActionsBtn.style.opacity = '0.45';
+      quickActionsBtn.style.cursor = 'not-allowed';
+      quickActionsBtn.title = "EasyAI Chat can’t do quick actions on this page. Try selecting and copying text, then paste it into the chat.";
+    } else {
+      quickActionsBtn.disabled = false;
+      quickActionsBtn.style.opacity = '1';
+      quickActionsBtn.style.cursor = 'pointer';
+      quickActionsBtn.title = 'Quick Actions';
+    }
+  }
+  updateQuickActionsBtnState();
+  // Also update on navigation or DOM changes
+  window.addEventListener('DOMContentLoaded', updateQuickActionsBtnState);
+  window.addEventListener('load', updateQuickActionsBtnState);
+  setTimeout(updateQuickActionsBtnState, 1200);
+
+  function getMainPageText() {
+    // Clone the body so we don't affect the real DOM
+    const bodyClone = document.body.cloneNode(true);
+    // Remove extension UI elements
+    bodyClone.querySelectorAll('.mini-gpt-chat-container, #mini-gpt-bubble, #mini-gpt-history-panel, #mini-gpt-quick-actions-dropdown, #mini-gpt-clear-modal, #mini-gpt-history-overlay').forEach(el => el.remove());
+    let main = bodyClone.querySelector('main');
+    let text = '';
+    if (main) text = main.innerText.trim();
+    if (!text) text = bodyClone.innerText.trim();
+    return text.length > 3000 ? text.slice(0, 3000) + '…' : text;
+  }
+  function sendSpeedPrompt(type) {
+    let prompt = '';
+    let userMsg = '';
+    const pageText = getMainPageText();
+    if (!pageText) {
+      appendMessage('No readable text found on this page.', 'bot');
+      return;
+    }
+    if (type === 'summarize') {
+      userMsg = 'Summarize this page';
+      prompt = `Summarize the following page content:\n\n${pageText}`;
+    } else if (type === 'explain') {
+      userMsg = 'Explain this page';
+      prompt = `Explain the following page content in simple terms:\n\n${pageText}`;
+    }
+    // Show only the short user message in chat, but send the full prompt
+    appendMessage(userMsg, 'user');
+    // Add animated loader as bot message
+    const loader = document.createElement('div');
+    loader.className = 'mini-gpt-msg-bot';
+    loader.setAttribute('aria-label', 'Mini-GPT is thinking');
+    loader.innerHTML = `<span class='mini-gpt-loader'><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span></span>`;
+    messagesDiv.appendChild(loader);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    requestInProgress = true;
+    input.disabled = true;
+    updateSendStopBtn();
+    streamingBotMsg = null;
+    streamingBotText = '';
+    // Send to backend directly
+    const provider = currentProvider;
+    const model = DEFAULT_MODELS[provider];
+    chrome.storage.local.get([`apiKey_${provider}`], (settings) => {
+      const apiKey = settings[`apiKey_${provider}`] || '';
+      if (!apiKey) {
+        appendMessage('Please set your API key in the extension popup.', 'bot');
+        return;
+      }
+      window.postMessage({ type: 'MINI_GPT_ASK', question: prompt, provider, model, apiKey }, '*');
+    });
+  }
+  function showQuickActionsDropdown() {
+    if (quickActionsDropdown) { quickActionsDropdown.remove(); quickActionsDropdown = null; return; }
+    quickActionsDropdown = document.createElement('div');
+    quickActionsDropdown.id = 'mini-gpt-quick-actions-dropdown';
+    quickActionsDropdown.style.position = 'absolute';
+    quickActionsDropdown.style.right = '44px';
+    quickActionsDropdown.style.bottom = '48px';
+    quickActionsDropdown.style.background = '#fff';
+    quickActionsDropdown.style.border = '1px solid #e5e7eb';
+    quickActionsDropdown.style.boxShadow = '0 4px 16px rgba(37,99,235,0.10)';
+    quickActionsDropdown.style.borderRadius = '10px';
+    quickActionsDropdown.style.padding = '4px 0';
+    quickActionsDropdown.style.zIndex = '999999';
+    quickActionsDropdown.style.minWidth = '160px';
+    quickActionsDropdown.style.fontFamily = 'inherit';
+    quickActionsDropdown.style.fontSize = '15px';
+    quickActionsDropdown.innerHTML = `
+      <button class="mini-gpt-quick-action-item" data-action="summarize" style="display:block;width:100%;background:none;border:none;padding:10px 18px;text-align:left;cursor:pointer;color:#2563eb;font-weight:500;transition:background 0.15s;">Summarize Page</button>
+      <button class="mini-gpt-quick-action-item" data-action="explain" style="display:block;width:100%;background:none;border:none;padding:10px 18px;text-align:left;cursor:pointer;color:#2563eb;font-weight:500;transition:background 0.15s;">Explain Page</button>
+    `;
+    Array.from(quickActionsDropdown.querySelectorAll('.mini-gpt-quick-action-item')).forEach(btn => {
+      btn.onmouseenter = () => btn.style.background = '#e8f0fe';
+      btn.onmouseleave = () => btn.style.background = 'none';
+      btn.onclick = (e) => {
+        sendSpeedPrompt(btn.dataset.action);
+        quickActionsDropdown.remove();
+        quickActionsDropdown = null;
+      };
+    });
+    document.body.appendChild(quickActionsDropdown);
+    // Position below the button
+    const rect = quickActionsBtn.getBoundingClientRect();
+    quickActionsDropdown.style.left = (rect.right - 160) + 'px';
+    quickActionsDropdown.style.top = (rect.top - 90) + 'px';
+    // Close on outside click
+    setTimeout(() => {
+      document.addEventListener('mousedown', quickActionsOutsideClick, { once: true });
+    }, 0);
+  }
+  function quickActionsOutsideClick(e) {
+    if (quickActionsDropdown && !quickActionsDropdown.contains(e.target) && e.target !== quickActionsBtn) {
+      quickActionsDropdown.remove();
+      quickActionsDropdown = null;
+    }
+  }
+  quickActionsBtn.onclick = showQuickActionsDropdown;
 
   // 2. Add history side panel HTML and overlay
   const historyPanel = document.createElement('div');
