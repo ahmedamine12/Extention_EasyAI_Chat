@@ -244,14 +244,17 @@ if (!window.__miniGptAgentInjected) {
   function resetSession() {
     currentSession = { messages: [], date: '', preview: '' };
   }
-  function saveCurrentSession() {
-    if (currentSession.messages.length > 1) {
+  // --- Patch: Only save session after full bot response ---
+  function trySaveCurrentSession() {
+    // Only save if not streaming
+    if (!requestInProgress && currentSession.messages.length > 1) {
       currentSession.date = new Date().toLocaleString();
       currentSession.preview = currentSession.messages.find(m => m.role === 'user')?.text?.slice(0, 60) || '';
       saveChatToHistory(currentSession);
+      resetSession();
     }
-    resetSession();
   }
+
   // Patch appendMessage to hide placeholder when a message is added
   const origAppendMessage = appendMessage;
   appendMessage = function(text, from) {
@@ -266,11 +269,12 @@ if (!window.__miniGptAgentInjected) {
     messagesDiv.innerHTML = '';
     showEmptyPlaceholder();
   }
+  // Replace all saveCurrentSession() calls with trySaveCurrentSession()
   // Save session when chat is closed or a new session is started
   const origBubbleOnClick = bubble.onclick;
   bubble.onclick = () => {
-    if (chatContainer.style.display === 'flex' || chatContainer.style.visibility === 'visible') {
-      saveCurrentSession();
+    if ((chatContainer.style.display === 'flex' || chatContainer.style.visibility === 'visible')) {
+      trySaveCurrentSession();
       chatContainer.style.display = 'none';
       chatContainer.style.visibility = 'hidden';
       chatContainer.style.opacity = '0';
@@ -286,7 +290,7 @@ if (!window.__miniGptAgentInjected) {
   };
   const origCloseOnClick = chatContainer.querySelector('#mini-gpt-close').onclick;
   chatContainer.querySelector('#mini-gpt-close').onclick = () => {
-    saveCurrentSession();
+    trySaveCurrentSession();
     chatContainer.style.display = 'none';
     chatContainer.style.visibility = 'hidden';
     chatContainer.style.opacity = '0';
@@ -434,6 +438,49 @@ if (!window.__miniGptAgentInjected) {
     if (last && last.querySelector && last.querySelector('.mini-gpt-loader')) messagesDiv.removeChild(last);
   }
 
+  // --- Streaming support ---
+  let streamingBotMsg = null;
+  let streamingBotText = '';
+
+  // Listen for streaming answer parts from background
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.type === 'MINI_GPT_ANSWER_PART') {
+      // Remove loader if present
+      removeLoader();
+      if (msg.done) {
+        // --- PATCH: Always append Gemini (non-streaming) answer as a bot message ---
+        if (!streamingBotMsg && msg.answerPart) {
+          // For Gemini (non-streaming), ensure appendMessage is called so history is correct
+          appendMessage(msg.answerPart, 'bot');
+          streamingBotMsg = null;
+          streamingBotText = '';
+        } else if (streamingBotMsg) {
+          streamingBotMsg.innerHTML = convertMarkdownToHTML(streamingBotText);
+          streamingBotMsg = null;
+          streamingBotText = '';
+        }
+        requestInProgress = false;
+        input.disabled = false;
+        updateSendStopBtn();
+        if (chatContainer.style.display === 'none' || chatContainer.style.visibility === 'hidden') {
+          trySaveCurrentSession();
+        }
+        return;
+      }
+      if (!streamingBotMsg) {
+        streamingBotMsg = document.createElement('div');
+        streamingBotMsg.className = 'mini-gpt-msg-bot';
+        streamingBotMsg.innerHTML = '';
+        messagesDiv.appendChild(streamingBotMsg);
+      }
+      if (msg.answerPart) {
+        streamingBotText += msg.answerPart;
+        streamingBotMsg.innerHTML = convertMarkdownToHTML(streamingBotText);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+    }
+  });
+
   // Patch loader logic in form.onsubmit
   form.onsubmit = (e) => {
     e.preventDefault();
@@ -442,6 +489,7 @@ if (!window.__miniGptAgentInjected) {
     if (requestInProgress) {
       chrome.runtime.sendMessage({ type: 'MINI_GPT_STOP' }, () => {
         removeLoader();
+        if (streamingBotMsg) streamingBotMsg = null;
         requestInProgress = false;
         input.disabled = false;
         updateSendStopBtn();
@@ -475,6 +523,8 @@ if (!window.__miniGptAgentInjected) {
       requestInProgress = true;
       input.disabled = true;
       updateSendStopBtn();
+      streamingBotMsg = null;
+      streamingBotText = '';
       window.postMessage({ type: 'MINI_GPT_ASK', question, provider, model, apiKey }, '*');
     });
   }
@@ -487,6 +537,17 @@ if (!window.__miniGptAgentInjected) {
       requestInProgress = false;
       input.disabled = false;
       updateSendStopBtn();
+    }
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    // Ctrl+H or Cmd+H to open history
+    if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
+      e.preventDefault();
+      if (chatContainer.style.display === 'flex') {
+        showHistoryPanel();
+      }
     }
   });
 
@@ -574,7 +635,7 @@ if (!window.__miniGptAgentInjected) {
   // History button
   const historyBtn = document.createElement('button');
   historyBtn.id = 'mini-gpt-history-btn';
-  historyBtn.title = 'Show chat history';
+  historyBtn.title = 'Show chat history (Ctrl+H)';
   historyBtn.setAttribute('aria-label', 'Show chat history');
   historyBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 9 9"/><polyline points="3 12 3 16 7 16"/></svg>`;
   historyBtn.style.background = 'none';
@@ -670,8 +731,8 @@ if (!window.__miniGptAgentInjected) {
   // Attach event listeners
   historyBtn.onclick = showHistoryPanel;
   newChatBtn.onclick = () => {
-    if (currentSession.messages.length > 0) {
-      saveCurrentSession();
+    if (currentSession.messages.length > 0 && !requestInProgress) {
+      trySaveCurrentSession();
     } else {
       resetSession();
     }
@@ -684,7 +745,7 @@ if (!window.__miniGptAgentInjected) {
     }
   };
   closeBtn.onclick = () => {
-    saveCurrentSession();
+    trySaveCurrentSession();
     chatContainer.style.display = 'none';
     chatContainer.style.visibility = 'hidden';
     chatContainer.style.opacity = '0';
@@ -699,6 +760,9 @@ if (!window.__miniGptAgentInjected) {
       <button id="mini-gpt-history-panel-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div id="mini-gpt-history-panel-divider"></div>
+    <div id="mini-gpt-history-panel-search">
+      <input type="text" id="mini-gpt-history-search-input" placeholder="Search conversations..." />
+    </div>
     <div id="mini-gpt-history-panel-list"></div>
     <button id="mini-gpt-history-panel-clear" style="display:none;">Clear All</button>
   `;
@@ -708,6 +772,9 @@ if (!window.__miniGptAgentInjected) {
   document.body.appendChild(historyPanel);
 
   // 3. History logic (update selectors)
+  let allHistory = [];
+  let filteredHistory = [];
+  
   function saveChatToHistory(session) {
     chrome.storage.local.get(['miniGptHistory'], (data) => {
       const history = Array.isArray(data.miniGptHistory) ? data.miniGptHistory : [];
@@ -717,54 +784,170 @@ if (!window.__miniGptAgentInjected) {
   }
   function loadHistory(callback) {
     chrome.storage.local.get(['miniGptHistory'], (data) => {
-      callback(Array.isArray(data.miniGptHistory) ? data.miniGptHistory : []);
+      allHistory = Array.isArray(data.miniGptHistory) ? data.miniGptHistory : [];
+      filteredHistory = [...allHistory];
+      callback(allHistory);
     });
   }
   function clearHistory() {
-    chrome.storage.local.set({ miniGptHistory: [] }, renderHistoryList);
+    chrome.storage.local.set({ miniGptHistory: [] }, () => {
+      allHistory = [];
+      filteredHistory = [];
+      renderHistoryList();
+    });
+  }
+  function deleteHistoryItem(index) {
+    // Find the actual index in allHistory
+    const actualIndex = allHistory.findIndex(item => item === filteredHistory[index]);
+    if (actualIndex !== -1) {
+      allHistory.splice(actualIndex, 1);
+      chrome.storage.local.set({ miniGptHistory: allHistory }, () => {
+        filteredHistory = [...allHistory];
+        renderHistoryList();
+      });
+    }
+  }
+  function filterHistory(searchTerm) {
+    if (!searchTerm.trim()) {
+      filteredHistory = [...allHistory];
+    } else {
+      const term = searchTerm.toLowerCase();
+      filteredHistory = allHistory.filter(session => {
+        return session.messages.some(msg => 
+          msg.text.toLowerCase().includes(term)
+        );
+      });
+    }
+    renderHistoryList();
   }
   function renderHistoryList() {
-    loadHistory((history) => {
-      const list = historyPanel.querySelector('#mini-gpt-history-panel-list');
-      const clearBtn = historyPanel.querySelector('#mini-gpt-history-panel-clear');
-      list.innerHTML = '';
-      if (!history.length) {
-        clearBtn.style.display = 'none';
-        list.innerHTML = `<div id='mini-gpt-history-panel-empty'>
-          <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10' /><path d='M12 8v4l2.5 2.5'/></svg>
-          <div>No history yet.</div>
-        </div>`;
-        return;
+    const list = historyPanel.querySelector('#mini-gpt-history-panel-list');
+    const clearBtn = historyPanel.querySelector('#mini-gpt-history-panel-clear');
+    list.innerHTML = '';
+    
+    if (!filteredHistory.length) {
+      clearBtn.style.display = 'none';
+      const searchInput = historyPanel.querySelector('#mini-gpt-history-search-input');
+      const isEmpty = !allHistory.length;
+      const isSearching = searchInput && searchInput.value.trim();
+      
+      list.innerHTML = `<div id='mini-gpt-history-panel-empty'>
+        <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'>
+          ${isEmpty ? '<circle cx="12" cy="12" r="10" /><path d="M12 8v4l2.5 2.5"/>' : '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>'}
+        </svg>
+        <div>${isEmpty ? 'No history yet.' : isSearching ? 'No conversations found.' : 'No history yet.'}</div>
+      </div>`;
+      return;
+    }
+    
+    clearBtn.style.display = 'block';
+    filteredHistory.forEach((session, idx) => {
+      const item = document.createElement('div');
+      item.className = 'mini-gpt-history-item';
+      item.tabIndex = 0;
+      
+      // Check if this is the current active session
+      const isCurrentSession = currentSession.messages.length > 0 && 
+        JSON.stringify(currentSession.messages) === JSON.stringify(session.messages);
+      
+      if (isCurrentSession) {
+        item.classList.add('mini-gpt-history-item-active');
       }
-      clearBtn.style.display = 'block';
-      history.forEach((session, idx) => {
-        const item = document.createElement('div');
-        item.className = 'mini-gpt-history-item';
-        item.tabIndex = 0;
-        // Show first user message as preview, and a snippet of the first bot reply if available
-        const userMsg = session.messages.find(m => m.role === 'user')?.text || '';
-        const botMsg = session.messages.find(m => m.role === 'bot')?.text || '';
-        item.innerHTML = `<div class='mini-gpt-history-preview'>${userMsg}</div>` +
-          (botMsg ? `<div class='mini-gpt-history-date' style='font-size:0.97em; color:#4f8cff; margin-bottom:2px;'>${botMsg.slice(0, 60)}${botMsg.length > 60 ? '…' : ''}</div>` : '') +
-          `<div class='mini-gpt-history-date'>${session.date}</div>`;
-        item.onclick = () => restoreHistorySession(idx);
-        item.onkeydown = (e) => { if (e.key === 'Enter') restoreHistorySession(idx); };
-        list.appendChild(item);
-      });
+      
+      // Get conversation preview
+      const userMessages = session.messages.filter(m => m.role === 'user');
+      const botMessages = session.messages.filter(m => m.role === 'bot');
+      const firstUserMsg = userMessages[0]?.text || '';
+      const firstBotMsg = botMessages[0]?.text || '';
+      const messageCount = session.messages.length;
+      
+      // Create better preview with message count
+      const previewText = firstUserMsg.length > 80 ? firstUserMsg.slice(0, 80) + '…' : firstUserMsg;
+      const botPreview = firstBotMsg.length > 60 ? firstBotMsg.slice(0, 60) + '…' : firstBotMsg;
+      
+      item.innerHTML = `
+        <div class='mini-gpt-history-item-content'>
+          <div class='mini-gpt-history-preview'>${previewText}</div>
+          ${botPreview ? `<div class='mini-gpt-history-bot-preview'>${botPreview}</div>` : ''}
+          <div class='mini-gpt-history-meta'>
+            <span class='mini-gpt-history-date'>${session.date}</span>
+            <span class='mini-gpt-history-count'>${messageCount} messages</span>
+            ${isCurrentSession ? '<span class="mini-gpt-history-current">Current</span>' : ''}
+          </div>
+        </div>
+        <button class='mini-gpt-history-delete' title='Delete this conversation' aria-label='Delete conversation'>
+          <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>
+            <path d='M3 6h18'/><path d='M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6'/><path d='M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2'/>
+          </svg>
+        </button>
+      `;
+      
+      // Main click to restore
+      const content = item.querySelector('.mini-gpt-history-item-content');
+      content.onclick = () => restoreHistorySession(idx);
+      content.onkeydown = (e) => { if (e.key === 'Enter') restoreHistorySession(idx); };
+      
+      // Delete button
+      const deleteBtn = item.querySelector('.mini-gpt-history-delete');
+      deleteBtn.onclick = (e) => {
+        e.stopPropagation();
+        deleteHistoryItem(idx);
+      };
+      
+      list.appendChild(item);
     });
   }
   function restoreHistorySession(idx) {
-    loadHistory((history) => {
-      if (!history[idx]) return;
-      // Clear current chat
-      messagesDiv.innerHTML = '';
-      history[idx].messages.forEach(msg => appendMessage(msg.text, msg.role));
-      historyPanel.style.display = 'none';
+    if (!filteredHistory[idx]) return;
+    
+    // Save current session if it has messages
+    if (currentSession.messages.length > 0) {
+      trySaveCurrentSession();
+    }
+    
+    // Clear current chat and restore the selected session
+    messagesDiv.innerHTML = '';
+    currentSession = { ...filteredHistory[idx] }; // Copy the session
+    
+    // Restore all messages from the session
+    filteredHistory[idx].messages.forEach(msg => {
+      appendMessage(msg.text, msg.role);
     });
+    
+    // Show the chat if it's hidden
+    if (chatContainer.style.display === 'none') {
+      chatContainer.style.display = 'flex';
+      chatContainer.style.visibility = 'visible';
+      chatContainer.style.opacity = '1';
+    }
+    
+    // Hide history panel
+    hideHistoryPanel();
   }
   // 4. Show/hide panel and overlay
   function showHistoryPanel() {
-    renderHistoryList();
+    loadHistory(() => {
+      renderHistoryList();
+      
+      // Set up search functionality
+      const searchInput = historyPanel.querySelector('#mini-gpt-history-search-input');
+      if (searchInput) {
+        searchInput.value = '';
+        searchInput.addEventListener('input', (e) => {
+          filterHistory(e.target.value);
+        });
+        searchInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            searchInput.value = '';
+            filterHistory('');
+            searchInput.blur();
+          }
+        });
+        // Focus on search input when panel opens
+        setTimeout(() => searchInput.focus(), 100);
+      }
+    });
+    
     historyPanel.style.display = 'flex';
     historyOverlay.style.display = 'block';
     if (chatContainer.classList.contains('mini-gpt-dark')) historyPanel.classList.add('mini-gpt-dark');

@@ -23,22 +23,55 @@ async function askOpenAI({ apiKey, model, prompt, tabId }) {
       body: JSON.stringify({
         model,
         messages: [{ role: 'user', content: prompt }],
-        max_tokens: 256
+        max_tokens: 256,
+        stream: true
       }),
       signal: controller.signal
     });
-    if (tabId) delete abortControllers[tabId];
-    const data = await res.json();
-    if (data.choices && data.choices[0]?.message?.content) {
-      return { ok: true, answer: data.choices[0].message.content };
-    } else {
-      return { ok: false, answer: data.error?.message || 'No answer from OpenAI.' };
+    if (!res.body) throw new Error('No response body');
+    const reader = res.body.getReader();
+    let buffer = '';
+    let done = false;
+    let answer = '';
+    while (!done) {
+      const { value, done: doneReading } = await reader.read();
+      done = doneReading;
+      if (value) {
+        buffer += new TextDecoder().decode(value);
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // last line may be incomplete
+        for (const line of lines) {
+          if (line.trim().startsWith('data:')) {
+            const data = line.replace('data:', '').trim();
+            if (data === '[DONE]') {
+              chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '', done: true });
+              if (tabId) delete abortControllers[tabId];
+              return { ok: true, answer };
+            }
+            try {
+              const parsed = JSON.parse(data);
+              const delta = parsed.choices?.[0]?.delta?.content || '';
+              if (delta) {
+                answer += delta;
+                chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: delta, done: false });
+              }
+            } catch (e) {
+              // ignore parse errors
+            }
+          }
+        }
+      }
     }
+    if (tabId) delete abortControllers[tabId];
+    chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '', done: true });
+    return { ok: true, answer };
   } catch (e) {
     if (tabId) delete abortControllers[tabId];
     if (e.name === 'AbortError') {
+      chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Stopped by user]', done: true });
       return { ok: false, answer: 'Request stopped by user.' };
     }
+    chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Error: ' + (e.message || 'Network error.') + ']', done: true });
     return { ok: false, answer: e.message || 'Network error.' };
   }
 }
@@ -51,21 +84,26 @@ async function askGemini({ apiKey, model, prompt, tabId }) {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }), // No stream param
       signal: controller.signal
     });
     if (tabId) delete abortControllers[tabId];
     const data = await res.json();
+    let answer = '';
     if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-      return { ok: true, answer: data.candidates[0].content.parts[0].text };
+      answer = data.candidates[0].content.parts[0].text;
     } else {
-      return { ok: false, answer: data.error?.message || 'No answer from Gemini.' };
+      answer = data.error?.message || 'No answer from Gemini.';
     }
+    chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: answer, done: true });
+    return { ok: true, answer };
   } catch (e) {
     if (tabId) delete abortControllers[tabId];
     if (e.name === 'AbortError') {
+      chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Stopped by user]', done: true });
       return { ok: false, answer: 'Request stopped by user.' };
     }
+    chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Error: ' + (e.message || 'Network error.') + ']', done: true });
     return { ok: false, answer: e.message || 'Network error.' };
   }
 }
@@ -179,28 +217,24 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 });
 
 // Listen for messages from content script
+// In the message handler, call the streaming functions and do not send a final MINI_GPT_ANSWER (handled by streaming)
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'MINI_GPT_ASK') {
     const provider = msg.provider || 'openai';
     const model = msg.model || (provider === 'openai' ? 'gpt-3.5-turbo' : 'gemini-2.0-flash');
     const apiKey = msg.apiKey || '';
-    let result = { ok: false, answer: 'No provider selected.' };
     const tabId = sender.tab && sender.tab.id;
     (async () => {
       try {
         if (provider === 'openai') {
-          result = await askOpenAI({ apiKey, model, prompt: msg.question, tabId });
+          await askOpenAI({ apiKey, model, prompt: msg.question, tabId });
         } else if (provider === 'gemini') {
-          result = await askGemini({ apiKey, model, prompt: msg.question, tabId });
+          await askGemini({ apiKey, model, prompt: msg.question, tabId });
         } else {
-          result = { ok: false, answer: 'Unknown provider.' };
+          chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '[Unknown provider]', done: true });
         }
       } catch (e) {
-        result = { ok: false, answer: e.message || 'Unknown error.' };
-      }
-      const answer = result.ok ? result.answer.replace(/\n/g, '<br>') : `Error: ${result.answer}`;
-      if (sender.tab && sender.tab.id) {
-        chrome.tabs.sendMessage(sender.tab.id, { type: 'MINI_GPT_ANSWER', answer });
+        chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '[Error: ' + (e.message || 'Unknown error.') + ']', done: true });
       }
       sendResponse({ ok: true });
     })();
