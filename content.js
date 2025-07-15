@@ -2,6 +2,106 @@
 if (!window.__miniGptAgentInjected) {
   window.__miniGptAgentInjected = true;
 
+  // Language detection and localization
+  const browserLanguage = navigator.language || navigator.userLanguage || 'en';
+  const isFrench = browserLanguage.startsWith('fr');
+  
+  // Localization strings
+  const translations = {
+    en: {
+      // Header
+      title: 'EasyAI Chat',
+      dragToMove: 'Drag to move',
+      showHistory: 'Show chat history',
+      newChat: 'New Chat',
+      closeChat: 'Close chat',
+      
+      // Input
+      placeholder: 'Ask anything...',
+      send: 'Send',
+      quickActions: 'Quick Actions',
+      
+      // Quick Actions
+      summarizePage: 'Summarize Page',
+      explainPage: 'Explain Page',
+      
+      // Messages
+      welcome: '👋 Welcome! This is EasyAI Chat. Ask anything, anytime.',
+      noTextFound: 'No readable text found on this page.',
+      pleaseSetApiKey: 'Please set your API key in the extension popup.',
+      thinking: 'Mini-GPT is thinking',
+      
+      // History
+      chatHistory: 'Chat History',
+      searchConversations: 'Search conversations...',
+      noHistoryYet: 'No history yet.',
+      noConversationsFound: 'No conversations found.',
+      messages: 'messages',
+      current: 'Current',
+      deleteConversation: 'Delete this conversation',
+      clearAll: 'Clear All',
+      
+      // Errors
+      errorOccurred: 'An error occurred. Please try again.',
+      cannotBeUndone: 'This action cannot be undone.',
+      cancel: 'Cancel',
+      
+      // Actions
+      summarize: 'Summarize this page',
+      explain: 'Explain this page'
+    },
+    fr: {
+      // Header
+      title: 'EasyAI Chat',
+      dragToMove: 'Glisser pour déplacer',
+      showHistory: 'Afficher l\'historique',
+      newChat: 'Nouveau chat',
+      closeChat: 'Fermer le chat',
+      
+      // Input
+      placeholder: 'Posez votre question...',
+      send: 'Envoyer',
+      quickActions: 'Actions rapides',
+      
+      // Quick Actions
+      summarizePage: 'Résumer la page',
+      explainPage: 'Expliquer la page',
+      
+      // Messages
+      welcome: '👋 Bienvenue ! C\'est EasyAI Chat. Posez vos questions à tout moment.',
+      noTextFound: 'Aucun texte lisible trouvé sur cette page.',
+      pleaseSetApiKey: 'Veuillez configurer votre clé API dans le popup de l\'extension.',
+      thinking: 'Mini-GPT réfléchit',
+      
+      // History
+      chatHistory: 'Historique des chats',
+      searchConversations: 'Rechercher des conversations...',
+      noHistoryYet: 'Aucun historique pour le moment.',
+      noConversationsFound: 'Aucune conversation trouvée.',
+      messages: 'messages',
+      current: 'Actuel',
+      deleteConversation: 'Supprimer cette conversation',
+      clearAll: 'Tout effacer',
+      
+      // Errors
+      errorOccurred: 'Une erreur s\'est produite. Veuillez réessayer.',
+      cannotBeUndone: 'Cette action ne peut pas être annulée.',
+      cancel: 'Annuler',
+      
+      // Actions
+      summarize: 'Résumer cette page',
+      explain: 'Expliquer cette page'
+    }
+  };
+  
+  // Get current language strings
+  const t = translations[isFrench ? 'fr' : 'en'];
+  
+  // Helper function to translate text
+  function translate(key) {
+    return t[key] || translations.en[key] || key;
+  }
+
   // Create floating button
   const bubble = document.createElement('div');
   bubble.id = 'mini-gpt-bubble';
@@ -135,19 +235,19 @@ if (!window.__miniGptAgentInjected) {
     <div class="mini-gpt-header mini-gpt-header-modern">
       <div class="mini-gpt-header-title">
         <span>
-          <img src="${chrome.runtime.getURL('icons/easyChat.png')}" alt="EasyAI Chat" style="width:28px; height:28px; margin-right:8px; border-radius:4px; vertical-align:middle;">
+          <img src="${chrome.runtime.getURL('icons/easyChat.png')}" alt="${translate('title')}" style="width:28px; height:28px; margin-right:8px; border-radius:4px; vertical-align:middle;">
           EasyAI <span class="brand-accent">Chat</span>
         </span>
-        <span class="mini-gpt-drag-indicator" title="Drag to move" style="margin-left:8px; opacity:0.6; font-size:12px;">⋮⋮</span>
+        <span class="mini-gpt-drag-indicator" title="${translate('dragToMove')}" style="margin-left:8px; opacity:0.6; font-size:12px;">⋮⋮</span>
       </div>
       <div class="mini-gpt-actions-bar">
-        <button class="mini-gpt-action-btn" id="mini-gpt-history-btn" title="Show chat history" aria-label="Show chat history">
+        <button class="mini-gpt-action-btn" id="mini-gpt-history-btn" title="${translate('showHistory')}" aria-label="${translate('showHistory')}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 9 9"/><polyline points="3 12 3 16 7 16"/></svg>
         </button>
-        <button class="mini-gpt-action-btn" id="mini-gpt-newchat-btn" title="New Chat" aria-label="Start new chat">
+        <button class="mini-gpt-action-btn" id="mini-gpt-newchat-btn" title="${translate('newChat')}" aria-label="${translate('newChat')}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
         </button>
-        <button class="mini-gpt-action-btn" id="mini-gpt-close" title="Close chat" aria-label="Close chat">
+        <button class="mini-gpt-action-btn" id="mini-gpt-close" title="${translate('closeChat')}" aria-label="${translate('closeChat')}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
@@ -155,11 +255,11 @@ if (!window.__miniGptAgentInjected) {
     <div id="mini-gpt-provider-row" class="mini-gpt-provider-row-enhanced"></div>
     <div id="mini-gpt-messages" class="mini-gpt-messages-enhanced"></div>
     <form id="mini-gpt-form" class="mini-gpt-form-enhanced" style="position:relative;display:flex;align-items:flex-end;">
-      <textarea id="mini-gpt-input" class="mini-gpt-input-enhanced" placeholder="Ask anything..." autocomplete="off" rows="1" style="flex:1;"></textarea>
-      <button type="submit" class="mini-gpt-send-btn" aria-label="Send">
+      <textarea id="mini-gpt-input" class="mini-gpt-input-enhanced" placeholder="${translate('placeholder')}" autocomplete="off" rows="1" style="flex:1;"></textarea>
+      <button type="submit" class="mini-gpt-send-btn" aria-label="${translate('send')}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       </button>
-      <button id="mini-gpt-quick-actions-btn" type="button" title="Quick Actions" aria-label="Quick Actions" style="background:none;border:none;padding:4px 8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:#2563eb;position:relative;margin-left:4px;">
+      <button id="mini-gpt-quick-actions-btn" type="button" title="${translate('quickActions')}" aria-label="${translate('quickActions')}" style="background:none;border:none;padding:4px 8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:#2563eb;position:relative;margin-left:4px;">
         <span style="font-size:20px;">⚡</span>
       </button>
     </form>
@@ -293,7 +393,7 @@ if (!window.__miniGptAgentInjected) {
     if (!messagesDiv.querySelector('.mini-gpt-empty-placeholder')) {
       const placeholder = document.createElement('div');
       placeholder.className = 'mini-gpt-empty-placeholder';
-      placeholder.textContent = '👋 Welcome! This is EasyAI Chat. Ask anything, anytime.';
+      placeholder.textContent = translate('welcome');
       messagesDiv.appendChild(placeholder);
     }
   }
@@ -338,7 +438,13 @@ if (!window.__miniGptAgentInjected) {
   // Save session when chat is closed or a new session is started
   const origBubbleOnClick = bubble.onclick;
   bubble.onclick = () => {
-    if ((chatContainer.style.display === 'flex' || chatContainer.style.visibility === 'visible')) {
+    // Check if chat is currently visible
+    const isChatVisible = chatContainer.style.display === 'flex' && 
+                         chatContainer.style.visibility === 'visible' && 
+                         chatContainer.style.opacity !== '0';
+    
+    if (isChatVisible) {
+      // Chat is open, so close it and show bubble
       // Show bubble instantly for better UX (no API key check needed since chat was open)
       requestAnimationFrame(() => {
         bubble.style.transition = 'none';
@@ -369,6 +475,7 @@ if (!window.__miniGptAgentInjected) {
         bubble.classList.remove('instant-show');
       }, 100);
     } else {
+      // Chat is closed, so open it
       resetSession();
       chatContainer.style.display = 'flex';
       chatContainer.style.visibility = 'visible';
@@ -712,6 +819,15 @@ if (!window.__miniGptAgentInjected) {
   // Listen for streaming answer parts from background
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === 'MINI_GPT_ANSWER_PART') {
+      // Ensure chat is visible when receiving messages
+      if (chatContainer.style.display === 'none' || chatContainer.style.visibility === 'hidden') {
+        chatContainer.style.display = 'flex';
+        chatContainer.style.visibility = 'visible';
+        chatContainer.style.opacity = '1';
+        // Hide bubble when chat becomes visible
+        hideBubble();
+      }
+      
       // Remove loader if present
       removeLoader();
       if (msg.done) {
@@ -1038,7 +1154,7 @@ if (!window.__miniGptAgentInjected) {
       quickActionsBtn.disabled = true;
       quickActionsBtn.style.opacity = '0.45';
       quickActionsBtn.style.cursor = 'not-allowed';
-      quickActionsBtn.title = "Quick actions aren’t available on this page. Select and copy text, then paste it into EasyAI Chat.";
+      quickActionsBtn.title = "Quick actions aren't available on this page. Select and copy text, then paste it into EasyAI Chat.";
     } else {
       quickActionsBtn.disabled = false;
       quickActionsBtn.style.opacity = '1';
@@ -1127,14 +1243,14 @@ if (!window.__miniGptAgentInjected) {
     let userMsg = '';
     const pageText = getMainPageText();
     if (!pageText) {
-      appendMessage('No readable text found on this page.', 'bot');
+      appendMessage(translate('noTextFound'), 'bot');
       return;
     }
     if (type === 'summarize') {
-      userMsg = 'Summarize this page';
+      userMsg = translate('summarize');
       prompt = `Summarize the following page content:\n\n${pageText}`;
     } else if (type === 'explain') {
-      userMsg = 'Explain this page';
+      userMsg = translate('explain');
       prompt = `Explain the following page content in simple terms:\n\n${pageText}`;
     }
     // Show only the short user message in chat, but send the full prompt
@@ -1142,7 +1258,7 @@ if (!window.__miniGptAgentInjected) {
     // Add animated loader as bot message
     const loader = document.createElement('div');
     loader.className = 'mini-gpt-msg-bot';
-    loader.setAttribute('aria-label', 'Mini-GPT is thinking');
+    loader.setAttribute('aria-label', translate('thinking'));
     loader.innerHTML = `<span class='mini-gpt-loader'><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span></span>`;
     messagesDiv.appendChild(loader);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -1157,7 +1273,7 @@ if (!window.__miniGptAgentInjected) {
     chrome.storage.local.get([`apiKey_${provider}`], (settings) => {
       const apiKey = settings[`apiKey_${provider}`] || '';
       if (!apiKey) {
-        appendMessage('Please set your API key in the extension popup.', 'bot');
+        appendMessage(translate('pleaseSetApiKey'), 'bot');
         return;
       }
       window.postMessage({ type: 'MINI_GPT_ASK', question: prompt, provider, model, apiKey }, '*');
@@ -1177,10 +1293,10 @@ if (!window.__miniGptAgentInjected) {
     // Create the dropdown content without icons for cleaner look
     quickActionsDropdown.innerHTML = `
       <button class="mini-gpt-quick-action-item" data-action="summarize">
-        <span class="action-text">Summarize Page</span>
+        <span class="action-text">${translate('summarizePage')}</span>
       </button>
       <button class="mini-gpt-quick-action-item" data-action="explain">
-        <span class="action-text">Explain Page</span>
+        <span class="action-text">${translate('explainPage')}</span>
       </button>
     `;
     
@@ -1306,15 +1422,15 @@ if (!window.__miniGptAgentInjected) {
   historyPanel.id = 'mini-gpt-history-panel';
   historyPanel.innerHTML = `
     <div id="mini-gpt-history-panel-header">
-      <span id="mini-gpt-history-panel-header-title">Chat History</span>
-      <button id="mini-gpt-history-panel-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <span id="mini-gpt-history-panel-header-title">${translate('chatHistory')}</span>
+      <button id="mini-gpt-history-panel-close" aria-label="${translate('closeChat')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div id="mini-gpt-history-panel-divider"></div>
     <div id="mini-gpt-history-panel-search">
-      <input type="text" id="mini-gpt-history-search-input" placeholder="Search conversations..." />
+      <input type="text" id="mini-gpt-history-search-input" placeholder="${translate('searchConversations')}" />
     </div>
     <div id="mini-gpt-history-panel-list"></div>
-    <button id="mini-gpt-history-panel-clear" style="display:none;">Clear All</button>
+    <button id="mini-gpt-history-panel-clear" style="display:none;">${translate('clearAll')}</button>
   `;
   const historyOverlay = document.createElement('div');
   historyOverlay.id = 'mini-gpt-history-overlay';
@@ -1385,7 +1501,7 @@ if (!window.__miniGptAgentInjected) {
         <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'>
           ${isEmpty ? '<circle cx="12" cy="12" r="10" /><path d="M12 8v4l2.5 2.5"/>' : '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>'}
         </svg>
-        <div>${isEmpty ? 'No history yet.' : isSearching ? 'No conversations found.' : 'No history yet.'}</div>
+        <div>${isEmpty ? translate('noHistoryYet') : isSearching ? translate('noConversationsFound') : translate('noHistoryYet')}</div>
         </div>`;
         return;
       }
@@ -1421,11 +1537,11 @@ if (!window.__miniGptAgentInjected) {
           ${botPreview ? `<div class='mini-gpt-history-bot-preview'>${botPreview}</div>` : ''}
           <div class='mini-gpt-history-meta'>
             <span class='mini-gpt-history-date'>${session.date}</span>
-            <span class='mini-gpt-history-count'>${messageCount} messages</span>
-            ${isCurrentSession ? '<span class="mini-gpt-history-current">Current</span>' : ''}
+            <span class='mini-gpt-history-count'>${messageCount} ${translate('messages')}</span>
+            ${isCurrentSession ? `<span class="mini-gpt-history-current">${translate('current')}</span>` : ''}
           </div>
         </div>
-        <button class='mini-gpt-history-delete' title='Delete this conversation' aria-label='Delete conversation'>
+        <button class='mini-gpt-history-delete' title='${translate('deleteConversation')}' aria-label='${translate('deleteConversation')}'>
           <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>
             <path d='M3 6h18'/><path d='M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6'/><path d='M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2'/>
           </svg>
@@ -1517,11 +1633,11 @@ if (!window.__miniGptAgentInjected) {
     clearModal.id = 'mini-gpt-clear-modal';
     clearModal.innerHTML = `
       <div class="mini-gpt-clear-modal-content">
-        <div class="mini-gpt-clear-modal-title">⚠️ Clear all chat history?</div>
-        <div class="mini-gpt-clear-modal-desc">This action cannot be undone.</div>
+        <div class="mini-gpt-clear-modal-title">⚠️ ${translate('clearAll')} ${translate('chatHistory').toLowerCase()}?</div>
+        <div class="mini-gpt-clear-modal-desc">${translate('cannotBeUndone')}</div>
         <div class="mini-gpt-clear-modal-actions">
-          <button id="mini-gpt-clear-cancel">Cancel</button>
-          <button id="mini-gpt-clear-confirm">Clear History</button>
+          <button id="mini-gpt-clear-cancel">${translate('cancel')}</button>
+          <button id="mini-gpt-clear-confirm">${translate('clearAll')}</button>
         </div>
       </div>
     `;
