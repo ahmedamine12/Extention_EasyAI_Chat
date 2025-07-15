@@ -110,7 +110,7 @@ h2 {
   text-align: center;
 }
 p {
-  font-size: 1.08em;
+  font-size: 0.95em;
   color: #444;
   margin-bottom: 18px;
   text-align: center;
@@ -122,7 +122,7 @@ p {
   box-sizing: border-box;
   border-radius: 10px;
   padding: 12px 28px;
-  font-size: 1.08em;
+  font-size: 0.95em;
   font-weight: 700;
   display: flex;
   align-items: center;

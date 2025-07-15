@@ -5,7 +5,7 @@ if (!window.__miniGptAgentInjected) {
   // Create floating button
   const bubble = document.createElement('div');
   bubble.id = 'mini-gpt-bubble';
-  bubble.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+  bubble.innerHTML = `<img src="${chrome.runtime.getURL('icons/easyChat.png')}" alt="EasyAI Chat" style="width:42px; height:42px; border-radius:7px;">`;
   bubble.style.position = 'fixed';
   bubble.style.right = '32px';
   bubble.style.bottom = '32px';
@@ -17,35 +17,23 @@ if (!window.__miniGptAgentInjected) {
   
   // Store original position for restoration
   const originalBubblePosition = { bottom: '32px', right: '32px' };
-  bubble.style.width = '60px';
-  bubble.style.height = '60px';
-  bubble.style.background = 'linear-gradient(135deg, #2563eb 60%, #10a37f 100%)';
+  bubble.style.width = '90px';
+  bubble.style.height = '90px';
+  bubble.style.background = 'linear-gradient(135deg, #2563eb 0%, #10a37f 100%)';
   bubble.style.borderRadius = '50%';
-  bubble.style.boxShadow = '0 4px 18px rgba(37,99,235,0.18), 0 1px 4px rgba(0,0,0,0.10)';
+  bubble.style.boxShadow = '0 6px 24px rgba(37,99,235,0.25), 0 2px 8px rgba(0,0,0,0.15)';
   bubble.style.display = 'flex';
   bubble.style.alignItems = 'center';
   bubble.style.justifyContent = 'center';
   bubble.style.cursor = 'pointer';
   bubble.style.userSelect = 'none';
-  bubble.style.transition = 'box-shadow 0.2s, transform 0.5s cubic-bezier(.4,1.4,.6,1), opacity 0.5s';
-  bubble.style.fontSize = '32px';
-  bubble.style.color = '#fff';
+  bubble.style.transition = 'box-shadow 0.2s, transform 0.3s ease-out, opacity 0.2s';
   bubble.style.opacity = '0';
-  bubble.style.transform = 'scale(0.5) translateY(40px)';
-  // Animate bubble in with a playful bounce
-  setTimeout(() => {
-    bubble.style.transition = 'box-shadow 0.2s, background 0.3s, color 0.3s, transform 0.7s cubic-bezier(.34,1.56,.64,1), opacity 0.5s';
-    bubble.style.opacity = '1';
-    bubble.style.transform = 'scale(1.15) translateY(-12px)';
-    setTimeout(() => {
-      bubble.style.transform = 'scale(0.95) translateY(6px)';
-      setTimeout(() => {
-        bubble.style.transform = 'scale(1) translateY(0)';
-      }, 180);
-    }, 320);
-  }, 120);
-  // Update SVG icon color to white
-  bubble.querySelector('svg').setAttribute('stroke', '#fff');
+  bubble.style.transform = 'scale(0.8) translateY(20px)';
+  bubble.style.display = 'none'; // Hide by default until API key check
+  // Don't animate initially - let updateBubbleVisibility handle it
+  
+  // Don't show bubble initially - let updateBubbleVisibility handle it based on API key
 
   // Chat UI
   const chatContainer = document.createElement('div');
@@ -69,14 +57,88 @@ if (!window.__miniGptAgentInjected) {
   // Force hide the chat container to override any CSS
   chatContainer.style.visibility = 'hidden';
   chatContainer.style.opacity = '0';
+  
+  // Draggable functionality variables
+  let isDragging = false;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let initialX = 0;
+  let initialY = 0;
+  let currentX = 0;
+  let currentY = 0;
+  
+  // Bubble visibility management - Optimized for instant appearance
+  function showBubble() {
+    // Check if API key is available before showing bubble
+    chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini'], (data) => {
+      const hasKey = (data.apiKey_openai && data.apiKey_openai.trim()) || (data.apiKey_gemini && data.apiKey_gemini.trim());
+      if (!hasKey) return; // Don't show bubble if no API key
+      
+      // Remove any existing transitions temporarily for instant visibility
+      bubble.style.transition = 'none';
+      bubble.style.display = 'flex';
+      bubble.style.visibility = 'visible';
+      bubble.style.opacity = '1';
+      bubble.style.transform = 'scale(1) translateY(0)';
+      
+      // Re-enable transitions after a brief moment for future interactions
+      requestAnimationFrame(() => {
+        bubble.style.transition = 'box-shadow 0.2s, background 0.3s, color 0.3s, transform 0.3s ease-out, opacity 0.2s';
+      });
+    });
+  }
+  
+  function showBubbleInstant() {
+    // Check if API key is available before showing bubble
+    chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini'], (data) => {
+      const hasKey = (data.apiKey_openai && data.apiKey_openai.trim()) || (data.apiKey_gemini && data.apiKey_gemini.trim());
+      if (!hasKey) return; // Don't show bubble if no API key
+      
+      // For immediate visibility without any transitions
+      bubble.style.transition = 'none';
+      bubble.style.display = 'flex';
+      bubble.style.visibility = 'visible';
+      bubble.style.opacity = '1';
+      bubble.style.transform = 'scale(1) translateY(0)';
+      
+      // Alternative approach: use CSS class for instant visibility
+      bubble.classList.add('instant-show');
+      
+      // Remove the class after a brief moment to allow future transitions
+      setTimeout(() => {
+        bubble.classList.remove('instant-show');
+      }, 100);
+    });
+  }
+  
+  function hideBubble() {
+    bubble.style.display = 'none';
+    bubble.style.visibility = 'hidden';
+  }
+  
+  function syncBubbleVisibility() {
+    const isChatVisible = chatContainer.style.display === 'flex' || chatContainer.style.visibility === 'visible';
+    if (isChatVisible) {
+      hideBubble();
+    } else {
+      // Only show bubble if API key is available
+      chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini'], (data) => {
+        const hasKey = (data.apiKey_openai && data.apiKey_openai.trim()) || (data.apiKey_gemini && data.apiKey_gemini.trim());
+        if (hasKey) {
+          showBubble();
+        }
+      });
+    }
+  }
 
   chatContainer.innerHTML = `
     <div class="mini-gpt-header mini-gpt-header-modern">
       <div class="mini-gpt-header-title">
         <span>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <img src="${chrome.runtime.getURL('icons/easyChat.png')}" alt="EasyAI Chat" style="width:28px; height:28px; margin-right:8px; border-radius:4px; vertical-align:middle;">
           EasyAI <span class="brand-accent">Chat</span>
         </span>
+        <span class="mini-gpt-drag-indicator" title="Drag to move" style="margin-left:8px; opacity:0.6; font-size:12px;">⋮⋮</span>
       </div>
       <div class="mini-gpt-actions-bar">
         <button class="mini-gpt-action-btn" id="mini-gpt-history-btn" title="Show chat history" aria-label="Show chat history">
@@ -254,8 +316,8 @@ if (!window.__miniGptAgentInjected) {
       currentSession.date = new Date().toLocaleString();
       currentSession.preview = currentSession.messages.find(m => m.role === 'user')?.text?.slice(0, 60) || '';
       saveChatToHistory(currentSession);
-      resetSession();
-    }
+    resetSession();
+  }
   }
 
   // Patch appendMessage to hide placeholder when a message is added
@@ -277,28 +339,230 @@ if (!window.__miniGptAgentInjected) {
   const origBubbleOnClick = bubble.onclick;
   bubble.onclick = () => {
     if ((chatContainer.style.display === 'flex' || chatContainer.style.visibility === 'visible')) {
-      trySaveCurrentSession();
+      // Show bubble instantly for better UX (no API key check needed since chat was open)
+      requestAnimationFrame(() => {
+        bubble.style.transition = 'none';
+        bubble.style.animation = 'none';
+        bubble.style.animationPlayState = 'paused';
+        bubble.style.display = 'flex';
+        bubble.style.visibility = 'visible';
+        bubble.style.opacity = '1';
+        bubble.style.transform = 'scale(1) translateY(0)';
+        bubble.classList.add('instant-show');
+        
+        // Force immediate repaint
+        bubble.offsetHeight;
+      });
+      
+      // Hide chat container
       chatContainer.style.display = 'none';
       chatContainer.style.visibility = 'hidden';
       chatContainer.style.opacity = '0';
+      
+      // Save session in background without blocking UI
+      setTimeout(() => {
+        trySaveCurrentSession();
+      }, 0);
+      
+      // Remove the instant-show class after a brief moment
+      setTimeout(() => {
+        bubble.classList.remove('instant-show');
+      }, 100);
     } else {
       resetSession();
       chatContainer.style.display = 'flex';
       chatContainer.style.visibility = 'visible';
       chatContainer.style.opacity = '1';
       chatContainer.style.animation = 'mini-gpt-fadein 0.22s';
+      
+      // Hide bubble when chat is opened
+      hideBubble();
+      
+      // Reset to default position if not previously positioned
+      if (!chatContainer.style.left && !chatContainer.style.top) {
+        chatContainer.style.right = '32px';
+        chatContainer.style.bottom = '92px';
+        chatContainer.style.left = '';
+        chatContainer.style.top = '';
+      }
+      
       setTimeout(() => { chatContainer.style.animation = ''; }, 250);
     }
     if (origBubbleOnClick) origBubbleOnClick();
   };
   const origCloseOnClick = chatContainer.querySelector('#mini-gpt-close').onclick;
   chatContainer.querySelector('#mini-gpt-close').onclick = () => {
-    trySaveCurrentSession();
+    // Show bubble instantly for better UX (no API key check needed since chat was open)
+    requestAnimationFrame(() => {
+      bubble.style.transition = 'none';
+      bubble.style.animation = 'none';
+      bubble.style.animationPlayState = 'paused';
+      bubble.style.display = 'flex';
+      bubble.style.visibility = 'visible';
+      bubble.style.opacity = '1';
+      bubble.style.transform = 'scale(1) translateY(0)';
+      bubble.classList.add('instant-show');
+      
+      // Force immediate repaint
+      bubble.offsetHeight;
+    });
+    
+    // Hide chat container
     chatContainer.style.display = 'none';
     chatContainer.style.visibility = 'hidden';
     chatContainer.style.opacity = '0';
+    
+    // Save session in background without blocking UI
+    setTimeout(() => {
+      trySaveCurrentSession();
+    }, 0);
+    
+    // Remove the instant-show class after a brief moment
+    setTimeout(() => {
+      bubble.classList.remove('instant-show');
+    }, 100);
+    
     if (origCloseOnClick) origCloseOnClick();
   };
+
+  // Draggable functionality for chat container
+  const dragHeader = chatContainer.querySelector('.mini-gpt-header');
+  
+  // Make header draggable
+  dragHeader.style.cursor = 'grab';
+  dragHeader.style.userSelect = 'none';
+  
+  function startDrag(e) {
+    // Only allow dragging from the header area, not buttons
+    if (e.target.closest('button') || e.target.closest('.mini-gpt-actions-bar')) {
+      return;
+    }
+    
+    isDragging = true;
+    dragHeader.style.cursor = 'grabbing';
+    
+    // Get current position
+    const rect = chatContainer.getBoundingClientRect();
+    initialX = rect.left;
+    initialY = rect.top;
+    
+    // Get mouse position
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    
+    // Calculate current position relative to viewport
+    currentX = initialX;
+    currentY = initialY;
+    
+    // Prevent text selection during drag
+    e.preventDefault();
+    
+    // Add event listeners for drag and end
+    document.addEventListener('mousemove', onDrag);
+    document.addEventListener('mouseup', stopDrag);
+    document.addEventListener('mouseleave', stopDrag);
+  }
+  
+  function onDrag(e) {
+    if (!isDragging) return;
+    
+    // Calculate new position
+    const deltaX = e.clientX - dragStartX;
+    const deltaY = e.clientY - dragStartY;
+    
+    currentX = initialX + deltaX;
+    currentY = initialY + deltaY;
+    
+    // Constrain to viewport bounds
+    const containerRect = chatContainer.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Keep at least 50px from edges
+    const minX = 50;
+    const maxX = viewportWidth - containerRect.width - 50;
+    const minY = 50;
+    const maxY = viewportHeight - containerRect.height - 50;
+    
+    currentX = Math.max(minX, Math.min(maxX, currentX));
+    currentY = Math.max(minY, Math.min(maxY, currentY));
+    
+    // Update position
+    chatContainer.style.left = currentX + 'px';
+    chatContainer.style.top = currentY + 'px';
+    chatContainer.style.right = 'auto';
+    chatContainer.style.bottom = 'auto';
+  }
+  
+  function stopDrag() {
+    if (!isDragging) return;
+    
+    isDragging = false;
+    dragHeader.style.cursor = 'grab';
+    
+    // Remove event listeners
+    document.removeEventListener('mousemove', onDrag);
+    document.removeEventListener('mouseup', stopDrag);
+    document.removeEventListener('mouseleave', stopDrag);
+  }
+  
+  // Add drag event listeners to header
+  dragHeader.addEventListener('mousedown', startDrag);
+  
+  // Add touch support for mobile devices
+  dragHeader.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent('mousedown', {
+      clientX: touch.clientX,
+      clientY: touch.clientY
+    });
+    startDrag(mouseEvent);
+  });
+  
+  // Prevent drag when clicking on interactive elements
+  dragHeader.addEventListener('click', (e) => {
+    if (e.target.closest('button') || e.target.closest('.mini-gpt-actions-bar')) {
+      e.stopPropagation();
+    }
+  });
+  
+  // Handle window resize to keep chat in bounds
+  window.addEventListener('resize', () => {
+    if (chatContainer.style.display === 'flex' || chatContainer.style.visibility === 'visible') {
+      const rect = chatContainer.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      
+      // If chat is outside viewport, reposition it
+      if (rect.right > viewportWidth || rect.bottom > viewportHeight || rect.left < 0 || rect.top < 0) {
+        chatContainer.style.left = '50px';
+        chatContainer.style.top = '50px';
+        chatContainer.style.right = 'auto';
+        chatContainer.style.bottom = 'auto';
+      }
+    }
+  });
+  
+  // Periodic sync check to ensure bubble visibility stays correct
+  setInterval(syncBubbleVisibility, 2000);
+  
+  // Enhanced bubble visibility check that also handles edge cases
+  function ensureBubbleVisible() {
+    const isChatVisible = chatContainer.style.display === 'flex' || chatContainer.style.visibility === 'visible';
+    const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || 
+                        document.mozFullScreenElement || document.msFullscreenElement;
+    
+    if (!isChatVisible && !isFullscreen) {
+      // Only show bubble if API key is available
+      chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini'], (data) => {
+        const hasKey = (data.apiKey_openai && data.apiKey_openai.trim()) || (data.apiKey_gemini && data.apiKey_gemini.trim());
+        if (hasKey) {
+          showBubbleInstant();
+        }
+      });
+    }
+  }
 
   // Enhanced markdown to HTML converter with paragraph and spacing support
   function convertMarkdownToHTML(text) {
@@ -774,7 +1038,7 @@ if (!window.__miniGptAgentInjected) {
       quickActionsBtn.disabled = true;
       quickActionsBtn.style.opacity = '0.45';
       quickActionsBtn.style.cursor = 'not-allowed';
-      quickActionsBtn.title = "EasyAI Chat can’t do quick actions on this page. Try selecting and copying text, then paste it into the chat.";
+      quickActionsBtn.title = "Quick actions aren’t available on this page. Select and copy text, then paste it into EasyAI Chat.";
     } else {
       quickActionsBtn.disabled = false;
       quickActionsBtn.style.opacity = '1';
@@ -791,12 +1055,71 @@ if (!window.__miniGptAgentInjected) {
   function getMainPageText() {
     // Clone the body so we don't affect the real DOM
     const bodyClone = document.body.cloneNode(true);
-    // Remove extension UI elements
-    bodyClone.querySelectorAll('.mini-gpt-chat-container, #mini-gpt-bubble, #mini-gpt-history-panel, #mini-gpt-quick-actions-dropdown, #mini-gpt-clear-modal, #mini-gpt-history-overlay').forEach(el => el.remove());
-    let main = bodyClone.querySelector('main');
+    
+    // Remove extension UI elements and other unwanted content
+    const selectorsToRemove = [
+      '.mini-gpt-chat-container', '#mini-gpt-bubble', '#mini-gpt-history-panel', 
+      '#mini-gpt-quick-actions-dropdown', '#mini-gpt-clear-modal', '#mini-gpt-history-overlay',
+      'script', 'style', 'noscript', 'iframe', 'svg', 'canvas', 'img[alt=""]',
+      '[style*="display: none"]', '[style*="visibility: hidden"]', '[hidden]',
+      '.ad', '.advertisement', '.ads', '.banner', '.sidebar', '.footer', '.header',
+      'nav', 'aside', '.navigation', '.menu', '.toolbar', '.controls'
+    ];
+    
+    selectorsToRemove.forEach(selector => {
+      bodyClone.querySelectorAll(selector).forEach(el => el.remove());
+    });
+    
+    // Try to find the main content area
+    let contentElement = bodyClone.querySelector('main') || 
+                        bodyClone.querySelector('[role="main"]') ||
+                        bodyClone.querySelector('.main') ||
+                        bodyClone.querySelector('#main') ||
+                        bodyClone.querySelector('.content') ||
+                        bodyClone.querySelector('#content') ||
+                        bodyClone.querySelector('article') ||
+                        bodyClone.querySelector('.article');
+    
     let text = '';
-    if (main) text = main.innerText.trim();
-    if (!text) text = bodyClone.innerText.trim();
+    
+    if (contentElement) {
+      // Extract text from main content area
+      text = contentElement.innerText || contentElement.textContent || '';
+    } else {
+      // Fallback: extract from body but filter out CSS and JS
+      const allText = bodyClone.innerText || bodyClone.textContent || '';
+      
+      // Split by lines and filter out CSS-like content
+      const lines = allText.split('\n').filter(line => {
+        const trimmed = line.trim();
+        // Skip empty lines
+        if (!trimmed) return false;
+        
+        // Skip CSS-like lines (containing {, }, :, ;)
+        if (trimmed.includes('{') && trimmed.includes('}')) return false;
+        if (trimmed.includes(':') && trimmed.includes(';')) return false;
+        
+        // Skip lines that are mostly special characters or numbers
+        const specialCharRatio = (trimmed.match(/[{}();:]/g) || []).length / trimmed.length;
+        if (specialCharRatio > 0.3) return false;
+        
+        // Skip very short lines that are likely CSS selectors
+        if (trimmed.length < 3 && trimmed.includes('.')) return false;
+        
+        // Skip lines that look like CSS properties
+        const cssProperties = ['display:', 'position:', 'width:', 'height:', 'background:', 'color:', 'margin:', 'padding:', 'border:', 'font-', 'text-', 'flex', 'grid'];
+        if (cssProperties.some(prop => trimmed.includes(prop))) return false;
+        
+        return true;
+      });
+      
+      text = lines.join('\n').trim();
+    }
+    
+    // Clean up the text
+    text = text.replace(/\s+/g, ' ').trim();
+    
+    // Limit length and add ellipsis if needed
     return text.length > 3000 ? text.slice(0, 3000) + '…' : text;
   }
   function sendSpeedPrompt(type) {
@@ -841,39 +1164,130 @@ if (!window.__miniGptAgentInjected) {
     });
   }
   function showQuickActionsDropdown() {
-    if (quickActionsDropdown) { quickActionsDropdown.remove(); quickActionsDropdown = null; return; }
+    if (quickActionsDropdown) { 
+      quickActionsDropdown.remove(); 
+      quickActionsDropdown = null; 
+      return; 
+    }
+    
     quickActionsDropdown = document.createElement('div');
     quickActionsDropdown.id = 'mini-gpt-quick-actions-dropdown';
-    quickActionsDropdown.style.position = 'absolute';
-    quickActionsDropdown.style.right = '44px';
-    quickActionsDropdown.style.bottom = '48px';
-    quickActionsDropdown.style.background = '#fff';
-    quickActionsDropdown.style.border = '1px solid #e5e7eb';
-    quickActionsDropdown.style.boxShadow = '0 4px 16px rgba(37,99,235,0.10)';
-    quickActionsDropdown.style.borderRadius = '10px';
-    quickActionsDropdown.style.padding = '4px 0';
-    quickActionsDropdown.style.zIndex = '999999';
-    quickActionsDropdown.style.minWidth = '160px';
-    quickActionsDropdown.style.fontFamily = 'inherit';
-    quickActionsDropdown.style.fontSize = '15px';
+    quickActionsDropdown.className = 'mini-gpt-quick-actions-dropdown';
+    
+    // Create the dropdown content without icons for cleaner look
     quickActionsDropdown.innerHTML = `
-      <button class="mini-gpt-quick-action-item" data-action="summarize" style="display:block;width:100%;background:none;border:none;padding:10px 18px;text-align:left;cursor:pointer;color:#2563eb;font-weight:500;transition:background 0.15s;">Summarize Page</button>
-      <button class="mini-gpt-quick-action-item" data-action="explain" style="display:block;width:100%;background:none;border:none;padding:10px 18px;text-align:left;cursor:pointer;color:#2563eb;font-weight:500;transition:background 0.15s;">Explain Page</button>
+      <button class="mini-gpt-quick-action-item" data-action="summarize">
+        <span class="action-text">Summarize Page</span>
+      </button>
+      <button class="mini-gpt-quick-action-item" data-action="explain">
+        <span class="action-text">Explain Page</span>
+      </button>
     `;
+    
+    // Add event listeners with enhanced interactions
     Array.from(quickActionsDropdown.querySelectorAll('.mini-gpt-quick-action-item')).forEach(btn => {
-      btn.onmouseenter = () => btn.style.background = '#e8f0fe';
-      btn.onmouseleave = () => btn.style.background = 'none';
-      btn.onclick = (e) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Add click animation
+        btn.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          btn.style.transform = '';
+        }, 150);
+        
         sendSpeedPrompt(btn.dataset.action);
         quickActionsDropdown.remove();
         quickActionsDropdown = null;
-      };
+      });
     });
+    
     document.body.appendChild(quickActionsDropdown);
-    // Position below the button
+    
+    // Position the dropdown properly within chat container bounds
     const rect = quickActionsBtn.getBoundingClientRect();
-    quickActionsDropdown.style.left = (rect.right - 160) + 'px';
-    quickActionsDropdown.style.top = (rect.top - 90) + 'px';
+    const chatContainer = document.getElementById('mini-gpt-chat-container');
+    const chatRect = chatContainer.getBoundingClientRect();
+    const dropdownWidth = 120; // Match CSS width
+    const dropdownHeight = 80; // Approximate height
+    
+    // Calculate available space
+    const spaceToRight = window.innerWidth - rect.right;
+    const spaceToLeft = rect.left;
+    const spaceAbove = rect.top;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    
+    // Position logic: prefer right side, fallback to left, then above/below
+    let left, top;
+    
+    if (spaceToRight >= dropdownWidth + 8) {
+      // Position to the right of the button
+      left = rect.right + 8;
+      top = rect.top - dropdownHeight/2;
+    } else if (spaceToLeft >= dropdownWidth + 8) {
+      // Position to the left of the button
+      left = rect.left - dropdownWidth - 8;
+      top = rect.top - dropdownHeight/2;
+    } else {
+      // Position above or below the button
+      if (spaceAbove >= dropdownHeight + 8) {
+        left = rect.left - dropdownWidth/2 + rect.width/2;
+        top = rect.top - dropdownHeight - 8;
+      } else {
+        left = rect.left - dropdownWidth/2 + rect.width/2;
+        top = rect.bottom + 8;
+      }
+    }
+    
+    // Ensure dropdown stays within viewport bounds
+    left = Math.max(8, Math.min(left, window.innerWidth - dropdownWidth - 8));
+    top = Math.max(8, Math.min(top, window.innerHeight - dropdownHeight - 8));
+    
+    quickActionsDropdown.style.left = left + 'px';
+    quickActionsDropdown.style.top = top + 'px';
+    quickActionsDropdown.style.right = 'auto';
+    quickActionsDropdown.style.bottom = 'auto';
+    
+    // Add entrance animation class
+    quickActionsDropdown.classList.add('mini-gpt-dropdown-visible');
+    
+    // Add arrow based on position relative to button
+    const arrowElement = document.createElement('div');
+    arrowElement.className = 'mini-gpt-dropdown-arrow';
+    arrowElement.style.position = 'absolute';
+    arrowElement.style.width = '0';
+    arrowElement.style.height = '0';
+    arrowElement.style.border = '6px solid transparent';
+    
+    // Position arrow based on dropdown position relative to button
+    if (left > rect.right) {
+      // Dropdown is to the right of button
+      arrowElement.style.left = '-12px';
+      arrowElement.style.top = '50%';
+      arrowElement.style.transform = 'translateY(-50%)';
+      arrowElement.style.borderRightColor = 'rgba(37,99,235,0.08)';
+    } else if (left < rect.left) {
+      // Dropdown is to the left of button
+      arrowElement.style.right = '-12px';
+      arrowElement.style.top = '50%';
+      arrowElement.style.transform = 'translateY(-50%)';
+      arrowElement.style.borderLeftColor = 'rgba(37,99,235,0.08)';
+    } else if (top < rect.top) {
+      // Dropdown is above button
+      arrowElement.style.bottom = '-12px';
+      arrowElement.style.left = '50%';
+      arrowElement.style.transform = 'translateX(-50%)';
+      arrowElement.style.borderTopColor = 'rgba(37,99,235,0.08)';
+    } else {
+      // Dropdown is below button
+      arrowElement.style.top = '-12px';
+      arrowElement.style.left = '50%';
+      arrowElement.style.transform = 'translateX(-50%)';
+      arrowElement.style.borderBottomColor = 'rgba(37,99,235,0.08)';
+    }
+    
+    quickActionsDropdown.appendChild(arrowElement);
+    
     // Close on outside click
     setTimeout(() => {
       document.addEventListener('mousedown', quickActionsOutsideClick, { once: true });
@@ -957,30 +1371,30 @@ if (!window.__miniGptAgentInjected) {
     renderHistoryList();
   }
   function renderHistoryList() {
-    const list = historyPanel.querySelector('#mini-gpt-history-panel-list');
-    const clearBtn = historyPanel.querySelector('#mini-gpt-history-panel-clear');
-    list.innerHTML = '';
+      const list = historyPanel.querySelector('#mini-gpt-history-panel-list');
+      const clearBtn = historyPanel.querySelector('#mini-gpt-history-panel-clear');
+      list.innerHTML = '';
     
     if (!filteredHistory.length) {
-      clearBtn.style.display = 'none';
+        clearBtn.style.display = 'none';
       const searchInput = historyPanel.querySelector('#mini-gpt-history-search-input');
       const isEmpty = !allHistory.length;
       const isSearching = searchInput && searchInput.value.trim();
       
-      list.innerHTML = `<div id='mini-gpt-history-panel-empty'>
+        list.innerHTML = `<div id='mini-gpt-history-panel-empty'>
         <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'>
           ${isEmpty ? '<circle cx="12" cy="12" r="10" /><path d="M12 8v4l2.5 2.5"/>' : '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>'}
         </svg>
         <div>${isEmpty ? 'No history yet.' : isSearching ? 'No conversations found.' : 'No history yet.'}</div>
-      </div>`;
-      return;
-    }
+        </div>`;
+        return;
+      }
     
-    clearBtn.style.display = 'block';
+      clearBtn.style.display = 'block';
     filteredHistory.forEach((session, idx) => {
-      const item = document.createElement('div');
-      item.className = 'mini-gpt-history-item';
-      item.tabIndex = 0;
+        const item = document.createElement('div');
+        item.className = 'mini-gpt-history-item';
+        item.tabIndex = 0;
       
       // Check if this is the current active session
       const isCurrentSession = currentSession.messages.length > 0 && 
@@ -1030,7 +1444,7 @@ if (!window.__miniGptAgentInjected) {
         deleteHistoryItem(idx);
       };
       
-      list.appendChild(item);
+        list.appendChild(item);
     });
   }
   function restoreHistorySession(idx) {
@@ -1042,7 +1456,7 @@ if (!window.__miniGptAgentInjected) {
     }
     
     // Clear current chat and restore the selected session
-    messagesDiv.innerHTML = '';
+      messagesDiv.innerHTML = '';
     currentSession = { ...filteredHistory[idx] }; // Copy the session
     
     // Restore all messages from the session
@@ -1063,7 +1477,7 @@ if (!window.__miniGptAgentInjected) {
   // 4. Show/hide panel and overlay
   function showHistoryPanel() {
     loadHistory(() => {
-      renderHistoryList();
+    renderHistoryList();
       
       // Set up search functionality
       const searchInput = historyPanel.querySelector('#mini-gpt-history-search-input');
@@ -1147,7 +1561,13 @@ if (!window.__miniGptAgentInjected) {
       bubble.style.display = 'none';
       chatContainer.style.display = 'none'; // Optionally hide chat too
     } else {
-      bubble.style.display = '';
+      // Use instant show when exiting fullscreen for better UX, but only if API key is available
+      chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini'], (data) => {
+        const hasKey = (data.apiKey_openai && data.apiKey_openai.trim()) || (data.apiKey_gemini && data.apiKey_gemini.trim());
+        if (hasKey) {
+          showBubbleInstant();
+        }
+      });
     }
   }
   document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -1162,7 +1582,10 @@ if (!window.__miniGptAgentInjected) {
       const bubble = document.getElementById('mini-gpt-bubble');
       const chat = document.getElementById('mini-gpt-chat-container');
       if (hasKey) {
-        if (bubble) bubble.style.display = '';
+        if (bubble) {
+          // Use instant show for better UX when API key is available
+          showBubbleInstant();
+        }
         if (chat) {
           chat.style.display = 'none'; // Hide chat by default
           chat.style.visibility = 'hidden';

@@ -37,5 +37,11 @@
     "32": "icons/easyChat.png",
     "48": "icons/easyChat.png",
     "128": "icons/easyChat.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/easyChat.png"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 } 
