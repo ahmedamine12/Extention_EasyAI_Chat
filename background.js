@@ -313,7 +313,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
                 if (!last || !last.querySelector || !last.querySelector('.mini-gpt-loader')) {
                   const loader = document.createElement('div');
                   loader.className = 'mini-gpt-msg-bot';
-                  loader.setAttribute('aria-label', 'Mini-GPT is thinking');
+                  loader.setAttribute('aria-label', isFrench ? 'Mini-GPT réfléchit' : 'Mini-GPT is thinking');
                   loader.innerHTML = `<span class='mini-gpt-loader'><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span></span>`;
                   loader.style.margin = '8px 0';
                   loader.style.maxWidth = '80%';

@@ -48,7 +48,21 @@ if (!window.__miniGptAgentInjected) {
       
       // Actions
       summarize: 'Summarize this page',
-      explain: 'Explain this page'
+      explain: 'Explain this page',
+      
+      // Tooltips and Labels
+      showHistoryTooltip: 'Show chat history (Ctrl+H)',
+      showHistoryAria: 'Show chat history',
+      newChatTooltip: 'New Chat',
+      newChatAria: 'Start new chat',
+      closeChatTooltip: 'Close chat',
+      closeChatAria: 'Close chat',
+      quickActionsTooltip: 'Quick Actions',
+      quickActionsDisabledTooltip: "Quick actions aren't available on this page. Select and copy text, then paste it into EasyAI Chat.",
+      
+      // Provider
+      currentProvider: 'Current provider: ',
+      setApiKeyTooltip: 'Set your API key in Settings to enable this provider.'
     },
     fr: {
       // Header
@@ -90,7 +104,21 @@ if (!window.__miniGptAgentInjected) {
       
       // Actions
       summarize: 'Résumer cette page',
-      explain: 'Expliquer cette page'
+      explain: 'Expliquer cette page',
+      
+      // Tooltips and Labels
+      showHistoryTooltip: 'Afficher l\'historique (Ctrl+H)',
+      showHistoryAria: 'Afficher l\'historique',
+      newChatTooltip: 'Nouveau chat',
+      newChatAria: 'Commencer un nouveau chat',
+      closeChatTooltip: 'Fermer le chat',
+      closeChatAria: 'Fermer le chat',
+      quickActionsTooltip: 'Actions rapides',
+      quickActionsDisabledTooltip: 'Les actions rapides ne sont pas disponibles sur cette page. Sélectionnez et copiez du texte, puis collez-le dans EasyAI Chat.',
+      
+      // Provider
+      currentProvider: 'Fournisseur actuel : ',
+      setApiKeyTooltip: 'Configurez votre clé API dans les paramètres pour activer ce fournisseur.'
     }
   };
   
@@ -299,7 +327,7 @@ if (!window.__miniGptAgentInjected) {
     currentProvider = provider;
     providerLabel.textContent = provider === 'openai' ? 'OpenAI' : 'Gemini';
     providerIcon.className = 'mini-gpt-provider-icon ' + provider;
-    providerBtn.setAttribute('aria-label', `Current provider: ${providerLabel.textContent}`);
+    providerBtn.setAttribute('aria-label', translate('currentProvider') + providerLabel.textContent);
     // Highlight selected in list
     providerList.querySelectorAll('.mini-gpt-provider-option').forEach(opt => {
       opt.setAttribute('aria-selected', opt.dataset.provider === provider ? 'true' : 'false');
@@ -316,8 +344,8 @@ if (!window.__miniGptAgentInjected) {
       const geminiOption = providerList.querySelector('.mini-gpt-provider-option[data-provider="gemini"]');
       openaiOption.classList.toggle('disabled', !openaiKey);
       geminiOption.classList.toggle('disabled', !geminiKey);
-      openaiOption.title = openaiKey ? '' : 'Set your API key in Settings to enable this provider.';
-      geminiOption.title = geminiKey ? '' : 'Set your API key in Settings to enable this provider.';
+      openaiOption.title = openaiKey ? '' : translate('setApiKeyTooltip');
+      geminiOption.title = geminiKey ? '' : translate('setApiKeyTooltip');
       // Set current provider
       let provider = data.provider || (openaiKey ? 'openai' : geminiKey ? 'gemini' : 'openai');
       if (!data[`apiKey_${provider}`]) provider = openaiKey ? 'openai' : geminiKey ? 'gemini' : 'openai';
@@ -890,7 +918,7 @@ if (!window.__miniGptAgentInjected) {
     chrome.storage.local.get([`apiKey_${provider}`], (settings) => {
       const apiKey = settings[`apiKey_${provider}`] || '';
       if (!apiKey) {
-        appendMessage('Please set your API key in the extension popup.', 'bot');
+        appendMessage(translate('pleaseSetApiKey'), 'bot');
         return;
       }
       appendMessage(question, 'user');
@@ -899,7 +927,7 @@ if (!window.__miniGptAgentInjected) {
       // Add animated loader as bot message
       const loader = document.createElement('div');
       loader.className = 'mini-gpt-msg-bot';
-      loader.setAttribute('aria-label', 'Mini-GPT is thinking');
+      loader.setAttribute('aria-label', translate('thinking'));
       loader.innerHTML = `<span class='mini-gpt-loader'><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span></span>`;
       messagesDiv.appendChild(loader);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -1018,8 +1046,8 @@ if (!window.__miniGptAgentInjected) {
   // History button
   const historyBtn = document.createElement('button');
   historyBtn.id = 'mini-gpt-history-btn';
-  historyBtn.title = 'Show chat history (Ctrl+H)';
-  historyBtn.setAttribute('aria-label', 'Show chat history');
+  historyBtn.title = translate('showHistoryTooltip');
+  historyBtn.setAttribute('aria-label', translate('showHistoryAria'));
   historyBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 9 9"/><polyline points="3 12 3 16 7 16"/></svg>`;
   historyBtn.style.background = 'none';
   historyBtn.style.border = 'none';
@@ -1034,8 +1062,8 @@ if (!window.__miniGptAgentInjected) {
   // New Chat button
   const newChatBtn = document.createElement('button');
   newChatBtn.id = 'mini-gpt-newchat-btn';
-  newChatBtn.title = 'New Chat';
-  newChatBtn.setAttribute('aria-label', 'Start new chat');
+  newChatBtn.title = translate('newChatTooltip');
+  newChatBtn.setAttribute('aria-label', translate('newChatAria'));
   newChatBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`;
   newChatBtn.style.background = 'none';
   newChatBtn.style.border = 'none';
@@ -1050,8 +1078,8 @@ if (!window.__miniGptAgentInjected) {
   // Close button
   const closeBtn = document.createElement('button');
   closeBtn.id = 'mini-gpt-close';
-  closeBtn.setAttribute('aria-label', 'Close chat');
-  closeBtn.title = 'Close chat';
+  closeBtn.setAttribute('aria-label', translate('closeChatAria'));
+  closeBtn.title = translate('closeChatTooltip');
   closeBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
   closeBtn.style.background = 'none';
   closeBtn.style.border = 'none';
@@ -1154,12 +1182,12 @@ if (!window.__miniGptAgentInjected) {
       quickActionsBtn.disabled = true;
       quickActionsBtn.style.opacity = '0.45';
       quickActionsBtn.style.cursor = 'not-allowed';
-      quickActionsBtn.title = "Quick actions aren't available on this page. Select and copy text, then paste it into EasyAI Chat.";
+      quickActionsBtn.title = translate('quickActionsDisabledTooltip');
     } else {
       quickActionsBtn.disabled = false;
       quickActionsBtn.style.opacity = '1';
       quickActionsBtn.style.cursor = 'pointer';
-      quickActionsBtn.title = 'Quick Actions';
+      quickActionsBtn.title = translate('quickActionsTooltip');
     }
   }
   updateQuickActionsBtnState();
