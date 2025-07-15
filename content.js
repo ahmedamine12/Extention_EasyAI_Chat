@@ -197,6 +197,8 @@ if (!window.__miniGptAgentInjected) {
   let bubbleInitialY = 0;
   let bubbleCurrentX = 0;
   let bubbleCurrentY = 0;
+  let bubbleDragDistance = 0;
+  let bubbleWasDragged = false;
   
   function showBubble() {
     // Don't show bubble on login/authorization pages
@@ -467,8 +469,8 @@ if (!window.__miniGptAgentInjected) {
   // Save session when chat is closed or a new session is started
   const origBubbleOnClick = bubble.onclick;
   bubble.onclick = (e) => {
-    // Prevent click if we were dragging
-    if (isBubbleDragging) {
+    // Prevent click if we were dragging or if we dragged significantly
+    if (isBubbleDragging || bubbleWasDragged || bubbleDragDistance > 5) {
       e.preventDefault();
       e.stopPropagation();
       return;
@@ -1881,6 +1883,8 @@ if (!window.__miniGptAgentInjected) {
   // Bubble drag functions
   function startBubbleDrag(e) {
     isBubbleDragging = true;
+    bubbleWasDragged = false;
+    bubbleDragDistance = 0;
     bubble.style.cursor = 'grabbing';
     
     // Get current position
@@ -1912,11 +1916,17 @@ if (!window.__miniGptAgentInjected) {
     const deltaX = e.clientX - bubbleDragStartX;
     const deltaY = e.clientY - bubbleDragStartY;
     
+    // Calculate total drag distance
+    bubbleDragDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    
     // Add drag threshold to prevent small movements from being considered as drags
     const dragThreshold = 5;
-    if (Math.abs(deltaX) < dragThreshold && Math.abs(deltaY) < dragThreshold) {
+    if (bubbleDragDistance < dragThreshold) {
       return;
     }
+    
+    // Mark that we've actually dragged
+    bubbleWasDragged = true;
     
     bubbleCurrentX = bubbleInitialX + deltaX;
     bubbleCurrentY = bubbleInitialY + deltaY;
@@ -1976,6 +1986,12 @@ if (!window.__miniGptAgentInjected) {
     document.removeEventListener('mousemove', onBubbleDrag);
     document.removeEventListener('mouseup', stopBubbleDrag);
     document.removeEventListener('mouseleave', stopBubbleDrag);
+    
+    // Reset drag distance after a short delay to allow click event to check it
+    setTimeout(() => {
+      bubbleDragDistance = 0;
+      bubbleWasDragged = false;
+    }, 100);
   }
   
   // Add drag event listeners to header
@@ -1993,6 +2009,26 @@ if (!window.__miniGptAgentInjected) {
       clientY: touch.clientY
     });
     startBubbleDrag(mouseEvent);
+  });
+  
+  // Add touch move and end handlers
+  bubble.addEventListener('touchmove', (e) => {
+    if (isBubbleDragging) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const mouseEvent = new MouseEvent('mousemove', {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+      });
+      onBubbleDrag(mouseEvent);
+    }
+  });
+  
+  bubble.addEventListener('touchend', (e) => {
+    if (isBubbleDragging) {
+      e.preventDefault();
+      stopBubbleDrag();
+    }
   });
 
   // Helper function to check if current page is a login/authorization page
