@@ -130,7 +130,6 @@ if (!window.__miniGptAgentInjected) {
     return t[key] || translations.en[key] || key;
   }
 
-  // Create floating button
   const bubble = document.createElement('div');
   bubble.id = 'mini-gpt-bubble';
   bubble.innerHTML = `<img src="${chrome.runtime.getURL('icons/easyChat.png')}" alt="EasyAI Chat" style="width:42px; height:42px; border-radius:7px;">`;
@@ -140,10 +139,8 @@ if (!window.__miniGptAgentInjected) {
   bubble.style.left = '';
   bubble.style.top = '';
   bubble.style.zIndex = '999999';
-  // Ensure bubble is always on top when chat is closed
   bubble.style.pointerEvents = 'auto';
   
-  // Store original position for restoration
   const originalBubblePosition = { bottom: '32px', right: '32px' };
   bubble.style.width = '90px';
   bubble.style.height = '90px';
@@ -158,18 +155,16 @@ if (!window.__miniGptAgentInjected) {
   bubble.style.transition = 'box-shadow 0.2s, transform 0.3s ease-out, opacity 0.2s';
   bubble.style.opacity = '0';
   bubble.style.transform = 'scale(0.8) translateY(20px)';
-  bubble.style.display = 'none'; // Hide by default until API key check
-  // Don't animate initially - let updateBubbleVisibility handle it
+  bubble.style.display = 'none';
   
-  // Don't show bubble initially - let updateBubbleVisibility handle it based on API key
 
   // Chat UI
   const chatContainer = document.createElement('div');
   chatContainer.id = 'mini-gpt-chat-container';
-  chatContainer.style.display = 'none'; // Always hidden on page load
+  chatContainer.style.display = 'none';
   chatContainer.style.position = 'fixed';
   chatContainer.style.right = '32px';
-  chatContainer.style.bottom = '92px'; // 32px (bubble) + 60px (bubble height)
+  chatContainer.style.bottom = '92px';
   chatContainer.style.left = '';
   chatContainer.style.top = '';
   chatContainer.style.width = '400px';
@@ -182,7 +177,6 @@ if (!window.__miniGptAgentInjected) {
   chatContainer.style.zIndex = '999999';
   chatContainer.style.overflow = 'hidden';
   chatContainer.style.flexDirection = 'column';
-  // Force hide the chat container to override any CSS
   chatContainer.style.visibility = 'hidden';
   chatContainer.style.opacity = '0';
   
@@ -195,14 +189,25 @@ if (!window.__miniGptAgentInjected) {
   let currentX = 0;
   let currentY = 0;
   
-  // Bubble visibility management - Optimized for instant appearance
+  // Bubble drag variables
+  let isBubbleDragging = false;
+  let bubbleDragStartX = 0;
+  let bubbleDragStartY = 0;
+  let bubbleInitialX = 0;
+  let bubbleInitialY = 0;
+  let bubbleCurrentX = 0;
+  let bubbleCurrentY = 0;
+  
   function showBubble() {
-    // Check if API key is available before showing bubble
+    // Don't show bubble on login/authorization pages
+    if (isLoginOrAuthPage()) {
+      return;
+    }
+    
     chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini'], (data) => {
       const hasKey = (data.apiKey_openai && data.apiKey_openai.trim()) || (data.apiKey_gemini && data.apiKey_gemini.trim());
       if (!hasKey) return; // Don't show bubble if no API key
       
-      // Remove any existing transitions temporarily for instant visibility
       bubble.style.transition = 'none';
       bubble.style.display = 'flex';
       bubble.style.visibility = 'visible';
@@ -217,7 +222,11 @@ if (!window.__miniGptAgentInjected) {
   }
   
   function showBubbleInstant() {
-    // Check if API key is available before showing bubble
+    // Don't show bubble on login/authorization pages
+    if (isLoginOrAuthPage()) {
+      return;
+    }
+    
     chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini'], (data) => {
       const hasKey = (data.apiKey_openai && data.apiKey_openai.trim()) || (data.apiKey_gemini && data.apiKey_gemini.trim());
       if (!hasKey) return; // Don't show bubble if no API key
@@ -228,14 +237,6 @@ if (!window.__miniGptAgentInjected) {
       bubble.style.visibility = 'visible';
       bubble.style.opacity = '1';
       bubble.style.transform = 'scale(1) translateY(0)';
-      
-      // Alternative approach: use CSS class for instant visibility
-      bubble.classList.add('instant-show');
-      
-      // Remove the class after a brief moment to allow future transitions
-      setTimeout(() => {
-        bubble.classList.remove('instant-show');
-      }, 100);
     });
   }
   
@@ -465,7 +466,14 @@ if (!window.__miniGptAgentInjected) {
   // Replace all saveCurrentSession() calls with trySaveCurrentSession()
   // Save session when chat is closed or a new session is started
   const origBubbleOnClick = bubble.onclick;
-  bubble.onclick = () => {
+  bubble.onclick = (e) => {
+    // Prevent click if we were dragging
+    if (isBubbleDragging) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    
     // Check if chat is currently visible
     const isChatVisible = chatContainer.style.display === 'flex' && 
                          chatContainer.style.visibility === 'visible' && 
@@ -622,11 +630,35 @@ if (!window.__miniGptAgentInjected) {
     currentX = Math.max(minX, Math.min(maxX, currentX));
     currentY = Math.max(minY, Math.min(maxY, currentY));
     
-    // Update position
+    // Update chat position
     chatContainer.style.left = currentX + 'px';
     chatContainer.style.top = currentY + 'px';
     chatContainer.style.right = 'auto';
     chatContainer.style.bottom = 'auto';
+    
+    // Move bubble to follow chat (positioned below the chat)
+    if (bubble.style.display !== 'none') {
+      const bubbleWidth = 90; // Bubble width
+      const bubbleHeight = 90; // Bubble height
+      
+      // Position bubble below the chat
+      let bubbleX = currentX + (containerRect.width - bubbleWidth) / 2;
+      let bubbleY = currentY + containerRect.height + 20; // 20px gap between chat and bubble
+      
+      // Constrain bubble to viewport bounds
+      const bubbleMinX = 20;
+      const bubbleMaxX = viewportWidth - bubbleWidth - 20;
+      const bubbleMinY = 20;
+      const bubbleMaxY = viewportHeight - bubbleHeight - 20;
+      
+      bubbleX = Math.max(bubbleMinX, Math.min(bubbleMaxX, bubbleX));
+      bubbleY = Math.max(bubbleMinY, Math.min(bubbleMaxY, bubbleY));
+      
+      bubble.style.left = bubbleX + 'px';
+      bubble.style.top = bubbleY + 'px';
+      bubble.style.right = 'auto';
+      bubble.style.bottom = 'auto';
+    }
   }
   
   function stopDrag() {
@@ -662,19 +694,53 @@ if (!window.__miniGptAgentInjected) {
     }
   });
   
-  // Handle window resize to keep chat in bounds
+  // Handle window resize to keep chat and bubble synchronized and in bounds
   window.addEventListener('resize', () => {
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
     if (chatContainer.style.display === 'flex' || chatContainer.style.visibility === 'visible') {
       const rect = chatContainer.getBoundingClientRect();
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
       
-      // If chat is outside viewport, reposition it
+      // If chat is outside viewport, reposition both chat and bubble
       if (rect.right > viewportWidth || rect.bottom > viewportHeight || rect.left < 0 || rect.top < 0) {
-        chatContainer.style.left = '50px';
-        chatContainer.style.top = '50px';
+        const newChatX = 50;
+        const newChatY = 50;
+        
+        chatContainer.style.left = newChatX + 'px';
+        chatContainer.style.top = newChatY + 'px';
         chatContainer.style.right = 'auto';
         chatContainer.style.bottom = 'auto';
+        
+        // Position bubble below the chat
+        if (bubble.style.display !== 'none') {
+          const bubbleWidth = 90;
+          const bubbleHeight = 90;
+          const chatWidth = 400;
+          const chatHeight = 60;
+          
+          let bubbleX = newChatX + (chatWidth - bubbleWidth) / 2;
+          let bubbleY = newChatY + chatHeight + 20;
+          
+          // Constrain bubble to viewport
+          bubbleX = Math.max(20, Math.min(viewportWidth - bubbleWidth - 20, bubbleX));
+          bubbleY = Math.max(20, Math.min(viewportHeight - bubbleHeight - 20, bubbleY));
+          
+          bubble.style.left = bubbleX + 'px';
+          bubble.style.top = bubbleY + 'px';
+          bubble.style.right = 'auto';
+          bubble.style.bottom = 'auto';
+        }
+      }
+    } else if (bubble.style.display !== 'none') {
+      // If only bubble is visible, keep it in bounds
+      const bubbleRect = bubble.getBoundingClientRect();
+      
+      if (bubbleRect.right > viewportWidth || bubbleRect.bottom > viewportHeight || bubbleRect.left < 0 || bubbleRect.top < 0) {
+        bubble.style.left = '32px';
+        bubble.style.top = '32px';
+        bubble.style.right = 'auto';
+        bubble.style.bottom = 'auto';
       }
     }
   });
@@ -1012,13 +1078,6 @@ if (!window.__miniGptAgentInjected) {
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyDarkMode);
   // Also re-check on page background changes
   setInterval(applyDarkMode, 2000);
-
-  // Handle window resize to ensure proper positioning
-  window.addEventListener('resize', () => {
-    if (chatContainer.style.display === 'flex') {
-      ensureBubbleVisibleAfterChatMove();
-    }
-  });
 
   // --- Modernized Chat Header Bar ---
   const header = chatContainer.querySelector('.mini-gpt-header');
@@ -1721,6 +1780,19 @@ if (!window.__miniGptAgentInjected) {
 
   // Always inject bubble and chat, but control their visibility based on API key presence
   function updateBubbleVisibility() {
+    // Don't show bubble on login/authorization pages
+    if (isLoginOrAuthPage()) {
+      const bubble = document.getElementById('mini-gpt-bubble');
+      const chat = document.getElementById('mini-gpt-chat-container');
+      if (bubble) bubble.style.display = 'none';
+      if (chat) {
+        chat.style.display = 'none';
+        chat.style.visibility = 'hidden';
+        chat.style.opacity = '0';
+      }
+      return;
+    }
+    
     chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini'], (data) => {
       const hasKey = (data.apiKey_openai && data.apiKey_openai.trim()) || (data.apiKey_gemini && data.apiKey_gemini.trim());
       const bubble = document.getElementById('mini-gpt-bubble');
@@ -1753,4 +1825,341 @@ if (!window.__miniGptAgentInjected) {
       updateBubbleVisibility();
     }
   });
+  
+  // Listen for URL changes to detect navigation to/from login pages
+  let currentUrl = window.location.href;
+  const urlChangeObserver = new MutationObserver(() => {
+    if (window.location.href !== currentUrl) {
+      currentUrl = window.location.href;
+      // Small delay to ensure page has loaded
+      setTimeout(() => {
+        updateBubbleVisibility();
+      }, 100);
+    }
+  });
+  
+  // Observe URL changes
+  urlChangeObserver.observe(document, { subtree: true, childList: true });
+  
+  // Also listen for popstate events (back/forward navigation)
+  window.addEventListener('popstate', () => {
+    setTimeout(() => {
+      updateBubbleVisibility();
+    }, 100);
+  });
+  
+  // Listen for pushstate/replacestate events (programmatic navigation)
+  const originalPushState = history.pushState;
+  const originalReplaceState = history.replaceState;
+  
+  history.pushState = function(...args) {
+    originalPushState.apply(history, args);
+    setTimeout(() => {
+      updateBubbleVisibility();
+    }, 100);
+  };
+  
+  history.replaceState = function(...args) {
+    originalReplaceState.apply(history, args);
+    setTimeout(() => {
+      updateBubbleVisibility();
+    }, 100);
+  };
+
+  function stopDrag() {
+    if (!isDragging) return;
+    
+    isDragging = false;
+    dragHeader.style.cursor = 'grab';
+    
+    // Remove event listeners
+    document.removeEventListener('mousemove', onDrag);
+    document.removeEventListener('mouseup', stopDrag);
+    document.removeEventListener('mouseleave', stopDrag);
+  }
+  
+  // Bubble drag functions
+  function startBubbleDrag(e) {
+    isBubbleDragging = true;
+    bubble.style.cursor = 'grabbing';
+    
+    // Get current position
+    const rect = bubble.getBoundingClientRect();
+    bubbleInitialX = rect.left;
+    bubbleInitialY = rect.top;
+    
+    // Get mouse position
+    bubbleDragStartX = e.clientX;
+    bubbleDragStartY = e.clientY;
+    
+    // Calculate current position relative to viewport
+    bubbleCurrentX = bubbleInitialX;
+    bubbleCurrentY = bubbleInitialY;
+    
+    // Prevent text selection during drag
+    e.preventDefault();
+    
+    // Add event listeners for drag and end
+    document.addEventListener('mousemove', onBubbleDrag);
+    document.addEventListener('mouseup', stopBubbleDrag);
+    document.addEventListener('mouseleave', stopBubbleDrag);
+  }
+  
+  function onBubbleDrag(e) {
+    if (!isBubbleDragging) return;
+    
+    // Calculate new position
+    const deltaX = e.clientX - bubbleDragStartX;
+    const deltaY = e.clientY - bubbleDragStartY;
+    
+    // Add drag threshold to prevent small movements from being considered as drags
+    const dragThreshold = 5;
+    if (Math.abs(deltaX) < dragThreshold && Math.abs(deltaY) < dragThreshold) {
+      return;
+    }
+    
+    bubbleCurrentX = bubbleInitialX + deltaX;
+    bubbleCurrentY = bubbleInitialY + deltaY;
+    
+    // Constrain to viewport bounds
+    const bubbleRect = bubble.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Keep at least 20px from edges
+    const minX = 20;
+    const maxX = viewportWidth - bubbleRect.width - 20;
+    const minY = 20;
+    const maxY = viewportHeight - bubbleRect.height - 20;
+    
+    bubbleCurrentX = Math.max(minX, Math.min(maxX, bubbleCurrentX));
+    bubbleCurrentY = Math.max(minY, Math.min(maxY, bubbleCurrentY));
+    
+    // Update bubble position
+    bubble.style.left = bubbleCurrentX + 'px';
+    bubble.style.top = bubbleCurrentY + 'px';
+    bubble.style.right = 'auto';
+    bubble.style.bottom = 'auto';
+    
+    // Move chat container to follow bubble (positioned above the bubble)
+    if (chatContainer.style.display === 'flex' || chatContainer.style.visibility === 'visible') {
+      const chatWidth = 400; // Default chat width
+      const chatHeight = 60; // Approximate chat height
+      
+      // Position chat above the bubble
+      let chatX = bubbleCurrentX - (chatWidth - bubbleRect.width) / 2;
+      let chatY = bubbleCurrentY - chatHeight - 20; // 20px gap between bubble and chat
+      
+      // Constrain chat to viewport bounds
+      const chatMinX = 20;
+      const chatMaxX = viewportWidth - chatWidth - 20;
+      const chatMinY = 20;
+      const chatMaxY = viewportHeight - chatHeight - 20;
+      
+      chatX = Math.max(chatMinX, Math.min(chatMaxX, chatX));
+      chatY = Math.max(chatMinY, Math.min(chatMaxY, chatY));
+      
+      chatContainer.style.left = chatX + 'px';
+      chatContainer.style.top = chatY + 'px';
+      chatContainer.style.right = 'auto';
+      chatContainer.style.bottom = 'auto';
+    }
+  }
+  
+  function stopBubbleDrag() {
+    if (!isBubbleDragging) return;
+    
+    isBubbleDragging = false;
+    bubble.style.cursor = 'pointer';
+    
+    // Remove event listeners
+    document.removeEventListener('mousemove', onBubbleDrag);
+    document.removeEventListener('mouseup', stopBubbleDrag);
+    document.removeEventListener('mouseleave', stopBubbleDrag);
+  }
+  
+  // Add drag event listeners to header
+  dragHeader.addEventListener('mousedown', startDrag);
+  
+  // Add bubble drag event listeners
+  bubble.addEventListener('mousedown', startBubbleDrag);
+  
+  // Add touch support for bubble drag
+  bubble.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent('mousedown', {
+      clientX: touch.clientX,
+      clientY: touch.clientY
+    });
+    startBubbleDrag(mouseEvent);
+  });
+
+  // Helper function to check if current page is a login/authorization page
+  function isLoginOrAuthPage() {
+    const url = window.location.href.toLowerCase();
+    const hostname = window.location.hostname.toLowerCase();
+    const pathname = window.location.pathname.toLowerCase();
+    
+    // Common login/authorization domains and paths
+    const loginDomains = [
+      'login.microsoftonline.com',
+      'auth0.com',
+      'okta.com',
+      'onelogin.com',
+      'sso.company.com',
+      'login.company.com',
+      'auth.company.com',
+      'oauth.com',
+      'oauth2.com'
+    ];
+    
+    // Google accounts - only specific login/authorization paths
+    if (hostname.includes('accounts.google.com')) {
+      const googleLoginPaths = [
+        '/signin',
+        '/signin/',
+        '/login',
+        '/login/',
+        '/oauth',
+        '/oauth/',
+        '/oauth2',
+        '/oauth2/',
+        '/authorize',
+        '/authorize/',
+        '/connect',
+        '/connect/',
+        '/authenticate',
+        '/authenticate/',
+        '/signup',
+        '/signup/',
+        '/register',
+        '/register/',
+        '/password',
+        '/password/',
+        '/reset',
+        '/reset/',
+        '/forgot',
+        '/forgot/',
+        '/chooser',
+        '/chooser/',
+        '/accountchooser',
+        '/accountchooser/'
+      ];
+      
+      // Only hide on actual login/authorization paths, not on regular Google services
+      if (googleLoginPaths.some(path => pathname.includes(path))) {
+        return true;
+      }
+      
+      // Check for OAuth authorization flows
+      if (url.includes('oauth') || url.includes('authorize') || url.includes('signin')) {
+        return true;
+      }
+      
+      // Allow Gmail and other Google services
+      return false;
+    }
+    
+    const loginPaths = [
+      '/signin',
+      '/signin/',
+      '/login',
+      '/login/',
+      '/auth',
+      '/auth/',
+      '/oauth',
+      '/oauth/',
+      '/oauth2',
+      '/oauth2/',
+      '/authorize',
+      '/authorize/',
+      '/connect',
+      '/connect/',
+      '/authenticate',
+      '/authenticate/',
+      '/signup',
+      '/signup/',
+      '/register',
+      '/register/',
+      '/password',
+      '/password/',
+      '/reset',
+      '/reset/',
+      '/forgot',
+      '/forgot/'
+    ];
+    
+    const loginKeywords = [
+      'signin',
+      'login',
+      'auth',
+      'oauth',
+      'authorize',
+      'connect',
+      'authenticate',
+      'signup',
+      'register',
+      'password',
+      'reset',
+      'forgot',
+      'connexion',
+      'se connecter',
+      's\'identifier',
+      'authentification'
+    ];
+    
+    // Check if current domain is a login domain
+    if (loginDomains.some(domain => hostname.includes(domain))) {
+      return true;
+    }
+    
+    // Check if current path contains login keywords
+    if (loginPaths.some(path => pathname.includes(path))) {
+      return true;
+    }
+    
+    // Check if URL contains login keywords (but be more careful with Google services)
+    if (loginKeywords.some(keyword => url.includes(keyword))) {
+      // Additional check for Google services - don't hide on Gmail, Drive, etc.
+      if (hostname.includes('google.com') && !pathname.includes('/signin') && !pathname.includes('/oauth')) {
+        return false;
+      }
+      return true;
+    }
+    
+    // Check page title for login indicators
+    const title = document.title.toLowerCase();
+    if (loginKeywords.some(keyword => title.includes(keyword))) {
+      // Additional check for Google services
+      if (hostname.includes('google.com') && !pathname.includes('/signin') && !pathname.includes('/oauth')) {
+        return false;
+      }
+      return true;
+    }
+    
+    // Check for common login form elements
+    const loginFormSelectors = [
+      'input[type="password"]',
+      'form[action*="login"]',
+      'form[action*="signin"]',
+      'form[action*="auth"]',
+      '.login-form',
+      '.signin-form',
+      '.auth-form',
+      '#login',
+      '#signin',
+      '#auth'
+    ];
+    
+        if (loginFormSelectors.some(selector => document.querySelector(selector))) {
+      // Additional check for Google services - don't hide on Gmail, Drive, etc.
+      if (hostname.includes('google.com') && !pathname.includes('/signin') && !pathname.includes('/oauth')) {
+        return false;
+      }
+      return true;
+    }
+    
+    return false;
+  }
 } 
