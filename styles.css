@@ -1645,7 +1645,7 @@ div:has(.mini-gpt-welcome-message) {
   box-shadow: 
     0 4px 12px rgba(16,163,127,0.2),
     0 0 0 1px rgba(16,163,127,0.2) inset;
-}
+} 
 
 /* Brand styling */
 .brand-accent {

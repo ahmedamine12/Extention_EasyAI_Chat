@@ -18,10 +18,22 @@ function isExtensionContextValid() {
 }
 
 // Provider API functions (inlined)
-async function askOpenAI({ apiKey, model, prompt, tabId }) {
+async function askOpenAI({ apiKey, model, prompt, tabId, conversationContext = [] }) {
   const url = 'https://api.openai.com/v1/chat/completions';
   const controller = new AbortController();
   if (tabId) abortControllers[tabId] = controller;
+  
+  // Build messages array with conversation context
+  const messages = [];
+  
+  // Add conversation context (previous messages)
+  if (conversationContext && conversationContext.length > 0) {
+    messages.push(...conversationContext);
+  }
+  
+  // Add current user message
+  messages.push({ role: 'user', content: prompt });
+  
   try {
     const res = await fetch(url, {
       method: 'POST',
@@ -31,8 +43,8 @@ async function askOpenAI({ apiKey, model, prompt, tabId }) {
       },
       body: JSON.stringify({
         model,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 256,
+        messages: messages, // Use full conversation context
+        max_tokens: 2048, // Increased for better context handling
         stream: true
       }),
       signal: controller.signal
@@ -55,7 +67,7 @@ async function askOpenAI({ apiKey, model, prompt, tabId }) {
             if (data === '[DONE]') {
               if (isExtensionContextValid() && tabId) {
                 try {
-                  chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '', done: true });
+              chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '', done: true });
                 } catch (e) {
                   console.log('Tab message failed:', e);
                 }
@@ -70,7 +82,7 @@ async function askOpenAI({ apiKey, model, prompt, tabId }) {
                 answer += delta;
                 if (isExtensionContextValid() && tabId) {
                   try {
-                    chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: delta, done: false });
+                chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: delta, done: false });
                   } catch (e) {
                     console.log('Tab message failed:', e);
                   }
@@ -86,7 +98,7 @@ async function askOpenAI({ apiKey, model, prompt, tabId }) {
     if (tabId) delete abortControllers[tabId];
     if (isExtensionContextValid() && tabId) {
       try {
-        chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '', done: true });
+    chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '', done: true });
       } catch (e) {
         console.log('Tab message failed:', e);
       }
@@ -97,7 +109,7 @@ async function askOpenAI({ apiKey, model, prompt, tabId }) {
     if (e.name === 'AbortError') {
       if (isExtensionContextValid() && tabId) {
         try {
-          chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Stopped by user]', done: true });
+      chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Stopped by user]', done: true });
         } catch (e) {
           console.log('Tab message failed:', e);
         }
@@ -106,7 +118,7 @@ async function askOpenAI({ apiKey, model, prompt, tabId }) {
     }
     if (isExtensionContextValid() && tabId) {
       try {
-        chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Error: ' + (e.message || 'Network error.') + ']', done: true });
+    chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Error: ' + (e.message || 'Network error.') + ']', done: true });
       } catch (e) {
         console.log('Tab message failed:', e);
       }
@@ -115,15 +127,28 @@ async function askOpenAI({ apiKey, model, prompt, tabId }) {
   }
 }
 
-async function askGemini({ apiKey, model, prompt, tabId }) {
+async function askGemini({ apiKey, model, prompt, tabId, conversationContext = [] }) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
   const controller = new AbortController();
   if (tabId) abortControllers[tabId] = controller;
+  
+  // Build conversation history for Gemini
+  let fullPrompt = prompt;
+  
+  // Add conversation context if available
+  if (conversationContext && conversationContext.length > 0) {
+    const contextText = conversationContext.map(msg => {
+      const role = msg.role === 'user' ? 'User' : 'Assistant';
+      return `${role}: ${msg.content}`;
+    }).join('\n\n');
+    fullPrompt = `Previous conversation:\n${contextText}\n\nUser: ${prompt}`;
+  }
+  
   try {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }), // No stream param
+      body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] }), // Include conversation context
       signal: controller.signal
     });
     if (tabId) delete abortControllers[tabId];
@@ -136,7 +161,7 @@ async function askGemini({ apiKey, model, prompt, tabId }) {
     }
     if (isExtensionContextValid() && tabId) {
       try {
-        chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: answer, done: true });
+    chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: answer, done: true });
       } catch (e) {
         console.log('Tab message failed:', e);
       }
@@ -147,7 +172,7 @@ async function askGemini({ apiKey, model, prompt, tabId }) {
     if (e.name === 'AbortError') {
       if (isExtensionContextValid() && tabId) {
         try {
-          chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Stopped by user]', done: true });
+      chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Stopped by user]', done: true });
         } catch (e) {
           console.log('Tab message failed:', e);
         }
@@ -156,7 +181,7 @@ async function askGemini({ apiKey, model, prompt, tabId }) {
     }
     if (isExtensionContextValid() && tabId) {
       try {
-        chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Error: ' + (e.message || 'Network error.') + ']', done: true });
+    chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Error: ' + (e.message || 'Network error.') + ']', done: true });
       } catch (e) {
         console.log('Tab message failed:', e);
       }
@@ -221,23 +246,23 @@ chrome.runtime.onInstalled.addListener(() => {
   
   // Remove old context menus first
   try {
-    chrome.contextMenus.removeAll(() => {
-      // Add a non-clickable header at the top
-      chrome.contextMenus.create({
-        id: 'mini-gpt-header',
+  chrome.contextMenus.removeAll(() => {
+    // Add a non-clickable header at the top
+    chrome.contextMenus.create({
+      id: 'mini-gpt-header',
         title: isFrench ? 'EasyAI Chat (réponses courtes)' : 'EasyAI Chat (short answers)',
-        contexts: ['selection'],
-        enabled: false
-      });
-      // Add new context menu items for each action
-      MINI_GPT_ACTIONS.forEach(action => {
-        chrome.contextMenus.create({
-          id: `mini-gpt-${action.id}`,
-          title: action.label,
-          contexts: ['selection']
-        });
+      contexts: ['selection'],
+      enabled: false
+    });
+    // Add new context menu items for each action
+    MINI_GPT_ACTIONS.forEach(action => {
+      chrome.contextMenus.create({
+        id: `mini-gpt-${action.id}`,
+        title: action.label,
+        contexts: ['selection']
       });
     });
+  });
   } catch (e) {
     console.log('Context menu creation failed:', e);
   }
@@ -262,15 +287,15 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
       const model = provider === 'openai' ? 'gpt-3.5-turbo' : 'gemini-2.0-flash';
       
       try {
-        chrome.scripting.executeScript({
-          target: { tabId: tab.id },
+      chrome.scripting.executeScript({
+        target: { tabId: tab.id },
           func: (q, provider, model, apiKey, actionId, selectionText, isFrench) => {
-            // Open chat bubble and add user message + Thinking...
-            const bubble = document.getElementById('mini-gpt-bubble');
-            const chat = document.getElementById('mini-gpt-chat-container');
-            if (bubble && chat) {
+          // Open chat bubble and add user message + Thinking...
+          const bubble = document.getElementById('mini-gpt-bubble');
+          const chat = document.getElementById('mini-gpt-chat-container');
+          if (bubble && chat) {
               // Ensure chat is visible
-              chat.style.display = 'flex';
+            chat.style.display = 'flex';
               chat.style.visibility = 'visible';
               chat.style.opacity = '1';
               
@@ -280,62 +305,62 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
                 bubble.style.visibility = 'hidden';
               }
               
-              // Set provider selector if present
-              const providerSelect = chat.querySelector('#mini-gpt-provider');
-              if (providerSelect) providerSelect.value = provider;
+            // Set provider selector if present
+            const providerSelect = chat.querySelector('#mini-gpt-provider');
+            if (providerSelect) providerSelect.value = provider;
               
-              // Add user message
-              const messagesDiv = chat.querySelector('#mini-gpt-messages');
-              if (messagesDiv) {
-                const userMsg = document.createElement('div');
-                userMsg.className = 'mini-gpt-msg-user';
-                // Show a clean label for the action, or just the selection text
-                let displayText = selectionText;
+            // Add user message
+            const messagesDiv = chat.querySelector('#mini-gpt-messages');
+            if (messagesDiv) {
+              const userMsg = document.createElement('div');
+              userMsg.className = 'mini-gpt-msg-user';
+              // Show a clean label for the action, or just the selection text
+              let displayText = selectionText;
                 if (actionId === 'summarize') displayText = (isFrench ? 'Résumer : ' : 'Summarize: ') + selectionText;
                 else if (actionId === 'correct') displayText = (isFrench ? 'Corriger : ' : 'Correct: ') + selectionText;
                 else if (actionId === 'explain') displayText = (isFrench ? 'Expliquer : ' : 'Explain: ') + selectionText;
-                userMsg.textContent = displayText;
-                userMsg.style.margin = '8px 0';
-                userMsg.style.maxWidth = '80%';
-                userMsg.style.padding = '8px 12px';
-                userMsg.style.borderRadius = '12px';
-                userMsg.style.display = 'inline-block';
-                userMsg.style.wordBreak = 'break-word';
-                userMsg.style.fontSize = '15px';
-                userMsg.style.background = '#e8f0fe';
-                userMsg.style.color = '#2563eb';
-                userMsg.style.alignSelf = 'flex-end';
-                userMsg.style.textAlign = 'right';
-                messagesDiv.appendChild(userMsg);
+              userMsg.textContent = displayText;
+              userMsg.style.margin = '8px 0';
+              userMsg.style.maxWidth = '80%';
+              userMsg.style.padding = '8px 12px';
+              userMsg.style.borderRadius = '12px';
+              userMsg.style.display = 'inline-block';
+              userMsg.style.wordBreak = 'break-word';
+              userMsg.style.fontSize = '15px';
+              userMsg.style.background = '#e8f0fe';
+              userMsg.style.color = '#2563eb';
+              userMsg.style.alignSelf = 'flex-end';
+              userMsg.style.textAlign = 'right';
+              messagesDiv.appendChild(userMsg);
                 
-                // Add loader if not already present
-                const last = messagesDiv.lastChild;
-                if (!last || !last.querySelector || !last.querySelector('.mini-gpt-loader')) {
-                  const loader = document.createElement('div');
-                  loader.className = 'mini-gpt-msg-bot';
+              // Add loader if not already present
+              const last = messagesDiv.lastChild;
+              if (!last || !last.querySelector || !last.querySelector('.mini-gpt-loader')) {
+                const loader = document.createElement('div');
+                loader.className = 'mini-gpt-msg-bot';
                   loader.setAttribute('aria-label', isFrench ? 'Mini-GPT réfléchit' : 'Mini-GPT is thinking');
-                  loader.innerHTML = `<span class='mini-gpt-loader'><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span></span>`;
-                  loader.style.margin = '8px 0';
-                  loader.style.maxWidth = '80%';
-                  loader.style.padding = '8px 12px';
-                  loader.style.borderRadius = '12px';
-                  loader.style.display = 'inline-block';
-                  loader.style.wordBreak = 'break-word';
-                  loader.style.fontSize = '15px';
-                  loader.style.background = '#f5f5f7';
-                  loader.style.color = '#222';
-                  loader.style.alignSelf = 'flex-start';
-                  loader.style.textAlign = 'left';
-                  messagesDiv.appendChild(loader);
-                }
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                loader.innerHTML = `<span class='mini-gpt-loader'><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span></span>`;
+                loader.style.margin = '8px 0';
+                loader.style.maxWidth = '80%';
+                loader.style.padding = '8px 12px';
+                loader.style.borderRadius = '12px';
+                loader.style.display = 'inline-block';
+                loader.style.wordBreak = 'break-word';
+                loader.style.fontSize = '15px';
+                loader.style.background = '#f5f5f7';
+                loader.style.color = '#222';
+                loader.style.alignSelf = 'flex-start';
+                loader.style.textAlign = 'left';
+                messagesDiv.appendChild(loader);
               }
+              messagesDiv.scrollTop = messagesDiv.scrollHeight;
             }
-            // Send provider/model/apiKey with the message
-            window.postMessage({ type: 'MINI_GPT_ASK', question: q, provider, model, apiKey }, '*');
-          },
+          }
+          // Send provider/model/apiKey with the message
+          window.postMessage({ type: 'MINI_GPT_ASK', question: q, provider, model, apiKey }, '*');
+        },
           args: [question, provider, model, apiKey, action.id, info.selectionText, isFrench]
-        });
+      });
       } catch (e) {
         console.log('Script execution failed:', e);
       }
@@ -356,16 +381,17 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     const model = msg.model || (provider === 'openai' ? 'gpt-3.5-turbo' : 'gemini-2.0-flash');
     const apiKey = msg.apiKey || '';
     const tabId = sender.tab && sender.tab.id;
+    const conversationContext = msg.conversationContext || []; // Get conversation context
     (async () => {
       try {
         if (provider === 'openai') {
-          await askOpenAI({ apiKey, model, prompt: msg.question, tabId });
+          await askOpenAI({ apiKey, model, prompt: msg.question, tabId, conversationContext });
         } else if (provider === 'gemini') {
-          await askGemini({ apiKey, model, prompt: msg.question, tabId });
+          await askGemini({ apiKey, model, prompt: msg.question, tabId, conversationContext });
         } else {
           if (isExtensionContextValid() && tabId) {
             try {
-              chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '[Unknown provider]', done: true });
+          chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '[Unknown provider]', done: true });
             } catch (e) {
               console.log('Tab message failed:', e);
             }
@@ -374,7 +400,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       } catch (e) {
         if (isExtensionContextValid() && tabId) {
           try {
-            chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '[Error: ' + (e.message || 'Unknown error.') + ']', done: true });
+        chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '[Error: ' + (e.message || 'Unknown error.') + ']', done: true });
           } catch (e) {
             console.log('Tab message failed:', e);
           }

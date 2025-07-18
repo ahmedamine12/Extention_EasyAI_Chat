@@ -287,8 +287,8 @@ if (!window.__miniGptAgentInjected) {
     <div id="mini-gpt-messages" class="mini-gpt-messages-enhanced"></div>
     <form id="mini-gpt-form" class="mini-gpt-form-enhanced" style="position:relative;display:flex;align-items:flex-end;">
       <textarea id="mini-gpt-input" class="mini-gpt-input-enhanced" placeholder="${translate('placeholder')}" autocomplete="off" rows="1" style="flex:1;"></textarea>
-      <button type="submit" class="mini-gpt-send-btn" aria-label="${translate('send')}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      <button type="submit" class="mini-gpt-send-btn" aria-label="${translate('send')}" style="background: #2563eb; border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; margin-left: 8px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       </button>
       <button id="mini-gpt-quick-actions-btn" type="button" title="${translate('quickActions')}" aria-label="${translate('quickActions')}" style="background:none;border:none;padding:4px 8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:#2563eb;position:relative;margin-left:4px;">
         <span style="font-size:20px;">⚡</span>
@@ -435,10 +435,29 @@ if (!window.__miniGptAgentInjected) {
   // Show placeholder initially
   showEmptyPlaceholder();
 
-  // --- Session-based chat history ---
+  // --- Session-based chat history with conversation context ---
   let currentSession = { messages: [], date: '', preview: '' };
+  let conversationContext = []; // Store conversation messages for context
+  
   function resetSession() {
     currentSession = { messages: [], date: '', preview: '' };
+    conversationContext = []; // Reset conversation context
+  }
+  
+  // Function to manage conversation context length (prevent it from getting too long)
+  function manageConversationContext() {
+    const maxContextLength = 20; // Maximum number of messages to keep in context
+    if (conversationContext.length > maxContextLength) {
+      // Keep the most recent messages, but always keep at least the first user message
+      const firstUserMessage = conversationContext.find(msg => msg.role === 'user');
+      const recentMessages = conversationContext.slice(-maxContextLength + 1);
+      
+      if (firstUserMessage && !recentMessages.find(msg => msg.role === 'user' && msg.content === firstUserMessage.content)) {
+        conversationContext = [firstUserMessage, ...recentMessages];
+      } else {
+        conversationContext = recentMessages;
+      }
+    }
   }
   // --- Patch: Only save session after full bot response ---
   function trySaveCurrentSession() {
@@ -451,13 +470,23 @@ if (!window.__miniGptAgentInjected) {
   }
   }
 
-  // Patch appendMessage to hide placeholder when a message is added
+  // Patch appendMessage to hide placeholder when a message is added and maintain conversation context
   const origAppendMessage = appendMessage;
   appendMessage = function(text, from) {
     hideEmptyPlaceholder();
     origAppendMessage(text, from);
     if (from === 'user' || from === 'bot') {
       currentSession.messages.push({ role: from, text });
+      
+      // Add to conversation context for AI providers
+      if (from === 'user') {
+        conversationContext.push({ role: 'user', content: text });
+      } else if (from === 'bot') {
+        conversationContext.push({ role: 'assistant', content: text });
+      }
+      
+      // Manage context length to prevent it from getting too long
+      manageConversationContext();
     }
   };
   // Also show placeholder if chat is cleared
@@ -839,7 +868,19 @@ if (!window.__miniGptAgentInjected) {
       msg.style.textAlign = 'left';
     }
     messagesDiv.appendChild(msg);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    
+    // Scroll to the top of the new message instead of bottom
+    if (from === 'bot') {
+      // For bot messages, scroll to the top so user can read from beginning
+      setTimeout(() => {
+        msg.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    } else {
+      // For user messages, scroll to show the message
+      setTimeout(() => {
+        msg.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 100);
+    }
   }
 
   function getSettings() {
@@ -871,6 +912,15 @@ if (!window.__miniGptAgentInjected) {
   input.addEventListener('input', function() {
     this.style.height = 'auto';
     this.style.height = (this.scrollHeight) + 'px';
+  });
+  
+  // Add hover effects to send button
+  const sendButton = form.querySelector('.mini-gpt-send-btn');
+  sendButton.addEventListener('mouseenter', () => {
+    sendButton.style.background = '#1d4ed8';
+  });
+  sendButton.addEventListener('mouseleave', () => {
+    sendButton.style.background = '#2563eb';
   });
   // Support Shift+Enter for new line, Enter to send
   input.addEventListener('keydown', function(e) {
@@ -951,11 +1001,15 @@ if (!window.__miniGptAgentInjected) {
         streamingBotMsg.className = 'mini-gpt-msg-bot';
         streamingBotMsg.innerHTML = '';
         messagesDiv.appendChild(streamingBotMsg);
+        // Scroll to the top of the new response when it starts
+        setTimeout(() => {
+          streamingBotMsg.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
       }
       if (msg.answerPart) {
         streamingBotText += msg.answerPart;
         streamingBotMsg.innerHTML = convertMarkdownToHTML(streamingBotText);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        // Don't scroll to bottom during streaming - let user read from top
       }
     }
   });
@@ -998,13 +1052,24 @@ if (!window.__miniGptAgentInjected) {
       loader.setAttribute('aria-label', translate('thinking'));
       loader.innerHTML = `<span class='mini-gpt-loader'><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span></span>`;
       messagesDiv.appendChild(loader);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      // Scroll to the top of the loader so user can see it
+      setTimeout(() => {
+        loader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
       requestInProgress = true;
       input.disabled = true;
       updateSendStopBtn();
       streamingBotMsg = null;
       streamingBotText = '';
-      window.postMessage({ type: 'MINI_GPT_ASK', question, provider, model, apiKey }, '*');
+      // Send conversation context along with the question
+      window.postMessage({ 
+        type: 'MINI_GPT_ASK', 
+        question, 
+        provider, 
+        model, 
+        apiKey,
+        conversationContext: conversationContext // Include full conversation history
+      }, '*');
     });
   }
 
@@ -1038,7 +1103,8 @@ if (!window.__miniGptAgentInjected) {
         question: event.data.question,
         provider: event.data.provider,
         model: event.data.model,
-        apiKey: event.data.apiKey
+        apiKey: event.data.apiKey,
+        conversationContext: event.data.conversationContext || [] // Pass conversation context
       });
     }
   });
@@ -1061,8 +1127,12 @@ if (!window.__miniGptAgentInjected) {
     const bg = el ? getComputedStyle(el).backgroundColor : 'rgb(255,255,255)';
     const rgb = bg.match(/\d+/g);
     if (!rgb || rgb.length < 3) return false;
-    // Consider dark if all channels are below 60
-    return rgb.slice(0,3).every(v => parseInt(v, 10) < 60);
+    
+    // Calculate brightness (higher values = lighter)
+    const brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
+    
+    // Consider dark if brightness is below 128 (more accurate than checking individual channels)
+    return brightness < 128;
   }
   function applyDarkMode() {
     if (isPageDark()) {

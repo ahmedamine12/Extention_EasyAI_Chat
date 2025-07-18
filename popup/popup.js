@@ -150,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('popupApiKeyLinkGemini').textContent = translate('getApiKey');
   document.getElementById('popupSaveBtn').textContent = translate('save');
   document.querySelector('.settings-modal-close.secondary-btn').textContent = translate('return');
-  
+
   // Add privacy note to settings UI
   const privacyNote = document.createElement('div');
   privacyNote.style.fontSize = '0.98em';
