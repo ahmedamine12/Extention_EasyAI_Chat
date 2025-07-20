@@ -132,7 +132,10 @@ if (!window.__miniGptAgentInjected) {
 
   const bubble = document.createElement('div');
   bubble.id = 'mini-gpt-bubble';
-  bubble.innerHTML = `<img src="${chrome.runtime.getURL('icons/easyChat.png')}" alt="EasyAI Chat" style="width:42px; height:42px; border-radius:7px;">`;
+  bubble.innerHTML = `
+    <img src="${chrome.runtime.getURL('icons/easyChat.png')}" alt="EasyAI Chat" style="width:52px; height:52px; border-radius:8px;">
+    <div class="tooltip">EasyAI Chat</div>
+  `;
   bubble.style.position = 'fixed';
   bubble.style.right = '32px';
   bubble.style.bottom = '32px';
@@ -142,11 +145,12 @@ if (!window.__miniGptAgentInjected) {
   bubble.style.pointerEvents = 'auto';
   
   const originalBubblePosition = { bottom: '32px', right: '32px' };
-  bubble.style.width = '90px';
-  bubble.style.height = '90px';
-  bubble.style.background = 'linear-gradient(135deg, #2563eb 0%, #10a37f 100%)';
+  bubble.style.width = '110px';
+  bubble.style.height = '110px';
+  bubble.style.background = 'rgba(255,255,255,0.95)';
   bubble.style.borderRadius = '50%';
-  bubble.style.boxShadow = '0 6px 24px rgba(37,99,235,0.25), 0 2px 8px rgba(0,0,0,0.15)';
+  bubble.style.border = '2px solid rgba(0,0,0,0.1)';
+  bubble.style.boxShadow = '0 8px 32px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)';
   bubble.style.display = 'flex';
   bubble.style.alignItems = 'center';
   bubble.style.justifyContent = 'center';
@@ -442,6 +446,7 @@ if (!window.__miniGptAgentInjected) {
   function resetSession() {
     currentSession = { messages: [], date: '', preview: '' };
     conversationContext = []; // Reset conversation context
+    console.log('Session reset: conversation context cleared');
   }
   
   // Function to manage conversation context length (prevent it from getting too long)
@@ -466,8 +471,8 @@ if (!window.__miniGptAgentInjected) {
       currentSession.date = new Date().toLocaleString();
       currentSession.preview = currentSession.messages.find(m => m.role === 'user')?.text?.slice(0, 60) || '';
       saveChatToHistory(currentSession);
-    resetSession();
-  }
+      // Don't reset session here - it should only be reset when starting a new chat
+    }
   }
 
   // Patch appendMessage to hide placeholder when a message is added and maintain conversation context
@@ -984,7 +989,53 @@ if (!window.__miniGptAgentInjected) {
           streamingBotMsg = null;
           streamingBotText = '';
         } else if (streamingBotMsg) {
-          streamingBotMsg.innerHTML = convertMarkdownToHTML(streamingBotText);
+          // Check if response seems incomplete
+          const isIncomplete = checkIfResponseIncomplete(streamingBotText);
+          if (isIncomplete) {
+            const incompleteIndicator = document.createElement('div');
+            incompleteIndicator.className = 'mini-gpt-incomplete-indicator';
+            incompleteIndicator.innerHTML = `
+              <div style="margin-top: 8px; padding: 8px; background: rgba(245, 158, 11, 0.1); border-radius: 6px; border-left: 3px solid #f59e0b;">
+                <span style="color: #f59e0b; font-size: 0.8em; font-style: italic; display: block; margin-bottom: 4px;">
+                  [Response may be incomplete]
+                </span>
+                <button class="mini-gpt-continue-btn" style="background: #f59e0b; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; cursor: pointer; margin-right: 8px;">
+                  Continue
+                </button>
+                <button class="mini-gpt-regenerate-btn" style="background: #6b7280; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; cursor: pointer;">
+                  Regenerate
+                </button>
+              </div>
+            `;
+            
+            // Add event listeners for the buttons
+            const continueBtn = incompleteIndicator.querySelector('.mini-gpt-continue-btn');
+            const regenerateBtn = incompleteIndicator.querySelector('.mini-gpt-regenerate-btn');
+            
+            continueBtn.onclick = () => {
+              // Send a continuation prompt
+              const continuationPrompt = "Please continue your previous response.";
+              input.value = continuationPrompt;
+              sendPrompt();
+            };
+            
+            regenerateBtn.onclick = () => {
+              // Remove the incomplete message and regenerate
+              streamingBotMsg.remove();
+              streamingBotMsg = null;
+              streamingBotText = '';
+              // Get the last user message and regenerate
+              const lastUserMsg = currentSession.messages.filter(m => m.role === 'user').pop();
+              if (lastUserMsg) {
+                input.value = lastUserMsg.text;
+                sendPrompt();
+              }
+            };
+            
+            streamingBotMsg.innerHTML = convertMarkdownToHTML(streamingBotText) + incompleteIndicator.outerHTML;
+          } else {
+            streamingBotMsg.innerHTML = convertMarkdownToHTML(streamingBotText);
+          }
           streamingBotMsg = null;
           streamingBotText = '';
         }
@@ -1020,18 +1071,89 @@ if (!window.__miniGptAgentInjected) {
     const question = input.value.trim();
     // If a request is in progress, stop it
     if (requestInProgress) {
-      chrome.runtime.sendMessage({ type: 'MINI_GPT_STOP' }, () => {
-        removeLoader();
-        if (streamingBotMsg) streamingBotMsg = null;
-        requestInProgress = false;
-        input.disabled = false;
-        updateSendStopBtn();
-      });
+      stopResponse();
       return;
     }
     if (!question) return;
     sendPrompt();
   };
+  
+  // Enhanced stop response function
+  function stopResponse() {
+    chrome.runtime.sendMessage({ type: 'MINI_GPT_STOP' }, () => {
+      removeLoader();
+      
+      // Handle incomplete streaming response
+      if (streamingBotMsg && streamingBotText) {
+        // Add visual indicator for incomplete response
+        const incompleteIndicator = document.createElement('div');
+        incompleteIndicator.className = 'mini-gpt-incomplete-indicator';
+        incompleteIndicator.innerHTML = `
+          <span style="color: #ef4444; font-size: 0.8em; font-style: italic;">
+            [Response stopped by user]
+          </span>
+        `;
+        streamingBotMsg.appendChild(incompleteIndicator);
+        
+        // Finalize the streaming message
+        streamingBotMsg.innerHTML = convertMarkdownToHTML(streamingBotText) + incompleteIndicator.outerHTML;
+        streamingBotMsg = null;
+        streamingBotText = '';
+      }
+      
+      requestInProgress = false;
+      input.disabled = false;
+      updateSendStopBtn();
+    });
+  }
+  
+  // Function to detect incomplete responses
+  function checkIfResponseIncomplete(text) {
+    if (!text || text.length < 10) return false;
+    
+    const trimmedText = text.trim();
+    const lastChar = trimmedText.slice(-1);
+    const lastSentence = trimmedText.split('.').pop().trim();
+    
+    // Check for common incomplete patterns
+    const incompletePatterns = [
+      /just a moment/i,
+      /one moment/i,
+      /wait/i,
+      /loading/i,
+      /checking/i,
+      /searching/i,
+      /looking up/i,
+      /finding/i,
+      /getting/i,
+      /retrieving/i,
+      /processing/i,
+      /analyzing/i,
+      /calculating/i,
+      /please wait/i,
+      /stand by/i,
+      /hold on/i
+    ];
+    
+    // Check if ends with incomplete phrases
+    for (const pattern of incompletePatterns) {
+      if (pattern.test(lastSentence)) {
+        return true;
+      }
+    }
+    
+    // Check if ends with ellipsis or incomplete punctuation
+    if (lastChar === '...' || lastChar === '…' || lastChar === ',') {
+      return true;
+    }
+    
+    // Check if the last sentence seems incomplete (no period, question mark, or exclamation)
+    if (!/[.!?]/.test(lastChar) && lastSentence.length > 5) {
+      return true;
+    }
+    
+    return false;
+  }
 
   function sendPrompt() {
     const question = input.value.trim();
@@ -1273,18 +1395,27 @@ if (!window.__miniGptAgentInjected) {
   // Attach event listeners
   historyBtn.onclick = showHistoryPanel;
   newChatBtn.onclick = () => {
+    // Save current session if it has messages and no request is in progress
     if (currentSession.messages.length > 0 && !requestInProgress) {
       trySaveCurrentSession();
-    } else {
-      resetSession();
     }
+    
+    // Always reset session for new chat
+    resetSession();
     messagesDiv.innerHTML = '';
+    showEmptyPlaceholder();
+    
+    // Force clear any lingering conversation context
+    conversationContext = [];
+    
     // Ensure chat stays visible when starting new chat
     if (chatContainer.style.display === 'none') {
       chatContainer.style.display = 'flex';
       chatContainer.style.visibility = 'visible';
       chatContainer.style.opacity = '1';
     }
+    
+    console.log('New chat started: context cleared');
   };
   closeBtn.onclick = () => {
     trySaveCurrentSession();
@@ -1582,7 +1713,22 @@ if (!window.__miniGptAgentInjected) {
   historyPanel.innerHTML = `
     <div id="mini-gpt-history-panel-header">
       <span id="mini-gpt-history-panel-header-title">${translate('chatHistory')}</span>
-      <button id="mini-gpt-history-panel-close" aria-label="${translate('closeChat')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="mini-gpt-history-header-buttons">
+        <button id="mini-gpt-history-panel-refresh" aria-label="Refresh history" title="Refresh history">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+            <path d="M21 3v5h-5"/>
+            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+            <path d="M3 21v-5h5"/>
+          </svg>
+        </button>
+        <button id="mini-gpt-history-panel-close" aria-label="${translate('closeChat')}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
     </div>
     <div id="mini-gpt-history-panel-divider"></div>
     <div id="mini-gpt-history-panel-search">
@@ -1767,6 +1913,11 @@ if (!window.__miniGptAgentInjected) {
             filterHistory('');
             searchInput.blur();
           }
+          // Add Ctrl+R or Cmd+R to refresh history
+          if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+            e.preventDefault();
+            refreshHistory();
+          }
         });
         // Focus on search input when panel opens
         setTimeout(() => searchInput.focus(), 100);
@@ -1783,6 +1934,66 @@ if (!window.__miniGptAgentInjected) {
     historyOverlay.style.display = 'none';
   }
   historyPanel.querySelector('#mini-gpt-history-panel-close').onclick = hideHistoryPanel;
+  
+  // Refresh button functionality
+  historyPanel.querySelector('#mini-gpt-history-panel-refresh').onclick = () => {
+    refreshHistory();
+  };
+  
+  // Enhanced refresh function with visual feedback and error handling
+  function refreshHistory() {
+    const refreshBtn = historyPanel.querySelector('#mini-gpt-history-panel-refresh');
+    const refreshIcon = refreshBtn.querySelector('svg');
+    
+    // Add loading state
+    refreshBtn.disabled = true;
+    refreshIcon.style.animation = 'spin 1s linear infinite';
+    
+    // Store current search term to restore after refresh
+    const searchInput = historyPanel.querySelector('#mini-gpt-history-search-input');
+    const currentSearchTerm = searchInput ? searchInput.value : '';
+    
+    // Store current history length to detect changes
+    const previousHistoryLength = allHistory.length;
+    
+    // Force reload from storage with error handling
+    chrome.storage.local.get(['miniGptHistory'], (data) => {
+      try {
+        // Update local arrays
+        const newHistory = Array.isArray(data.miniGptHistory) ? data.miniGptHistory : [];
+        allHistory = newHistory;
+        filteredHistory = [...allHistory];
+        
+        // Re-render the list
+        renderHistoryList();
+        
+        // Restore search if there was one
+        if (searchInput && currentSearchTerm) {
+          searchInput.value = currentSearchTerm;
+          filterHistory(currentSearchTerm);
+        } else if (searchInput) {
+          searchInput.value = '';
+          filterHistory('');
+        }
+        
+        // Check if history actually changed
+        const historyChanged = newHistory.length !== previousHistoryLength;
+        if (historyChanged) {
+          console.log(`History refreshed: ${allHistory.length} conversations loaded (was ${previousHistoryLength})`);
+        } else {
+          console.log(`History refreshed: ${allHistory.length} conversations loaded (no changes)`);
+        }
+        
+      } catch (error) {
+        console.error('Error refreshing history:', error);
+        // Could add user notification here if needed
+      } finally {
+        // Remove loading state
+        refreshBtn.disabled = false;
+        refreshIcon.style.animation = '';
+      }
+    });
+  }
 
   // --- Custom Clear Confirmation Modal ---
   let clearModal = null;

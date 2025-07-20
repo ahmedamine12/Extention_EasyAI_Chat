@@ -138,8 +138,7 @@ async function askGemini({ apiKey, model, prompt, tabId, conversationContext = [
   // Add conversation context if available
   if (conversationContext && conversationContext.length > 0) {
     const contextText = conversationContext.map(msg => {
-      const role = msg.role === 'user' ? 'User' : 'Assistant';
-      return `${role}: ${msg.content}`;
+      return msg.content;
     }).join('\n\n');
     fullPrompt = `Previous conversation:\n${contextText}\n\nUser: ${prompt}`;
   }
