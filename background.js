@@ -69,7 +69,7 @@ async function askOpenAI({ apiKey, model, prompt, tabId, conversationContext = [
                 try {
               chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '', done: true });
                 } catch (e) {
-                  console.log('Tab message failed:', e);
+                  // console.log('Tab message failed:', e); // Replaced with silent handling
                 }
               }
               if (tabId) delete abortControllers[tabId];
@@ -84,7 +84,7 @@ async function askOpenAI({ apiKey, model, prompt, tabId, conversationContext = [
                   try {
                 chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: delta, done: false });
                   } catch (e) {
-                    console.log('Tab message failed:', e);
+                    // console.log('Tab message failed:', e); // Replaced with silent handling
                   }
                 }
               }
@@ -100,7 +100,7 @@ async function askOpenAI({ apiKey, model, prompt, tabId, conversationContext = [
       try {
     chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '', done: true });
       } catch (e) {
-        console.log('Tab message failed:', e);
+        // console.log('Tab message failed:', e); // Replaced with silent handling
       }
     }
     return { ok: true, answer };
@@ -111,7 +111,7 @@ async function askOpenAI({ apiKey, model, prompt, tabId, conversationContext = [
         try {
       chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Stopped by user]', done: true });
         } catch (e) {
-          console.log('Tab message failed:', e);
+          // console.log('Tab message failed:', e); // Replaced with silent handling
         }
       }
       return { ok: false, answer: 'Request stopped by user.' };
@@ -120,7 +120,7 @@ async function askOpenAI({ apiKey, model, prompt, tabId, conversationContext = [
       try {
     chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Error: ' + (e.message || 'Network error.') + ']', done: true });
       } catch (e) {
-        console.log('Tab message failed:', e);
+        // console.log('Tab message failed:', e); // Replaced with silent handling
       }
     }
     return { ok: false, answer: e.message || 'Network error.' };
@@ -162,7 +162,7 @@ async function askGemini({ apiKey, model, prompt, tabId, conversationContext = [
       try {
     chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: answer, done: true });
       } catch (e) {
-        console.log('Tab message failed:', e);
+        // console.log('Tab message failed:', e); // Replaced with silent handling
       }
     }
     return { ok: true, answer };
@@ -173,7 +173,7 @@ async function askGemini({ apiKey, model, prompt, tabId, conversationContext = [
         try {
       chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Stopped by user]', done: true });
         } catch (e) {
-          console.log('Tab message failed:', e);
+          // console.log('Tab message failed:', e); // Replaced with silent handling
         }
       }
       return { ok: false, answer: 'Request stopped by user.' };
@@ -182,7 +182,7 @@ async function askGemini({ apiKey, model, prompt, tabId, conversationContext = [
       try {
     chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Error: ' + (e.message || 'Network error.') + ']', done: true });
       } catch (e) {
-        console.log('Tab message failed:', e);
+        // console.log('Tab message failed:', e); // Replaced with silent handling
       }
     }
     return { ok: false, answer: e.message || 'Network error.' };
@@ -220,7 +220,7 @@ const MINI_GPT_ACTIONS = [
 // Safe storage access function
 function safeStorageGet(keys, callback) {
   if (!isExtensionContextValid()) {
-    console.log('Extension context invalid, cannot access storage');
+    // console.log('Extension context invalid, cannot access storage'); // Replaced with silent handling
     callback({});
     return;
   }
@@ -228,14 +228,14 @@ function safeStorageGet(keys, callback) {
   try {
     chrome.storage.local.get(keys, (data) => {
       if (chrome.runtime.lastError) {
-        console.log('Storage error:', chrome.runtime.lastError);
+        // console.log('Storage error:', chrome.runtime.lastError); // Replaced with silent handling
         callback({});
         return;
       }
       callback(data);
     });
   } catch (e) {
-    console.log('Storage access failed:', e);
+    // console.log('Storage access failed:', e); // Replaced with silent handling
     callback({});
   }
 }
@@ -263,7 +263,7 @@ chrome.runtime.onInstalled.addListener(() => {
     });
   });
   } catch (e) {
-    console.log('Context menu creation failed:', e);
+    // console.log('Context menu creation failed:', e); // Replaced with silent handling
   }
 });
 
@@ -361,7 +361,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
           args: [question, provider, model, apiKey, action.id, info.selectionText, isFrench]
       });
       } catch (e) {
-        console.log('Script execution failed:', e);
+        // console.log('Script execution failed:', e); // Replaced with silent handling
       }
     });
   }
@@ -392,7 +392,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             try {
           chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '[Unknown provider]', done: true });
             } catch (e) {
-              console.log('Tab message failed:', e);
+              // console.log('Tab message failed:', e); // Replaced with silent handling
             }
           }
         }
@@ -401,7 +401,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           try {
         chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '[Error: ' + (e.message || 'Unknown error.') + ']', done: true });
           } catch (e) {
-            console.log('Tab message failed:', e);
+            // console.log('Tab message failed:', e); // Replaced with silent handling
           }
         }
       }

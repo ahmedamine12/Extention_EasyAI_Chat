@@ -446,7 +446,7 @@ if (!window.__miniGptAgentInjected) {
   function resetSession() {
     currentSession = { messages: [], date: '', preview: '' };
     conversationContext = []; // Reset conversation context
-    console.log('Session reset: conversation context cleared');
+    // Session reset: conversation context cleared
   }
   
   // Function to manage conversation context length (prevent it from getting too long)
@@ -1415,7 +1415,7 @@ if (!window.__miniGptAgentInjected) {
       chatContainer.style.opacity = '1';
     }
     
-    console.log('New chat started: context cleared');
+    // New chat started: context cleared
   };
   closeBtn.onclick = () => {
     trySaveCurrentSession();
@@ -1979,9 +1979,9 @@ if (!window.__miniGptAgentInjected) {
         // Check if history actually changed
         const historyChanged = newHistory.length !== previousHistoryLength;
         if (historyChanged) {
-          console.log(`History refreshed: ${allHistory.length} conversations loaded (was ${previousHistoryLength})`);
-        } else {
-          console.log(`History refreshed: ${allHistory.length} conversations loaded (no changes)`);
+                // History refreshed: conversations loaded
+    } else {
+      // History refreshed: no changes
         }
         
       } catch (error) {
