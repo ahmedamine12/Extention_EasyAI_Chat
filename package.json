@@ -1,0 +1,35 @@
+{
+  "name": "easyaichat",
+  "version": "1.0.0",
+  "description": "Effortless AI chat assistant for any webpage. Access OpenAI, Gemini, and more with a beautiful floating chat interface.",
+  "main": "content.js",
+  "scripts": {
+    "build": "echo 'Extension is ready for Chrome Web Store submission'",
+    "test": "echo 'Run manual testing in Chrome'",
+    "package": "zip -r easyaichat-v1.0.0.zip . -x '*.git*' '*.DS_Store*' 'node_modules/*' '*.zip'"
+  },
+  "keywords": [
+    "chrome-extension",
+    "ai",
+    "chat",
+    "openai",
+    "gemini",
+    "assistant",
+    "productivity"
+  ],
+  "author": "EasyAI Chat Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/easyaichat/extension"
+  },
+  "bugs": {
+    "url": "https://github.com/easyaichat/extension/issues"
+  },
+  "homepage": "https://easyaichat.com",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "devDependencies": {},
+  "dependencies": {}
+} 

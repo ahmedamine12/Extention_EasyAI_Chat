@@ -446,6 +446,7 @@ if (!window.__miniGptAgentInjected) {
   function resetSession() {
     currentSession = { messages: [], date: '', preview: '' };
     conversationContext = []; // Reset conversation context
+    currentHistoryIndex = -1;
     // Session reset: conversation context cleared
   }
   
@@ -464,14 +465,28 @@ if (!window.__miniGptAgentInjected) {
       }
     }
   }
-  // --- Patch: Only save session after full bot response ---
+  let currentHistoryIndex = -1;
+  
   function trySaveCurrentSession() {
     // Only save if not streaming
     if (!requestInProgress && currentSession.messages.length > 1) {
       currentSession.date = new Date().toLocaleString();
       currentSession.preview = currentSession.messages.find(m => m.role === 'user')?.text?.slice(0, 60) || '';
-      saveChatToHistory(currentSession);
-      // Don't reset session here - it should only be reset when starting a new chat
+      
+      if (currentHistoryIndex >= 0 && currentHistoryIndex < allHistory.length) {
+        allHistory[currentHistoryIndex] = { ...currentSession };
+        chrome.storage.local.set({ miniGptHistory: allHistory }, () => {
+          const filteredIndex = filteredHistory.findIndex(item => 
+            item === allHistory[currentHistoryIndex] || 
+            JSON.stringify(item.messages) === JSON.stringify(allHistory[currentHistoryIndex].messages)
+          );
+          if (filteredIndex !== -1) {
+            filteredHistory[filteredIndex] = { ...currentSession };
+          }
+        });
+      } else {
+        saveChatToHistory(currentSession);
+      }
     }
   }
 
@@ -497,6 +512,7 @@ if (!window.__miniGptAgentInjected) {
   // Also show placeholder if chat is cleared
   function clearChatMessages() {
     messagesDiv.innerHTML = '';
+    currentHistoryIndex = -1;
     showEmptyPlaceholder();
   }
   // Replace all saveCurrentSession() calls with trySaveCurrentSession()
@@ -605,20 +621,20 @@ if (!window.__miniGptAgentInjected) {
   };
 
   // Draggable functionality for chat container
-  const dragHeader = chatContainer.querySelector('.mini-gpt-header');
+  const dragIndicator = chatContainer.querySelector('.mini-gpt-drag-indicator');
   
-  // Make header draggable
-  dragHeader.style.cursor = 'grab';
-  dragHeader.style.userSelect = 'none';
+  // Make drag indicator draggable
+  dragIndicator.style.cursor = 'grab';
+  dragIndicator.style.userSelect = 'none';
   
   function startDrag(e) {
-    // Only allow dragging from the header area, not buttons
-    if (e.target.closest('button') || e.target.closest('.mini-gpt-actions-bar')) {
+    // Only allow dragging from the drag indicator
+    if (!e.target.closest('.mini-gpt-drag-indicator')) {
       return;
     }
     
     isDragging = true;
-    dragHeader.style.cursor = 'grabbing';
+    dragIndicator.style.cursor = 'grabbing';
     
     // Get current position
     const rect = chatContainer.getBoundingClientRect();
@@ -701,7 +717,7 @@ if (!window.__miniGptAgentInjected) {
     if (!isDragging) return;
     
     isDragging = false;
-    dragHeader.style.cursor = 'grab';
+    dragIndicator.style.cursor = 'grab';
     
     // Remove event listeners
     document.removeEventListener('mousemove', onDrag);
@@ -709,11 +725,11 @@ if (!window.__miniGptAgentInjected) {
     document.removeEventListener('mouseleave', stopDrag);
   }
   
-  // Add drag event listeners to header
-  dragHeader.addEventListener('mousedown', startDrag);
+  // Add drag event listeners to drag indicator
+  dragIndicator.addEventListener('mousedown', startDrag);
   
   // Add touch support for mobile devices
-  dragHeader.addEventListener('touchstart', (e) => {
+  dragIndicator.addEventListener('touchstart', (e) => {
     e.preventDefault();
     const touch = e.touches[0];
     const mouseEvent = new MouseEvent('mousedown', {
@@ -721,13 +737,6 @@ if (!window.__miniGptAgentInjected) {
       clientY: touch.clientY
     });
     startDrag(mouseEvent);
-  });
-  
-  // Prevent drag when clicking on interactive elements
-  dragHeader.addEventListener('click', (e) => {
-    if (e.target.closest('button') || e.target.closest('.mini-gpt-actions-bar')) {
-      e.stopPropagation();
-    }
   });
   
   // Handle window resize to keep chat and bubble synchronized and in bounds
@@ -982,13 +991,14 @@ if (!window.__miniGptAgentInjected) {
       // Remove loader if present
       removeLoader();
       if (msg.done) {
-        // --- PATCH: Always append Gemini (non-streaming) answer as a bot message ---
         if (!streamingBotMsg && msg.answerPart) {
-          // For Gemini (non-streaming), ensure appendMessage is called so history is correct
           appendMessage(msg.answerPart, 'bot');
           streamingBotMsg = null;
           streamingBotText = '';
         } else if (streamingBotMsg) {
+          currentSession.messages.push({ role: 'bot', text: streamingBotText });
+          conversationContext.push({ role: 'assistant', content: streamingBotText });
+          
           // Check if response seems incomplete
           const isIncomplete = checkIfResponseIncomplete(streamingBotText);
           if (isIncomplete) {
@@ -1768,7 +1778,6 @@ if (!window.__miniGptAgentInjected) {
     });
   }
   function deleteHistoryItem(index) {
-    // Find the actual index in allHistory
     const actualIndex = allHistory.findIndex(item => item === filteredHistory[index]);
     if (actualIndex !== -1) {
       allHistory.splice(actualIndex, 1);
@@ -1877,8 +1886,11 @@ if (!window.__miniGptAgentInjected) {
     }
     
     // Clear current chat and restore the selected session
-      messagesDiv.innerHTML = '';
-    currentSession = { ...filteredHistory[idx] }; // Copy the session
+    messagesDiv.innerHTML = '';
+    currentSession = { ...filteredHistory[idx] };
+    
+    const actualIndex = allHistory.findIndex(item => item === filteredHistory[idx]);
+    currentHistoryIndex = actualIndex;
     
     // Restore all messages from the session
     filteredHistory[idx].messages.forEach(msg => {
@@ -1985,7 +1997,7 @@ if (!window.__miniGptAgentInjected) {
         }
         
       } catch (error) {
-        console.error('Error refreshing history:', error);
+
         // Could add user notification here if needed
       } finally {
         // Remove loading state
@@ -2153,7 +2165,7 @@ if (!window.__miniGptAgentInjected) {
     if (!isDragging) return;
     
     isDragging = false;
-    dragHeader.style.cursor = 'grab';
+    dragIndicator.style.cursor = 'grab';
     
     // Remove event listeners
     document.removeEventListener('mousemove', onDrag);
@@ -2275,8 +2287,8 @@ if (!window.__miniGptAgentInjected) {
     }, 100);
   }
   
-  // Add drag event listeners to header
-  dragHeader.addEventListener('mousedown', startDrag);
+  // Add drag event listeners to drag indicator
+  dragIndicator.addEventListener('mousedown', startDrag);
   
   // Add bubble drag event listeners
   bubble.addEventListener('mousedown', startBubbleDrag);

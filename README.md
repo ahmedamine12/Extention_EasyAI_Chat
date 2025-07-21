@@ -1,135 +1,80 @@
-# EasyAI Chat – Your Effortless AI Companion for the Web
+# EasyAI Chat
 
-EasyAI Chat is a modern, floating AI assistant for your browser. Instantly access powerful AI (OpenAI, Gemini, and more) on any webpage—ask questions, get suggestions, or improve your writing, all without leaving your current tab.
+A beautiful, privacy-focused AI chat assistant that works on any webpage. Access OpenAI GPT and Google Gemini directly from your browser with an elegant floating interface.
 
 ## ✨ Features
-- **Floating Chat Bubble:** Always available, never in the way. Click to open, close, or move it anywhere on the page.
-- **Beautiful, Minimal UI:** Clean, responsive design with light and dark mode support.
-- **Multi-Provider Support:** Works with OpenAI, Google Gemini, and more—just add your API key.
-- **Context Menu Integration:** Right-click any text to ask the AI about it.
-- **Secure & Private:** Your API keys are stored only on your device and never leave your computer.
-- **Chat History:** Save and search through your conversations.
-- **Quick Actions:** Fast access to common AI tasks.
-- **Responsive Design:** Works beautifully on all devices and screen sizes.
 
-## 🚀 Installation
+- **🎯 Smart Floating Interface** - Elegant chat bubble that appears on any website
+- **🤖 Multiple AI Providers** - Support for OpenAI GPT and Google Gemini
+- **🎨 Beautiful Design** - Modern interface with dark/light mode support
+- **🔒 Privacy First** - Your API keys stay on your device only
+- **💬 Smart Context** - Right-click any text to ask AI about it
+- **📚 Chat History** - Save and search through your conversations
+- **⚙️ Customizable** - Comprehensive settings and shortcuts
 
-### Chrome Web Store (Recommended)
-[Install from Chrome Web Store](https://chrome.google.com/webstore) *(Coming Soon)*
+## 🚀 Quick Start
 
-### Manual Installation (Developer Mode)
-1. Download or clone this repository
-2. Open Chrome and go to `chrome://extensions`
-3. Enable **Developer mode** (toggle in top-right corner)
-4. Click **Load unpacked** and select the extension folder
-5. The EasyAI Chat bubble will appear on web pages
+1. **Install** the extension from the Chrome Web Store
+2. **Add API Keys** - Get your OpenAI or Gemini API key
+3. **Start Chatting** - Click the floating bubble on any webpage
+4. **Ask Anything** - Get help with writing, research, coding, and more
 
-## ⚙️ Setup
+## 🛡️ Privacy & Security
 
-### 1. Get Your API Keys
-- **OpenAI**: Get your key from [OpenAI Platform](https://platform.openai.com/account/api-keys)
-- **Google Gemini**: Get your key from [Google AI Studio](https://aistudio.google.com/apikey)
+- ✅ **Zero data collection** - We don't collect any user data
+- ✅ **Local storage only** - All conversations stored on your device
+- ✅ **Direct API communication** - No intermediate servers
+- ✅ **Secure key handling** - API keys encrypted and stored locally
+- ✅ **No tracking** - No analytics or user tracking
 
-### 2. Configure the Extension
-1. Click the EasyAI Chat bubble on any webpage
-2. Open **Settings** from the chat interface
-3. Add your API key(s) for your preferred provider(s)
-4. Choose your default AI model
-5. Start chatting!
+## 🎯 Perfect For
 
-## 💡 How to Use
-
-### Basic Chat
-- Click the floating chat bubble on any webpage
-- Type your question or prompt
-- Press Enter or click Send
-- Get instant AI responses
-
-### Context Menu
-- Select any text on a webpage
-- Right-click and choose "Ask EasyAI Chat"
-- Get AI assistance about the selected content
-
-### Quick Actions
-- Click the ⚡ button in the chat for common tasks:
-  - Summarize page content
-  - Explain selected text
-  - Grammar and style improvements
-  - And more!
-
-### Chat History
-- Click the history button (clock icon) to view past conversations
-- Search through your chat history
-- Continue previous conversations
-
-## 🔒 Privacy & Security
-
-**Your privacy is our top priority:**
-- ✅ All data stored locally on your device
-- ✅ No external servers or data collection
-- ✅ API keys encrypted and stored securely
-- ✅ Direct communication with AI providers only
-- ✅ No tracking or analytics
-
-See our full [Privacy Policy](privacy-policy.md) for details.
-
-## 🛠️ Features
-
-### AI Provider Support
-- **OpenAI**: GPT-3.5 Turbo, GPT-4, and more
-- **Google Gemini**: Gemini Pro and latest models
-- **Extensible**: Built to support additional providers
-
-### User Interface
-- **Floating Design**: Unobtrusive bubble interface
-- **Drag & Drop**: Position the bubble anywhere
-- **Responsive**: Adapts to any screen size
-- **Dark Mode**: Automatic theme detection
-- **Animations**: Smooth, professional interactions
-
-### Smart Features
-- **Conversation Context**: Maintains chat history
-- **Incomplete Response Detection**: Smart handling of cut-off responses
-- **Error Recovery**: Graceful error handling and retries
-- **Keyboard Shortcuts**: Quick access and navigation
+- **Students** - Research assistance and study help
+- **Writers** - Content creation and editing support  
+- **Developers** - Code review and debugging help
+- **Professionals** - Email drafting and document review
+- **Anyone** - Quick answers and intelligent assistance
 
 ## 🔧 Requirements
 
-- **Browser**: Chrome 88+ (or compatible Chromium browser)
-- **API Key**: OpenAI and/or Google AI API key
-- **Internet**: Required for AI queries
+- Chrome 88+ (or compatible browser)
+- OpenAI API key and/or Google AI API key
+- Internet connection for AI queries
 
-## 📝 Development
+## 📱 Supported Browsers
 
-### Project Structure
-```
-EasyAI-Chat/
-├── manifest.json          # Extension manifest
-├── content.js             # Main content script
-├── background.js          # Service worker
-├── styles.css             # Styling
-├── popup/                 # Extension popup
-├── settings/              # Settings page
-├── icons/                 # Extension icons
-└── utils/                 # Utility functions
-```
+- ✅ Google Chrome 88+
+- ✅ Microsoft Edge (Chromium)
+- ✅ Brave Browser
+- ✅ Vivaldi Browser
+- ✅ Other Chromium-based browsers
 
-### Contributing
-We welcome contributions! Please feel free to submit issues and pull requests.
+## 🆕 Latest Updates
 
-## 📜 License
+- Enhanced bubble hover effects with smooth animations
+- Improved visibility on all website backgrounds
+- Streamlined settings and configuration
+- Better error handling and user feedback
+- Optimized performance and memory usage
+
+## 💡 Tips for Best Experience
+
+1. **Position the bubble** - Drag it to your preferred location
+2. **Use context menu** - Right-click any text for quick AI assistance
+3. **Explore settings** - Customize your experience in the settings panel
+4. **Save conversations** - Important chats are automatically saved
+5. **Switch providers** - Use different AI models for different tasks
+
+## 🆘 Support
+
+- **Documentation**: [EasyAI Chat Help](https://easyaichat.com/help)
+- **Contact**: support@easyaichat.com
+- **Privacy Policy**: [Privacy Policy](https://easyaichat.com/privacy)
+
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆕 Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for version history and updates.
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/your-username/easyai-chat/issues)
-- **Email**: support@easyaichat.com *(placeholder)*
-
 ---
 
-**Ready to supercharge your browsing with AI? Install EasyAI Chat and experience effortless AI assistance on any webpage!** 🚀 
+**Ready to supercharge your browsing with AI? Install EasyAI Chat today! 🚀** 

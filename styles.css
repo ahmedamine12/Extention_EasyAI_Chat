@@ -1501,20 +1501,29 @@
   font-size: 16px !important;
   line-height: 1.2 !important;
   box-sizing: border-box !important;
-  cursor: grab !important;
   user-select: none !important;
-  transition: cursor 0.1s ease !important;
-}
-
-.mini-gpt-header-modern:active {
-  cursor: grabbing !important;
 }
 
 .mini-gpt-drag-indicator {
   color: #6b7280 !important;
   font-weight: 400 !important;
   letter-spacing: -1px !important;
-  transition: opacity 0.2s ease !important;
+  transition: opacity 0.2s ease, color 0.2s ease !important;
+  cursor: grab !important;
+  user-select: none !important;
+  padding: 4px !important;
+  border-radius: 4px !important;
+}
+
+.mini-gpt-drag-indicator:hover {
+  color: #374151 !important;
+  background: rgba(37, 99, 235, 0.1) !important;
+}
+
+.mini-gpt-drag-indicator:active {
+  cursor: grabbing !important;
+  color: #1f2937 !important;
+  background: rgba(37, 99, 235, 0.2) !important;
 }
 
 .mini-gpt-header-modern:hover .mini-gpt-drag-indicator {
@@ -1586,7 +1595,6 @@
   font-family: 'Inter', 'Segoe UI', Arial, sans-serif !important;
   margin: 0 !important;
   flex: 1 1 0% !important;
-  user-select: none !important;
   height: 100% !important;
   white-space: nowrap !important;
 }

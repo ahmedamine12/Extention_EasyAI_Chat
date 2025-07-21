@@ -247,7 +247,7 @@ document.getElementById('open-bubble').onclick = () => {
         }
       }
     }).catch((error) => {
-      console.error('Error opening chat bubble:', error);
+      
       document.getElementById('open-bubble').textContent = 'Error opening chat';
       document.getElementById('open-bubble').style.background = '#ff4444';
       setTimeout(() => {

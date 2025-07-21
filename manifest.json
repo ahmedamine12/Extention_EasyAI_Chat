@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "Effortless AI chat assistant for any webpage. Access OpenAI, Gemini, and more with a beautiful floating chat interface.",
   "author": "EasyAI Chat Team",
-  "homepage_url": "https://github.com/your-username/easyai-chat",
+  "homepage_url": "https://easyaichat.com",
   "action": {
     "default_popup": "popup/popup.html",
     "default_title": "EasyAI Chat Settings",
