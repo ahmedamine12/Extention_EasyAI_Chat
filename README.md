@@ -67,9 +67,9 @@ A beautiful, privacy-focused AI chat assistant that works on any webpage. Access
 
 ## 🆘 Support
 
-- **Documentation**: [EasyAI Chat Help](https://easyaichat.com/help)
+- **Documentation**: [EasyAI Chat Help](https://ahmedamine12.github.io/Extention_EasyAI_Chat/homepage.html)
 - **Contact**: support@easyaichat.com
-- **Privacy Policy**: [Privacy Policy](https://easyaichat.com/privacy)
+- **Privacy Policy**: [Privacy Policy](https://ahmedamine12.github.io/Extention_EasyAI_Chat/privacy-policy.html)
 
 ## 📄 License
 
