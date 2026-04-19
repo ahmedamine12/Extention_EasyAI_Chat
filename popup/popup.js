@@ -21,6 +21,8 @@ const translations = {
     getApiKey: 'Get your API key',
     geminiApiKey: 'Gemini API Key',
     enterGeminiKey: 'Enter your Gemini API key',
+    huggingfaceApiKey: 'Hugging Face Token',
+    enterHuggingFaceKey: 'Enter your Hugging Face token (hf_...)',
     save: 'Save',
     return: 'Return',
     settingsSaved: 'Settings saved!',
@@ -53,6 +55,8 @@ const translations = {
     getApiKey: 'Obtenir votre clé API',
     geminiApiKey: 'Clé API Gemini',
     enterGeminiKey: 'Entrez votre clé API Gemini',
+    huggingfaceApiKey: 'Token Hugging Face',
+    enterHuggingFaceKey: 'Entrez votre token Hugging Face (hf_...)',
     save: 'Enregistrer',
     return: 'Retour',
     settingsSaved: 'Paramètres enregistrés !',
@@ -81,14 +85,18 @@ function translate(key) {
 document.addEventListener('DOMContentLoaded', function() {
   const popupApiKeyOpenAI = document.getElementById('popupApiKeyOpenAI');
   const popupApiKeyGemini = document.getElementById('popupApiKeyGemini');
+  const popupApiKeyHuggingFace = document.getElementById('popupApiKeyHuggingFace');
   const popupSettingsForm = document.getElementById('popupSettingsForm');
   const popupSettingsStatus = document.getElementById('popupSettingsStatus');
   const toggleOpenAIEye = document.getElementById('toggleOpenAIEye');
   const toggleGeminiEye = document.getElementById('toggleGeminiEye');
+  const toggleHuggingFaceEye = document.getElementById('toggleHuggingFaceEye');
   const openaiEyeShow = document.getElementById('openai-eye-show');
   const openaiEyeHide = document.getElementById('openai-eye-hide');
   const geminiEyeShow = document.getElementById('gemini-eye-show');
   const geminiEyeHide = document.getElementById('gemini-eye-hide');
+  const huggingfaceEyeShow = document.getElementById('huggingface-eye-show');
+  const huggingfaceEyeHide = document.getElementById('huggingface-eye-hide');
   const settingsBtn = document.getElementById('settingsBtn');
   const settingsModal = document.getElementById('settingsModal');
   const popupSaveBtn = document.getElementById('popupSaveBtn');
@@ -96,23 +104,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Enable Save button only if at least one API key is entered
   function updateSaveBtnState() {
-    const hasKey = popupApiKeyOpenAI.value.trim() || popupApiKeyGemini.value.trim();
+    const hasKey = popupApiKeyOpenAI.value.trim() || popupApiKeyGemini.value.trim() || popupApiKeyHuggingFace.value.trim();
     popupSaveBtn.disabled = !hasKey;
   }
   popupApiKeyOpenAI.addEventListener('input', updateSaveBtnState);
   popupApiKeyGemini.addEventListener('input', updateSaveBtnState);
+  popupApiKeyHuggingFace.addEventListener('input', updateSaveBtnState);
   updateSaveBtnState();
 
   // Load saved API keys on popup open
-  chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini'], (data) => {
+  chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface'], (data) => {
     popupApiKeyOpenAI.value = data.apiKey_openai || '';
     popupApiKeyGemini.value = data.apiKey_gemini || '';
+    popupApiKeyHuggingFace.value = data.apiKey_huggingface || '';
     updateSaveBtnState();
     // Auto-focus on first empty field
     if (!popupApiKeyOpenAI.value) {
       popupApiKeyOpenAI.focus();
     } else if (!popupApiKeyGemini.value) {
       popupApiKeyGemini.focus();
+    } else if (!popupApiKeyHuggingFace.value) {
+      popupApiKeyHuggingFace.focus();
     }
   });
 
@@ -128,6 +140,12 @@ document.addEventListener('DOMContentLoaded', function() {
     popupApiKeyGemini.type = show ? 'text' : 'password';
     geminiEyeShow.style.display = show ? 'none' : '';
     geminiEyeHide.style.display = show ? '' : 'none';
+  };
+  toggleHuggingFaceEye.onclick = function() {
+    const show = popupApiKeyHuggingFace.type === 'password';
+    popupApiKeyHuggingFace.type = show ? 'text' : 'password';
+    huggingfaceEyeShow.style.display = show ? 'none' : '';
+    huggingfaceEyeHide.style.display = show ? '' : 'none';
   };
 
   // Apply translations to HTML elements
@@ -148,6 +166,10 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('popupApiKeyGemini').placeholder = translate('enterGeminiKey');
   document.getElementById('popupApiKeyGemini').setAttribute('aria-label', translate('geminiApiKey'));
   document.getElementById('popupApiKeyLinkGemini').textContent = translate('getApiKey');
+  document.querySelector('label[for="popupApiKeyHuggingFace"]').textContent = translate('huggingfaceApiKey');
+  document.getElementById('popupApiKeyHuggingFace').placeholder = translate('enterHuggingFaceKey');
+  document.getElementById('popupApiKeyHuggingFace').setAttribute('aria-label', translate('huggingfaceApiKey'));
+  document.getElementById('popupApiKeyLinkHuggingFace').textContent = translate('getApiKey');
   document.getElementById('popupSaveBtn').textContent = translate('save');
   document.querySelector('.settings-modal-close.secondary-btn').textContent = translate('return');
 
@@ -165,9 +187,11 @@ document.addEventListener('DOMContentLoaded', function() {
     e.preventDefault();
     const apiKeyOpenAI = popupApiKeyOpenAI.value;
     const apiKeyGemini = popupApiKeyGemini.value;
+    const apiKeyHuggingFace = popupApiKeyHuggingFace.value;
     chrome.storage.local.set({
       apiKey_openai: apiKeyOpenAI,
-      apiKey_gemini: apiKeyGemini
+      apiKey_gemini: apiKeyGemini,
+      apiKey_huggingface: apiKeyHuggingFace
     }, () => {
       popupSettingsStatus.textContent = '';
       // Show modern toast
@@ -215,120 +239,5 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-document.getElementById('open-bubble').onclick = () => {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    const currentTab = tabs[0];
-    
-    // Check if we can access this tab (chrome:// URLs are restricted)
-    if (currentTab.url.startsWith('chrome://') || currentTab.url.startsWith('chrome-extension://')) {
-      // Show error message for restricted URLs
-      document.getElementById('open-bubble').textContent = 'Not available on this page';
-      document.getElementById('open-bubble').style.background = '#ff4444';
-      setTimeout(() => {
-        document.getElementById('open-bubble').textContent = 'Open Chat Bubble';
-        document.getElementById('open-bubble').style.background = '#4f8cff';
-      }, 2000);
-      return;
-    }
-    
-    chrome.scripting.executeScript({
-      target: { tabId: currentTab.id },
-      func: () => {
-        const bubble = document.getElementById('mini-gpt-bubble');
-        const chat = document.getElementById('mini-gpt-chat-container');
-        if (bubble && chat) {
-          chat.style.display = 'flex';
-          // Also show a success message
-          const successMsg = document.createElement('div');
-          successMsg.textContent = 'Chat bubble opened!';
-          successMsg.style.cssText = 'position:fixed;top:20px;right:20px;background:#4f8cff;color:#fff;padding:10px;border-radius:8px;z-index:999999;';
-          document.body.appendChild(successMsg);
-          setTimeout(() => successMsg.remove(), 2000);
-        }
-      }
-    }).catch((error) => {
-      
-      document.getElementById('open-bubble').textContent = 'Error opening chat';
-      document.getElementById('open-bubble').style.background = '#ff4444';
-      setTimeout(() => {
-        document.getElementById('open-bubble').textContent = 'Open Chat Bubble';
-        document.getElementById('open-bubble').style.background = '#4f8cff';
-      }, 2000);
-    });
-  });
-};
-
-const settingsBtn = document.getElementById('settingsBtn');
-const settingsModal = document.getElementById('settingsModal');
-const cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
-const providerSelect = document.getElementById('providerSelect');
-const modelSelect = document.getElementById('modelSelect');
-const apiKeyInput = document.getElementById('apiKeyInput');
-const apiKeyLink = document.getElementById('apiKeyLink');
-const settingsStatus = document.getElementById('settingsStatus');
-const chatSettingsForm = document.getElementById('chatSettingsForm');
-
-const PROVIDER_MODELS = {
-  openai: ['gpt-3.5-turbo'],
-  gemini: ['gemini-2.0-flash']
-};
-const PROVIDER_API_LINKS = {
-  openai: 'https://platform.openai.com/api-keys',
-  gemini: 'https://aistudio.google.com/apikey'
-};
-
-function showSettingsModal() {
-  settingsModal.style.display = 'flex';
-  settingsStatus.textContent = '';
-}
-function hideSettingsModal() {
-  settingsModal.style.display = 'none';
-}
-function populateModelDropdown(provider) {
-  modelSelect.innerHTML = '';
-  PROVIDER_MODELS[provider].forEach(model => {
-    const opt = document.createElement('option');
-    opt.value = model;
-    opt.textContent = model;
-    modelSelect.appendChild(opt);
-  });
-}
-function updateApiKeyLink(provider) {
-  apiKeyLink.href = PROVIDER_API_LINKS[provider];
-  apiKeyLink.textContent = 'Get your API key';
-}
-// Load settings from storage
-function loadSettings() {
-  chrome.storage.local.get(['provider', 'model', 'apiKey'], (data) => {
-    const provider = data.provider || 'openai';
-    providerSelect.value = provider;
-    populateModelDropdown(provider);
-    modelSelect.value = data.model || PROVIDER_MODELS[provider][0];
-    apiKeyInput.value = data.apiKey || '';
-    updateApiKeyLink(provider);
-  });
-}
-settingsBtn.onclick = () => {
-  loadSettings();
-  showSettingsModal();
-};
-cancelSettingsBtn.onclick = hideSettingsModal;
-providerSelect.onchange = () => {
-  populateModelDropdown(providerSelect.value);
-  updateApiKeyLink(providerSelect.value);
-};
-chatSettingsForm.onsubmit = (e) => {
-  e.preventDefault();
-  const provider = providerSelect.value;
-  const model = modelSelect.value;
-  const apiKey = apiKeyInput.value;
-  chrome.storage.local.set({ provider, model, apiKey }, () => {
-    settingsStatus.textContent = 'Settings saved!';
-    setTimeout(() => {
-      settingsStatus.textContent = '';
-      hideSettingsModal();
-      // Optionally, update chat logic here to use new settings immediately
-      // e.g., updateProvider(provider, model, apiKey);
-    }, 1000);
-  });
-}; 
+// Removed obsolete code for non-existent 'open-bubble' element
+// The chat bubble is automatically shown on pages when API keys are configured 

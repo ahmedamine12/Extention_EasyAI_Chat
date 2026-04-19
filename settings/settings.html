@@ -18,11 +18,15 @@
       <select id="provider" name="provider">
         <option value="openai">OpenAI</option>
         <option value="gemini">Gemini</option>
+        <option value="huggingface">Hugging Face</option>
       </select>
       <label for="apiKey">API Key:</label>
       <input type="password" id="apiKey" name="apiKey" placeholder="Enter your API key" required />
       <label for="model">Model:</label>
       <input type="text" id="model" name="model" placeholder="e.g. gpt-3.5-turbo or gemini-2.0-flash" />
+      <label for="promptPrefix">Prompt Style Prefix:</label>
+      <input type="text" id="promptPrefix" name="promptPrefix" placeholder="e.g. Give a simple, direct, resume answer. " />
+      <small style="color:#666; font-size:0.85em; display:block; margin-top:4px;">This text will be automatically added before every prompt you send.</small>
       <div class="toggle-group">
         <label><input type="checkbox" id="darkMode" name="darkMode"> Dark Mode</label>
         <label><input type="checkbox" id="chatHistory" name="chatHistory"> Enable Chat History</label>
@@ -31,6 +35,7 @@
       <div id="status"></div>
     </form>
   </div>
+  <script src="../utils/provider-config.js"></script>
   <script src="settings.js"></script>
 </body>
 </html> 

@@ -419,6 +419,21 @@
   top: 50%;
   transform: translate(-50%,-50%);
 }
+.mini-gpt-provider-icon.huggingface {
+  background: #FFD21E;
+  position: relative;
+}
+.mini-gpt-provider-icon.huggingface::after {
+  content: 'HF';
+  color: #000;
+  font-weight: bold;
+  font-size: 11px;
+  font-family: Arial, sans-serif;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%,-50%);
+}
 .mini-gpt-dark .mini-gpt-provider-selected, .mini-gpt-dark .mini-gpt-provider-options {
   background: #23272f !important;
   color: #f3f4f6 !important;
@@ -1905,4 +1920,61 @@ div:has(.mini-gpt-welcome-message) {
 .brand-accent {
   color: #10a37f !important;
   font-weight: 600;
+}
+
+/* Copy button styling */
+.mini-gpt-copy-btn {
+  position: absolute;
+  top: 6px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s, transform 0.15s;
+  z-index: 10;
+  padding: 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.mini-gpt-copy-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.05);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.mini-gpt-copy-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke: #4b5563;
+  transition: stroke 0.2s;
+}
+
+.mini-gpt-copy-btn:hover svg {
+  stroke: #2563eb;
+}
+
+/* Dark mode copy button */
+.mini-gpt-dark .mini-gpt-copy-btn {
+  background: rgba(35, 39, 47, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.mini-gpt-dark .mini-gpt-copy-btn:hover {
+  background: rgba(49, 52, 59, 1);
+  border-color: rgba(37, 99, 235, 0.3);
+}
+
+.mini-gpt-dark .mini-gpt-copy-btn svg {
+  stroke: #9ca3af;
+}
+
+.mini-gpt-dark .mini-gpt-copy-btn:hover svg {
+  stroke: #60a5fa;
 } 

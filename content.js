@@ -62,7 +62,10 @@ if (!window.__miniGptAgentInjected) {
       
       // Provider
       currentProvider: 'Current provider: ',
-      setApiKeyTooltip: 'Set your API key in Settings to enable this provider.'
+      setApiKeyTooltip: 'Set your API key in Settings to enable this provider.',
+      
+      // Copy
+      copyMessage: 'Copy message'
     },
     fr: {
       // Header
@@ -118,7 +121,10 @@ if (!window.__miniGptAgentInjected) {
       
       // Provider
       currentProvider: 'Fournisseur actuel : ',
-      setApiKeyTooltip: 'Configurez votre clé API dans les paramètres pour activer ce fournisseur.'
+      setApiKeyTooltip: 'Configurez votre clé API dans les paramètres pour activer ce fournisseur.',
+      
+      // Copy
+      copyMessage: 'Copier le message'
     }
   };
   
@@ -128,6 +134,32 @@ if (!window.__miniGptAgentInjected) {
   // Helper function to translate text
   function translate(key) {
     return t[key] || translations.en[key] || key;
+  }
+
+  const providerConfig = globalThis.EASYAI_PROVIDER_CONFIG || {};
+  const providerHelpers = globalThis.EASYAI_PROVIDER_HELPERS || {};
+  const pageHelpers = globalThis.EASYAI_PAGE_HELPERS || {};
+  const API_KEY_FIELDS = providerHelpers.getApiKeyFields
+    ? providerHelpers.getApiKeyFields()
+    : (providerConfig.apiKeyFields || ['apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface']);
+  const DEFAULT_PROMPT_PREFIX = providerConfig.defaultPromptPrefix || 'Give a simple, direct, resume answer. ';
+
+  function isLoginOrAuthPage() {
+    if (pageHelpers.isLoginOrAuthPage) {
+      return pageHelpers.isLoginOrAuthPage();
+    }
+    return false;
+  }
+
+  function hasAnyApiKey(settings) {
+    if (providerHelpers.hasAnyApiKey) {
+      return providerHelpers.hasAnyApiKey(settings);
+    }
+    return API_KEY_FIELDS.some((field) => settings[field] && settings[field].trim());
+  }
+
+  function getProviderKeys(callback) {
+    chrome.storage.local.get(API_KEY_FIELDS, callback);
   }
 
   const bubble = document.createElement('div');
@@ -210,8 +242,8 @@ if (!window.__miniGptAgentInjected) {
       return;
     }
     
-    chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini'], (data) => {
-      const hasKey = (data.apiKey_openai && data.apiKey_openai.trim()) || (data.apiKey_gemini && data.apiKey_gemini.trim());
+    getProviderKeys((data) => {
+      const hasKey = hasAnyApiKey(data);
       if (!hasKey) return; // Don't show bubble if no API key
       
       bubble.style.transition = 'none';
@@ -233,8 +265,8 @@ if (!window.__miniGptAgentInjected) {
       return;
     }
     
-    chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini'], (data) => {
-      const hasKey = (data.apiKey_openai && data.apiKey_openai.trim()) || (data.apiKey_gemini && data.apiKey_gemini.trim());
+    getProviderKeys((data) => {
+      const hasKey = hasAnyApiKey(data);
       if (!hasKey) return; // Don't show bubble if no API key
       
       // For immediate visibility without any transitions
@@ -257,8 +289,8 @@ if (!window.__miniGptAgentInjected) {
       hideBubble();
     } else {
       // Only show bubble if API key is available
-      chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini'], (data) => {
-        const hasKey = (data.apiKey_openai && data.apiKey_openai.trim()) || (data.apiKey_gemini && data.apiKey_gemini.trim());
+      getProviderKeys((data) => {
+        const hasKey = hasAnyApiKey(data);
         if (hasKey) {
           showBubble();
         }
@@ -318,6 +350,10 @@ if (!window.__miniGptAgentInjected) {
           <span class="mini-gpt-provider-icon gemini"></span>
           <span>Gemini</span>
         </li>
+        <li class="mini-gpt-provider-option" data-provider="huggingface" role="option">
+          <span class="mini-gpt-provider-icon huggingface"></span>
+          <span>Hugging Face</span>
+        </li>
       </ul>
     </div>
   `;
@@ -332,7 +368,12 @@ if (!window.__miniGptAgentInjected) {
 
   function setProviderUI(provider) {
     currentProvider = provider;
-    providerLabel.textContent = provider === 'openai' ? 'OpenAI' : 'Gemini';
+    const providerNames = {
+      'openai': 'OpenAI',
+      'gemini': 'Gemini',
+      'huggingface': 'Hugging Face'
+    };
+    providerLabel.textContent = providerNames[provider] || provider;
     providerIcon.className = 'mini-gpt-provider-icon ' + provider;
     providerBtn.setAttribute('aria-label', translate('currentProvider') + providerLabel.textContent);
     // Highlight selected in list
@@ -343,19 +384,26 @@ if (!window.__miniGptAgentInjected) {
 
   // API key check and enable/disable
   function updateProviderDropdown() {
-    chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini', 'provider'], (data) => {
+    chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface', 'provider'], (data) => {
       const openaiKey = data.apiKey_openai;
       const geminiKey = data.apiKey_gemini;
+      const huggingfaceKey = data.apiKey_huggingface;
       // Disable options without API key
       const openaiOption = providerList.querySelector('.mini-gpt-provider-option[data-provider="openai"]');
       const geminiOption = providerList.querySelector('.mini-gpt-provider-option[data-provider="gemini"]');
+      const huggingfaceOption = providerList.querySelector('.mini-gpt-provider-option[data-provider="huggingface"]');
       openaiOption.classList.toggle('disabled', !openaiKey);
       geminiOption.classList.toggle('disabled', !geminiKey);
+      huggingfaceOption.classList.toggle('disabled', !huggingfaceKey);
       openaiOption.title = openaiKey ? '' : translate('setApiKeyTooltip');
-      geminiOption.title = geminiKey ? '' : translate('setApiKeyTooltip');
+      // Add warning for Gemini free tier limits
+      geminiOption.title = geminiKey ? 
+        'Gemini free tier has strict rate limits. Consider OpenAI for better reliability.' : 
+        translate('setApiKeyTooltip');
+      huggingfaceOption.title = huggingfaceKey ? '' : translate('setApiKeyTooltip');
       // Set current provider
-      let provider = data.provider || (openaiKey ? 'openai' : geminiKey ? 'gemini' : 'openai');
-      if (!data[`apiKey_${provider}`]) provider = openaiKey ? 'openai' : geminiKey ? 'gemini' : 'openai';
+      let provider = data.provider || (openaiKey ? 'openai' : geminiKey ? 'gemini' : huggingfaceKey ? 'huggingface' : 'openai');
+      if (!data[`apiKey_${provider}`]) provider = openaiKey ? 'openai' : geminiKey ? 'gemini' : huggingfaceKey ? 'huggingface' : 'openai';
       setProviderUI(provider);
       // Disable button if no key
       providerBtn.disabled = !data[`apiKey_${provider}`];
@@ -413,7 +461,7 @@ if (!window.__miniGptAgentInjected) {
   });
   updateProviderDropdown();
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && (changes.apiKey_openai || changes.apiKey_gemini || changes.provider)) {
+    if (area === 'local' && (changes.apiKey_openai || changes.apiKey_gemini || changes.apiKey_huggingface || changes.provider)) {
       updateProviderDropdown();
     }
   });
@@ -801,8 +849,8 @@ if (!window.__miniGptAgentInjected) {
     
     if (!isChatVisible && !isFullscreen) {
       // Only show bubble if API key is available
-      chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini'], (data) => {
-        const hasKey = (data.apiKey_openai && data.apiKey_openai.trim()) || (data.apiKey_gemini && data.apiKey_gemini.trim());
+      getProviderKeys((data) => {
+        const hasKey = hasAnyApiKey(data);
         if (hasKey) {
           showBubbleInstant();
         }
@@ -856,6 +904,10 @@ if (!window.__miniGptAgentInjected) {
   function appendMessage(text, from) {
     const msg = document.createElement('div');
     msg.className = from === 'user' ? 'mini-gpt-msg-user' : 'mini-gpt-msg-bot';
+    
+    // Create message wrapper for copy button
+    msg.style.position = 'relative';
+    
     if (from === 'bot') {
       // Convert markdown to HTML for bot messages
       const formattedText = convertMarkdownToHTML(text);
@@ -881,6 +933,76 @@ if (!window.__miniGptAgentInjected) {
       msg.style.alignSelf = 'flex-start';
       msg.style.textAlign = 'left';
     }
+    
+    // Add copy button
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'mini-gpt-copy-btn';
+    copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+    copyBtn.title = translate('copyMessage') || 'Copy message';
+    copyBtn.setAttribute('aria-label', translate('copyMessage') || 'Copy message');
+    copyBtn.style.cssText = `
+      position: absolute;
+      top: 6px;
+      ${from === 'user' ? 'left: 6px;' : 'right: 6px;'}
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 6px;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s, background 0.2s;
+      z-index: 10;
+      padding: 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    `;
+    
+    // Show on hover
+    msg.addEventListener('mouseenter', () => {
+      copyBtn.style.opacity = '1';
+    });
+    msg.addEventListener('mouseleave', () => {
+      copyBtn.style.opacity = '0';
+    });
+    
+    // Copy functionality
+    copyBtn.onclick = async (e) => {
+      e.stopPropagation();
+      const textToCopy = from === 'bot' ? text : text; // Get plain text
+      try {
+        await navigator.clipboard.writeText(textToCopy);
+        // Show feedback
+        copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        copyBtn.style.background = '#10b981';
+        copyBtn.style.borderColor = '#10b981';
+        setTimeout(() => {
+          copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+          copyBtn.style.background = 'rgba(255, 255, 255, 0.9)';
+          copyBtn.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+        }, 1500);
+      } catch (err) {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        copyBtn.style.background = '#10b981';
+        setTimeout(() => {
+          copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+          copyBtn.style.background = 'rgba(255, 255, 255, 0.9)';
+        }, 1500);
+      }
+    };
+    
+    msg.appendChild(copyBtn);
     messagesDiv.appendChild(msg);
     
     // Scroll to the top of the new message instead of bottom
@@ -899,7 +1021,7 @@ if (!window.__miniGptAgentInjected) {
 
   function getSettings() {
     return new Promise(resolve => {
-      chrome.storage.local.get(['provider', 'apiKey_openai', 'apiKey_gemini'], resolve);
+      chrome.storage.local.get(['provider', 'apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface'], resolve);
     });
   }
   function setSettings(settings) {
@@ -908,7 +1030,19 @@ if (!window.__miniGptAgentInjected) {
     });
   }
 
-  const DEFAULT_MODELS = { openai: 'gpt-3.5-turbo', gemini: 'gemini-2.0-flash' };
+  const DEFAULT_MODELS = providerConfig.defaultModels || {
+    openai: 'gpt-3.5-turbo',
+    gemini: 'gemini-2.0-flash',
+    huggingface: 'meta-llama/Llama-3.1-8B-Instruct'
+  };
+
+  const HF_MODELS = providerConfig.hfModels || [
+    'meta-llama/Llama-3.1-8B-Instruct',
+    'mistralai/Mistral-7B-Instruct-v0.2',
+    'google/gemma-7b-it',
+    'microsoft/Phi-3-mini-4k-instruct',
+    'Qwen/Qwen2.5-7B-Instruct'
+  ];
 
   async function updateProviderUI() {
     const settings = await getSettings();
@@ -1168,14 +1302,22 @@ if (!window.__miniGptAgentInjected) {
   function sendPrompt() {
     const question = input.value.trim();
     const provider = currentProvider;
-    const model = DEFAULT_MODELS[provider];
-    chrome.storage.local.get([`apiKey_${provider}`], (settings) => {
+    // For Hugging Face, we'll use the first model (auto-switching happens in background)
+    const model = provider === 'huggingface' ? HF_MODELS[0] : DEFAULT_MODELS[provider];
+    chrome.storage.local.get([`apiKey_${provider}`, 'promptPrefix'], (settings) => {
       const apiKey = settings[`apiKey_${provider}`] || '';
       if (!apiKey) {
         appendMessage(translate('pleaseSetApiKey'), 'bot');
         return;
       }
-      appendMessage(question, 'user');
+      
+      // Get prompt prefix from settings (default: simple, direct, resume answer)
+      const promptPrefix = settings.promptPrefix || DEFAULT_PROMPT_PREFIX;
+      
+      // Prepend the style keywords to the question automatically
+      const enhancedQuestion = promptPrefix + question;
+      
+      appendMessage(question, 'user'); // Show original question to user
       input.value = '';
       input.style.height = 'auto';
       // Add animated loader as bot message
@@ -1193,14 +1335,17 @@ if (!window.__miniGptAgentInjected) {
       updateSendStopBtn();
       streamingBotMsg = null;
       streamingBotText = '';
-      // Send conversation context along with the question
+      // Send enhanced question with prefix to LLM
+      // For Hugging Face, include models list for auto-switching
+      const hfModels = provider === 'huggingface' ? HF_MODELS : undefined;
       window.postMessage({ 
         type: 'MINI_GPT_ASK', 
-        question, 
+        question: enhancedQuestion, // Send enhanced question with prefix
         provider, 
         model, 
         apiKey,
-        conversationContext: conversationContext // Include full conversation history
+        conversationContext: conversationContext, // Include full conversation history
+        hfModels: hfModels // Include HF models for auto-switching
       }, '*');
     });
   }
@@ -1236,7 +1381,8 @@ if (!window.__miniGptAgentInjected) {
         provider: event.data.provider,
         model: event.data.model,
         apiKey: event.data.apiKey,
-        conversationContext: event.data.conversationContext || [] // Pass conversation context
+        conversationContext: event.data.conversationContext || [], // Pass conversation context
+        hfModels: event.data.hfModels // Pass Hugging Face models list
       });
     }
   });
@@ -1280,8 +1426,6 @@ if (!window.__miniGptAgentInjected) {
   setInterval(applyDarkMode, 2000);
 
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyDarkMode);
-  // Also re-check on page background changes
-  setInterval(applyDarkMode, 2000);
 
   // --- Modernized Chat Header Bar ---
   const header = chatContainer.querySelector('.mini-gpt-header');
@@ -1570,13 +1714,16 @@ if (!window.__miniGptAgentInjected) {
     // Send to backend directly
     const provider = currentProvider;
     const model = DEFAULT_MODELS[provider];
-    chrome.storage.local.get([`apiKey_${provider}`], (settings) => {
+    chrome.storage.local.get([`apiKey_${provider}`, 'promptPrefix'], (settings) => {
       const apiKey = settings[`apiKey_${provider}`] || '';
       if (!apiKey) {
         appendMessage(translate('pleaseSetApiKey'), 'bot');
         return;
       }
-      window.postMessage({ type: 'MINI_GPT_ASK', question: prompt, provider, model, apiKey }, '*');
+      // Apply prompt prefix to quick actions too
+      const promptPrefix = settings.promptPrefix || DEFAULT_PROMPT_PREFIX;
+      const enhancedPrompt = promptPrefix + prompt;
+      window.postMessage({ type: 'MINI_GPT_ASK', question: enhancedPrompt, provider, model, apiKey }, '*');
     });
   }
   function showQuickActionsDropdown() {
@@ -2060,8 +2207,8 @@ if (!window.__miniGptAgentInjected) {
       chatContainer.style.display = 'none'; // Optionally hide chat too
     } else {
       // Use instant show when exiting fullscreen for better UX, but only if API key is available
-      chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini'], (data) => {
-        const hasKey = (data.apiKey_openai && data.apiKey_openai.trim()) || (data.apiKey_gemini && data.apiKey_gemini.trim());
+      getProviderKeys((data) => {
+        const hasKey = hasAnyApiKey(data);
         if (hasKey) {
           showBubbleInstant();
         }
@@ -2088,8 +2235,8 @@ if (!window.__miniGptAgentInjected) {
       return;
     }
     
-    chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini'], (data) => {
-      const hasKey = (data.apiKey_openai && data.apiKey_openai.trim()) || (data.apiKey_gemini && data.apiKey_gemini.trim());
+    getProviderKeys((data) => {
+      const hasKey = hasAnyApiKey(data);
       const bubble = document.getElementById('mini-gpt-bubble');
       const chat = document.getElementById('mini-gpt-chat-container');
       if (hasKey) {
@@ -2116,7 +2263,7 @@ if (!window.__miniGptAgentInjected) {
   updateBubbleVisibility();
   // Listen for storage changes
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && (changes.apiKey_openai || changes.apiKey_gemini)) {
+    if (area === 'local' && (changes.apiKey_openai || changes.apiKey_gemini || changes.apiKey_huggingface)) {
       updateBubbleVisibility();
     }
   });
@@ -2161,18 +2308,6 @@ if (!window.__miniGptAgentInjected) {
     }, 100);
   };
 
-  function stopDrag() {
-    if (!isDragging) return;
-    
-    isDragging = false;
-    dragIndicator.style.cursor = 'grab';
-    
-    // Remove event listeners
-    document.removeEventListener('mousemove', onDrag);
-    document.removeEventListener('mouseup', stopDrag);
-    document.removeEventListener('mouseleave', stopDrag);
-  }
-  
   // Bubble drag functions
   function startBubbleDrag(e) {
     isBubbleDragging = true;
@@ -2324,171 +2459,4 @@ if (!window.__miniGptAgentInjected) {
     }
   });
 
-  // Helper function to check if current page is a login/authorization page
-  function isLoginOrAuthPage() {
-    const url = window.location.href.toLowerCase();
-    const hostname = window.location.hostname.toLowerCase();
-    const pathname = window.location.pathname.toLowerCase();
-    
-    // Common login/authorization domains and paths
-    const loginDomains = [
-      'login.microsoftonline.com',
-      'auth0.com',
-      'okta.com',
-      'onelogin.com',
-      'sso.company.com',
-      'login.company.com',
-      'auth.company.com',
-      'oauth.com',
-      'oauth2.com'
-    ];
-    
-    // Google accounts - only specific login/authorization paths
-    if (hostname.includes('accounts.google.com')) {
-      const googleLoginPaths = [
-        '/signin',
-        '/signin/',
-        '/login',
-        '/login/',
-        '/oauth',
-        '/oauth/',
-        '/oauth2',
-        '/oauth2/',
-        '/authorize',
-        '/authorize/',
-        '/connect',
-        '/connect/',
-        '/authenticate',
-        '/authenticate/',
-        '/signup',
-        '/signup/',
-        '/register',
-        '/register/',
-        '/password',
-        '/password/',
-        '/reset',
-        '/reset/',
-        '/forgot',
-        '/forgot/',
-        '/chooser',
-        '/chooser/',
-        '/accountchooser',
-        '/accountchooser/'
-      ];
-      
-      // Only hide on actual login/authorization paths, not on regular Google services
-      if (googleLoginPaths.some(path => pathname.includes(path))) {
-        return true;
-      }
-      
-      // Check for OAuth authorization flows
-      if (url.includes('oauth') || url.includes('authorize') || url.includes('signin')) {
-        return true;
-      }
-      
-      // Allow Gmail and other Google services
-      return false;
-    }
-    
-    const loginPaths = [
-      '/signin',
-      '/signin/',
-      '/login',
-      '/login/',
-      '/auth',
-      '/auth/',
-      '/oauth',
-      '/oauth/',
-      '/oauth2',
-      '/oauth2/',
-      '/authorize',
-      '/authorize/',
-      '/connect',
-      '/connect/',
-      '/authenticate',
-      '/authenticate/',
-      '/signup',
-      '/signup/',
-      '/register',
-      '/register/',
-      '/password',
-      '/password/',
-      '/reset',
-      '/reset/',
-      '/forgot',
-      '/forgot/'
-    ];
-    
-    const loginKeywords = [
-      'signin',
-      'login',
-      'auth',
-      'oauth',
-      'authorize',
-      'connect',
-      'authenticate',
-      'signup',
-      'register',
-      'password',
-      'reset',
-      'forgot',
-      'connexion',
-      'se connecter',
-      's\'identifier',
-      'authentification'
-    ];
-    
-    // Check if current domain is a login domain
-    if (loginDomains.some(domain => hostname.includes(domain))) {
-      return true;
-    }
-    
-    // Check if current path contains login keywords
-    if (loginPaths.some(path => pathname.includes(path))) {
-      return true;
-    }
-    
-    // Check if URL contains login keywords (but be more careful with Google services)
-    if (loginKeywords.some(keyword => url.includes(keyword))) {
-      // Additional check for Google services - don't hide on Gmail, Drive, etc.
-      if (hostname.includes('google.com') && !pathname.includes('/signin') && !pathname.includes('/oauth')) {
-        return false;
-      }
-      return true;
-    }
-    
-    // Check page title for login indicators
-    const title = document.title.toLowerCase();
-    if (loginKeywords.some(keyword => title.includes(keyword))) {
-      // Additional check for Google services
-      if (hostname.includes('google.com') && !pathname.includes('/signin') && !pathname.includes('/oauth')) {
-        return false;
-      }
-      return true;
-    }
-    
-    // Check for common login form elements
-    const loginFormSelectors = [
-      'input[type="password"]',
-      'form[action*="login"]',
-      'form[action*="signin"]',
-      'form[action*="auth"]',
-      '.login-form',
-      '.signin-form',
-      '.auth-form',
-      '#login',
-      '#signin',
-      '#auth'
-    ];
-    
-        if (loginFormSelectors.some(selector => document.querySelector(selector))) {
-      // Additional check for Google services - don't hide on Gmail, Drive, etc.
-      if (hostname.includes('google.com') && !pathname.includes('/signin') && !pathname.includes('/oauth')) {
-        return false;
-      }
-      return true;
-    }
-    
-    return false;
-  }
 } 

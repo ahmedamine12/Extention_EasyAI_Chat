@@ -81,6 +81,29 @@
             </div>
             <a href="https://aistudio.google.com/apikey" id="popupApiKeyLinkGemini" target="_blank" rel="noopener">Get your API key</a>
           </div>
+          <div class="provider-block">
+            <div class="provider-label-row">
+              <span class="provider-logo" title="Hugging Face" aria-label="Hugging Face">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="14" r="12" fill="#FFD21E"/><text x="14" y="19" text-anchor="middle" font-size="13" fill="#000" font-family="Arial" font-weight="bold">HF</text></svg>
+              </span>
+              <label for="popupApiKeyHuggingFace">Hugging Face Token</label>
+            </div>
+            <div class="input-eye-wrapper">
+              <input type="password" id="popupApiKeyHuggingFace" placeholder="Enter your Hugging Face token (hf_...)" aria-label="Hugging Face Token" />
+              <button type="button" class="toggle-eye" id="toggleHuggingFaceEye" aria-label="Show/Hide Hugging Face token">
+                <svg id="huggingface-eye-show" width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <path d="M1 12C3.5 7 8.5 4 12 4s8.5 3 11 8c-2.5 5-7.5 8-11 8s-8.5-3-11-8z" stroke="#aaa" stroke-width="2"/>
+                  <circle cx="12" cy="12" r="3" stroke="#aaa" stroke-width="2"/>
+                </svg>
+                <svg id="huggingface-eye-hide" width="22" height="22" viewBox="0 0 24 24" fill="none" style="display:none;">
+                  <path d="M1 12C3.5 7 8.5 4 12 4s8.5 3 11 8c-2.5 5-7.5 8-11 8s-8.5-3-11-8z" stroke="#aaa" stroke-width="2"/>
+                  <circle cx="12" cy="12" r="3" stroke="#aaa" stroke-width="2"/>
+                  <line x1="4" y1="20" x2="20" y2="4" stroke="#aaa" stroke-width="2"/>
+                </svg>
+              </button>
+            </div>
+            <a href="https://huggingface.co/settings/tokens" id="popupApiKeyLinkHuggingFace" target="_blank" rel="noopener">Get your token</a>
+          </div>
           <div class="settings-modal-actions">
             <button type="submit" id="popupSaveBtn" class="primary-btn">Save</button>
             <button type="button" class="settings-modal-close secondary-btn">Return</button>
@@ -91,6 +114,7 @@
       </div>
     </div>
   </div>
+  <script src="../utils/provider-config.js"></script>
   <script src="popup.js"></script>
 </body>
 </html> 

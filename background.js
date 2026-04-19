@@ -1,9 +1,25 @@
 // IMPORTANT: Add your Gemini API key below before using the extension.
 // Get your key at https://aistudio.google.com/app/apikey
 
-// Using local Ollama API - 100% FREE!
-// Make sure Ollama is running: ollama serve
-// And you have a model: ollama pull llama2:7b
+importScripts('utils/provider-config.js', 'utils/provider-helpers.js');
+
+const providerConfig = globalThis.EASYAI_PROVIDER_CONFIG || {};
+const providerHelpers = globalThis.EASYAI_PROVIDER_HELPERS || {};
+const getDefaultModelForProvider = providerHelpers.getDefaultModelForProvider || ((provider) => {
+  const defaults = providerConfig.defaultModels || {};
+  return defaults[provider] || defaults.openai || 'gpt-3.5-turbo';
+});
+const resolveProviderFromSettings = providerHelpers.resolveProviderFromSettings || ((settings) => {
+  let provider = settings.provider;
+  if (!provider || !settings[`apiKey_${provider}`]) {
+    if (settings.apiKey_openai) provider = 'openai';
+    else if (settings.apiKey_gemini) provider = 'gemini';
+    else if (settings.apiKey_huggingface) provider = 'huggingface';
+    else provider = 'openai';
+  }
+  return provider;
+});
+const DEFAULT_PROMPT_PREFIX = providerConfig.defaultPromptPrefix || 'Give a simple, direct, resume answer. ';
 
 // Map to store AbortController per tab
 const abortControllers = {};
@@ -15,6 +31,63 @@ function isExtensionContextValid() {
   } catch (e) {
     return false;
   }
+}
+
+// Unified error message formatter for all providers
+function formatErrorMessage(errorMsg, provider = 'openai') {
+  const providerNames = {
+    'openai': 'OpenAI',
+    'gemini': 'Gemini',
+    'huggingface': 'Hugging Face'
+  };
+  const providerLinks = {
+    'openai': 'https://platform.openai.com/account/billing',
+    'gemini': 'https://ai.google.dev/pricing',
+    'huggingface': 'https://huggingface.co/pricing'
+  };
+  const apiKeyHints = {
+    'openai': 'Make sure it starts with "sk-".',
+    'gemini': 'Check your API key in Settings.',
+    'huggingface': 'Make sure it starts with "hf_".'
+  };
+  
+  const providerName = providerNames[provider] || provider;
+  const providerLink = providerLinks[provider] || '';
+  const apiKeyHint = apiKeyHints[provider] || 'Check your API key in Settings.';
+  
+  let userFriendlyError = '';
+  
+  // Invalid API key
+  if (errorMsg.includes('Invalid API key') || errorMsg.includes('Incorrect API key') || 
+      errorMsg.includes('API key') && errorMsg.includes('invalid') || 
+      errorMsg.includes('401') || errorMsg.includes('Unauthorized')) {
+    userFriendlyError = `❌ Invalid API Key\n\nPlease check your ${providerName} API key in Settings. ${apiKeyHint}`;
+  }
+  // Quota/Rate limit errors
+  else if (errorMsg.includes('quota') || errorMsg.includes('Quota exceeded') || 
+           errorMsg.includes('rate limit') || errorMsg.includes('rate-limits') ||
+           errorMsg.includes('429') || errorMsg.includes('Rate limit')) {
+    userFriendlyError = `⚠️ Quota/Rate Limit Exceeded\n\n` +
+      `Your ${providerName} quota or rate limit has been reached.\n\n` +
+      `Options:\n` +
+      `• Wait a few minutes and try again\n` +
+      `• Switch to ${provider === 'openai' ? 'Gemini' : 'OpenAI'} provider\n` +
+      `• Upgrade your plan at: ${providerLink}`;
+  }
+  // Billing/Payment errors
+  else if (errorMsg.includes('billing') || errorMsg.includes('payment') || 
+           errorMsg.includes('402') || errorMsg.includes('403') ||
+           errorMsg.includes('insufficient_quota')) {
+    userFriendlyError = `❌ Billing/Quota Issue\n\n` +
+      `${errorMsg}\n\n` +
+      `Check your ${providerName} account at: ${providerLink}`;
+  }
+  // Generic errors
+  else {
+    userFriendlyError = `❌ Error: ${errorMsg}`;
+  }
+  
+  return userFriendlyError;
 }
 
 // Provider API functions (inlined)
@@ -34,7 +107,7 @@ async function askOpenAI({ apiKey, model, prompt, tabId, conversationContext = [
   // Add current user message
   messages.push({ role: 'user', content: prompt });
   
-  try {
+    try {
     const res = await fetch(url, {
       method: 'POST',
       headers: {
@@ -49,6 +122,24 @@ async function askOpenAI({ apiKey, model, prompt, tabId, conversationContext = [
       }),
       signal: controller.signal
     });
+    
+    // Check for HTTP errors
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: { message: `HTTP ${res.status}: ${res.statusText}` } }));
+      const errorMsg = errorData.error?.message || `HTTP ${res.status}: ${res.statusText}`;
+      const userFriendlyError = formatErrorMessage(errorMsg, 'openai');
+      
+      if (isExtensionContextValid() && tabId) {
+        try {
+          chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: userFriendlyError, done: true });
+        } catch (e) {
+          // console.log('Tab message failed:', e);
+        }
+      }
+      if (tabId) delete abortControllers[tabId];
+      return { ok: false, answer: userFriendlyError };
+    }
+    
     if (!res.body) throw new Error('No response body');
     const reader = res.body.getReader();
     let buffer = '';
@@ -77,6 +168,23 @@ async function askOpenAI({ apiKey, model, prompt, tabId, conversationContext = [
             }
             try {
               const parsed = JSON.parse(data);
+              
+              // Check for errors in streaming response
+              if (parsed.error) {
+                const errorMsg = parsed.error.message || 'Unknown error';
+                const userFriendlyError = formatErrorMessage(errorMsg, 'openai');
+                
+                if (isExtensionContextValid() && tabId) {
+                  try {
+                    chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: userFriendlyError, done: true });
+                  } catch (e) {
+                    // console.log('Tab message failed:', e);
+                  }
+                }
+                if (tabId) delete abortControllers[tabId];
+                return { ok: false, answer: userFriendlyError };
+              }
+              
               const delta = parsed.choices?.[0]?.delta?.content || '';
               if (delta) {
                 answer += delta;
@@ -89,7 +197,11 @@ async function askOpenAI({ apiKey, model, prompt, tabId, conversationContext = [
                 }
               }
             } catch (e) {
-              // ignore parse errors
+              // ignore parse errors for empty lines
+              if (data && data.trim() && data !== '[DONE]') {
+                // If it's not empty and not [DONE], might be an error
+                // console.log('Parse error:', e, 'Data:', data);
+              }
             }
           }
         }
@@ -116,14 +228,18 @@ async function askOpenAI({ apiKey, model, prompt, tabId, conversationContext = [
       }
       return { ok: false, answer: 'Request stopped by user.' };
     }
+    
+    // Format error message using unified formatter
+    const errorMessage = formatErrorMessage(e.message || 'Network error.', 'openai');
+    
     if (isExtensionContextValid() && tabId) {
       try {
-    chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Error: ' + (e.message || 'Network error.') + ']', done: true });
+    chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: errorMessage, done: true });
       } catch (e) {
         // console.log('Tab message failed:', e); // Replaced with silent handling
       }
     }
-    return { ok: false, answer: e.message || 'Network error.' };
+    return { ok: false, answer: errorMessage };
   }
 }
 
@@ -153,10 +269,26 @@ async function askGemini({ apiKey, model, prompt, tabId, conversationContext = [
     if (tabId) delete abortControllers[tabId];
     const data = await res.json();
     let answer = '';
+    
+    // Check for errors in response
+    if (data.error) {
+      const errorMsg = data.error.message || '';
+      const userFriendlyError = formatErrorMessage(errorMsg, 'gemini');
+      
+      if (isExtensionContextValid() && tabId) {
+        try {
+          chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: userFriendlyError, done: true });
+        } catch (e) {
+          // console.log('Tab message failed:', e);
+        }
+      }
+      return { ok: false, answer: userFriendlyError };
+    }
+    
     if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
       answer = data.candidates[0].content.parts[0].text;
     } else {
-      answer = data.error?.message || 'No answer from Gemini.';
+      answer = 'No answer from Gemini.';
     }
     if (isExtensionContextValid() && tabId) {
       try {
@@ -178,15 +310,317 @@ async function askGemini({ apiKey, model, prompt, tabId, conversationContext = [
       }
       return { ok: false, answer: 'Request stopped by user.' };
     }
+    // Format error message using unified formatter
+    const errorMessage = formatErrorMessage(e.message || 'Network error.', 'gemini');
+    
     if (isExtensionContextValid() && tabId) {
       try {
-    chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Error: ' + (e.message || 'Network error.') + ']', done: true });
+    chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: errorMessage, done: true });
       } catch (e) {
         // console.log('Tab message failed:', e); // Replaced with silent handling
       }
     }
-    return { ok: false, answer: e.message || 'Network error.' };
+    return { ok: false, answer: errorMessage };
   }
+}
+
+// Predefined Hugging Face models for auto-switching
+const HF_MODELS = providerConfig.hfModels || [
+  'meta-llama/Llama-3.1-8B-Instruct',
+  'mistralai/Mistral-7B-Instruct-v0.2',
+  'google/gemma-7b-it',
+  'microsoft/Phi-3-mini-4k-instruct',
+  'Qwen/Qwen2.5-7B-Instruct'
+];
+
+async function askHuggingFace({ apiKey, model, prompt, tabId, conversationContext = [], hfModels = HF_MODELS }) {
+  const controller = new AbortController();
+  if (tabId) abortControllers[tabId] = controller;
+  
+  // Build conversation history for Hugging Face
+  let fullPrompt = prompt;
+  
+  // Add conversation context if available
+  if (conversationContext && conversationContext.length > 0) {
+    const contextText = conversationContext.map(msg => {
+      const role = msg.role === 'user' ? 'User' : 'Assistant';
+      return `${role}: ${msg.content}`;
+    }).join('\n\n');
+    fullPrompt = `Previous conversation:\n${contextText}\n\nUser: ${prompt}`;
+  }
+  
+  // Try models in order until one works
+  const modelsToTry = hfModels || HF_MODELS;
+  let lastError = null;
+  
+  for (let i = 0; i < modelsToTry.length; i++) {
+    const currentModel = modelsToTry[i];
+    // Use router endpoint with Responses API format: router.huggingface.co/v1/responses
+    const url = `https://router.huggingface.co/v1/responses`;
+    
+    try {
+      // Add timeout to prevent hanging requests
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, 30000); // 30 second timeout
+      
+      // Build input text from conversation context and current prompt
+      let inputText = prompt;
+      if (conversationContext && conversationContext.length > 0) {
+        const contextText = conversationContext.map(msg => {
+          const role = msg.role === 'user' ? 'User' : 'Assistant';
+          return `${role}: ${msg.content}`;
+        }).join('\n\n');
+        inputText = `Previous conversation:\n${contextText}\n\nUser: ${prompt}`;
+      }
+      
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: currentModel,
+          instructions: "You are a helpful assistant. Give simple, direct, resume answers.",
+          input: inputText
+        }),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      // Check if model is loading (503 status)
+      if (res.status === 503) {
+        // Model is loading, wait a bit and try again
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        
+        // Add timeout for retry too
+        const retryTimeoutId = setTimeout(() => {
+          controller.abort();
+        }, 30000);
+        
+        const retryRes = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            inputs: fullPrompt,
+            parameters: {
+              max_new_tokens: 512,
+              temperature: 0.7,
+              return_full_text: false
+            }
+          }),
+          signal: controller.signal
+        });
+        
+        clearTimeout(retryTimeoutId);
+        
+        if (retryRes.ok) {
+          const data = await retryRes.json();
+          let answer = '';
+          
+          if (Array.isArray(data) && data[0]?.generated_text) {
+            answer = data[0].generated_text.trim();
+          } else if (data.generated_text) {
+            answer = data.generated_text.trim();
+          } else if (data.error) {
+            // If this model has an error, try next one
+            lastError = data.error;
+            continue;
+          }
+          
+          if (answer && isExtensionContextValid() && tabId) {
+            try {
+              chrome.tabs.sendMessage(tabId, { 
+                type: 'MINI_GPT_ANSWER_PART', 
+                answerPart: answer, 
+                done: true,
+                modelUsed: currentModel 
+              });
+            } catch (e) {
+              // console.log('Tab message failed:', e);
+            }
+          }
+          if (tabId) delete abortControllers[tabId];
+          return { ok: true, answer, modelUsed: currentModel };
+        }
+      }
+      
+      // Parse response (read body only once)
+      const responseText = await res.text().catch(() => '');
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch {
+        responseData = { error: responseText || `HTTP ${res.status}` };
+      }
+      
+      // Extract answer from response (Responses API format)
+      let answer = '';
+      if (responseData.output) {
+        // Responses API format - primary format
+        answer = responseData.output.trim();
+      } else if (responseData.choices && responseData.choices[0]?.message?.content) {
+        // Chat completion format (fallback)
+        answer = responseData.choices[0].message.content.trim();
+      } else if (Array.isArray(responseData) && responseData[0]?.generated_text) {
+        // Raw inference format (fallback)
+        answer = responseData[0].generated_text.trim();
+      } else if (responseData.generated_text) {
+        // Raw inference format (fallback)
+        answer = responseData.generated_text.trim();
+      }
+      
+      // If we got valid data, use it (even if status is not ok or there's a deprecation warning)
+      if (answer) {
+        if (isExtensionContextValid() && tabId) {
+          try {
+            chrome.tabs.sendMessage(tabId, { 
+              type: 'MINI_GPT_ANSWER_PART', 
+              answerPart: answer, 
+              done: true,
+              modelUsed: currentModel 
+            });
+          } catch (e) {}
+        }
+        if (tabId) delete abortControllers[tabId];
+        return { ok: true, answer, modelUsed: currentModel };
+      }
+      
+      // No valid data - handle errors
+      if (!res.ok) {
+        // Check for authentication errors
+        if (res.status === 401 || res.status === 403 || 
+            responseText.includes('Invalid username or password') ||
+            responseText.includes('authentication') ||
+            responseText.includes('Unauthorized') ||
+            responseText.includes('Forbidden')) {
+          // Authentication error - token might be invalid or missing permissions
+          const authError = `⚠️ Hugging Face Authentication Error\n\n` +
+            `Your API token is not valid or doesn't have the required permissions.\n\n` +
+            `To fix this:\n` +
+            `1. Go to https://huggingface.co/settings/tokens\n` +
+            `2. Create a new "Fine-grained" token\n` +
+            `3. Make sure to check:\n` +
+            `   ✓ "Make calls to Inference Providers"\n` +
+            `   ✓ "Make calls to your Inference Endpoints"\n` +
+            `4. Copy the token (starts with "hf_")\n` +
+            `5. Paste it in the extension settings\n\n` +
+            `Note: The token must have "Inference Providers" permission enabled.`;
+          
+          if (isExtensionContextValid() && tabId) {
+            try {
+              chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: authError, done: true });
+            } catch (e) {}
+          }
+          if (tabId) delete abortControllers[tabId];
+          return { ok: false, answer: authError };
+        }
+        
+        // Check for deprecation message
+        if (responseText.includes('router.huggingface.co') || responseText.includes('no longer supported')) {
+          // Deprecation error - the endpoint is truly deprecated
+          // Since all models use the same endpoint, they'll all fail
+          // Show helpful error and stop trying
+          const deprecationError = `⚠️ Hugging Face API Endpoint Deprecated\n\n` +
+            `The Inference API endpoint has been updated. The router endpoint format is not yet documented.\n\n` +
+            `Current status: All models are failing because the endpoint is deprecated.\n\n` +
+            `Options:\n` +
+            `• Wait for Hugging Face to document the router endpoint\n` +
+            `• Use OpenAI or Gemini providers for now\n` +
+            `• Check Hugging Face documentation for updates\n\n` +
+            `We'll update the extension once the router endpoint format is available.`;
+          
+          if (isExtensionContextValid() && tabId) {
+            try {
+              chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: deprecationError, done: true });
+            } catch (e) {}
+          }
+          if (tabId) delete abortControllers[tabId];
+          return { ok: false, answer: deprecationError };
+        }
+        
+        // If quota/rate limit error, try next model
+        if (res.status === 429 || res.status === 403 || responseData.error?.includes('quota')) {
+          lastError = responseData.error || `HTTP ${res.status}`;
+          continue;
+        }
+        
+        // Other errors - show to user
+        const errorMsg = responseData.error || `HTTP ${res.status}: ${res.statusText}`;
+        const userFriendlyError = formatErrorMessage(errorMsg, 'huggingface');
+        
+        if (isExtensionContextValid() && tabId) {
+          try {
+            chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: userFriendlyError, done: true });
+          } catch (e) {}
+        }
+        if (tabId) delete abortControllers[tabId];
+        return { ok: false, answer: userFriendlyError };
+      }
+      
+      // Response is ok but no generated_text - might be an error in the data
+      if (responseData.error) {
+        lastError = responseData.error;
+        continue; // Try next model
+      }
+      
+      // No answer and no error - unexpected response format
+      lastError = 'Unexpected response format';
+      continue;
+      
+    } catch (e) {
+      if (e.name === 'AbortError') {
+        if (isExtensionContextValid() && tabId) {
+          try {
+            chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Request timeout or stopped]', done: true });
+          } catch (e) {
+            // console.log('Tab message failed:', e);
+          }
+        }
+        if (tabId) delete abortControllers[tabId];
+        return { ok: false, answer: 'Request timeout or stopped by user.' };
+      }
+      
+      // Network, timeout, or other error - try next model
+      const errorMsg = e.message || 'Network error';
+      lastError = errorMsg;
+      
+      // If timeout or network error, show progress and try next model
+      if (errorMsg.includes('timeout') || errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError')) {
+        if (isExtensionContextValid() && tabId && i < modelsToTry.length - 1) {
+          try {
+            chrome.tabs.sendMessage(tabId, { 
+              type: 'MINI_GPT_ANSWER_PART', 
+              answerPart: `⏳ Model ${i + 1} timed out, trying next model...\n`, 
+              done: false 
+            });
+          } catch (e) {}
+        }
+      }
+      continue;
+    }
+  }
+  
+  // All models failed
+  if (tabId) delete abortControllers[tabId];
+  const finalError = formatErrorMessage(
+    `All models failed. Last error: ${lastError || 'Unknown error'}. Please try again later.`,
+    'huggingface'
+  );
+  
+  if (isExtensionContextValid() && tabId) {
+    try {
+      chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: finalError, done: true });
+    } catch (e) {
+      // console.log('Tab message failed:', e);
+    }
+  }
+  return { ok: false, answer: finalError };
 }
 
 // Language detection for context menus
@@ -272,18 +706,15 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   
   const action = MINI_GPT_ACTIONS.find(a => info.menuItemId === `mini-gpt-${a.id}`);
   if (action && info.selectionText) {
-    const question = action.prefix + info.selectionText;
     // Fetch provider and API keys from storage
-    safeStorageGet(['provider', 'apiKey_openai', 'apiKey_gemini'], (data) => {
+    safeStorageGet(['provider', 'apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface', 'promptPrefix'], (data) => {
+      // Apply prompt prefix to context menu actions too
+      const promptPrefix = data.promptPrefix || DEFAULT_PROMPT_PREFIX;
+      const question = promptPrefix + action.prefix + info.selectionText;
       // Determine provider: use last-used, or fallback to one with a key
-      let provider = data.provider;
-      if (!provider || !data[`apiKey_${provider}`]) {
-        if (data.apiKey_openai) provider = 'openai';
-        else if (data.apiKey_gemini) provider = 'gemini';
-        else provider = 'openai'; // fallback
-      }
+      const provider = resolveProviderFromSettings(data);
       const apiKey = data[`apiKey_${provider}`] || '';
-      const model = provider === 'openai' ? 'gpt-3.5-turbo' : 'gemini-2.0-flash';
+      const model = getDefaultModelForProvider(provider);
       
       try {
       chrome.scripting.executeScript({
@@ -356,7 +787,9 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
             }
           }
           // Send provider/model/apiKey with the message
-          window.postMessage({ type: 'MINI_GPT_ASK', question: q, provider, model, apiKey }, '*');
+          // For Hugging Face, include models list for auto-switching
+          const hfModels = provider === 'huggingface' ? HF_MODELS : undefined;
+          window.postMessage({ type: 'MINI_GPT_ASK', question: q, provider, model, apiKey, hfModels }, '*');
         },
           args: [question, provider, model, apiKey, action.id, info.selectionText, isFrench]
       });
@@ -377,16 +810,21 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   
   if (msg.type === 'MINI_GPT_ASK') {
     const provider = msg.provider || 'openai';
-    const model = msg.model || (provider === 'openai' ? 'gpt-3.5-turbo' : 'gemini-2.0-flash');
+    const model = msg.model || getDefaultModelForProvider(provider);
     const apiKey = msg.apiKey || '';
     const tabId = sender.tab && sender.tab.id;
     const conversationContext = msg.conversationContext || []; // Get conversation context
+    const hfModels = msg.hfModels || HF_MODELS; // Get Hugging Face models list
+    const providerHandlers = {
+      openai: () => askOpenAI({ apiKey, model, prompt: msg.question, tabId, conversationContext }),
+      gemini: () => askGemini({ apiKey, model, prompt: msg.question, tabId, conversationContext }),
+      huggingface: () => askHuggingFace({ apiKey, model, prompt: msg.question, tabId, conversationContext, hfModels })
+    };
     (async () => {
       try {
-        if (provider === 'openai') {
-          await askOpenAI({ apiKey, model, prompt: msg.question, tabId, conversationContext });
-        } else if (provider === 'gemini') {
-          await askGemini({ apiKey, model, prompt: msg.question, tabId, conversationContext });
+        const handler = providerHandlers[provider];
+        if (handler) {
+          await handler();
         } else {
           if (isExtensionContextValid() && tabId) {
             try {
@@ -399,7 +837,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       } catch (e) {
         if (isExtensionContextValid() && tabId) {
           try {
-        chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '[Error: ' + (e.message || 'Unknown error.') + ']', done: true });
+            const provider = msg.provider || 'openai';
+            const errorMessage = formatErrorMessage(e.message || 'Unknown error.', provider);
+            chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: errorMessage, done: true });
           } catch (e) {
             // console.log('Tab message failed:', e); // Replaced with silent handling
           }

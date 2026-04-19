@@ -6,6 +6,7 @@ const isFrench = browserLanguage.startsWith('fr');
 const translations = {
   en: {
     settingsTitle: 'EasyAI Chat Settings',
+    settings: 'Settings',
     effortlessChat: 'Effortless AI chat, anywhere.',
     provider: 'Provider:',
     apiKey: 'API Key:',
@@ -22,6 +23,7 @@ const translations = {
   },
   fr: {
     settingsTitle: 'Paramètres EasyAI Chat',
+    settings: 'Paramètres',
     effortlessChat: 'Chat IA sans effort, partout.',
     provider: 'Fournisseur :',
     apiKey: 'Clé API :',
@@ -40,6 +42,8 @@ const translations = {
 
 // Get current language strings
 const t = translations[isFrench ? 'fr' : 'en'];
+const providerConfig = globalThis.EASYAI_PROVIDER_CONFIG || {};
+const DEFAULT_PROMPT_PREFIX = providerConfig.defaultPromptPrefix || 'Give a simple, direct, resume answer. ';
 
 // Helper function to translate text
 function translate(key) {
@@ -103,27 +107,71 @@ document.addEventListener('DOMContentLoaded', async () => {
   const provider = document.getElementById('provider');
   const apiKey = document.getElementById('apiKey');
   const model = document.getElementById('model');
+  const promptPrefix = document.getElementById('promptPrefix');
   const darkMode = document.getElementById('darkMode');
   const chatHistory = document.getElementById('chatHistory');
 
-  // Load settings
-  const settings = await storage.get(['provider', 'apiKey', 'model', 'darkMode', 'chatHistory']);
+  // Load settings - handle both old format (apiKey) and new format (apiKey_*)
+  const settings = await storage.get(['provider', 'apiKey', 'apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface', 'model', 'promptPrefix', 'darkMode', 'chatHistory']);
   if (settings.provider) provider.value = settings.provider;
-  if (settings.apiKey) apiKey.value = settings.apiKey;
+  
+  // Support both old and new storage format
+  if (settings.apiKey) {
+    // Old format - migrate to new format based on provider
+    if (settings.provider === 'openai') {
+      apiKey.value = settings.apiKey;
+      await storage.set({ apiKey_openai: settings.apiKey });
+    } else if (settings.provider === 'gemini') {
+      apiKey.value = settings.apiKey;
+      await storage.set({ apiKey_gemini: settings.apiKey });
+    } else if (settings.provider === 'huggingface') {
+      apiKey.value = settings.apiKey;
+      await storage.set({ apiKey_huggingface: settings.apiKey });
+    }
+  } else {
+    // New format - get key based on current provider
+    const providerKey = `apiKey_${settings.provider || 'openai'}`;
+    apiKey.value = settings[providerKey] || '';
+  }
+  
   if (settings.model) model.value = settings.model;
+  if (settings.promptPrefix) promptPrefix.value = settings.promptPrefix;
+  else promptPrefix.value = DEFAULT_PROMPT_PREFIX; // Default value
   darkMode.checked = settings.darkMode === 'true' || settings.darkMode === true;
   chatHistory.checked = settings.chatHistory === 'true' || settings.chatHistory === true;
 
+  // Update API key field when provider changes
+  provider.addEventListener('change', async () => {
+    const providerKey = `apiKey_${provider.value}`;
+    const allSettings = await storage.get(['apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface']);
+    apiKey.value = allSettings[providerKey] || '';
+    
+    // Update placeholder based on provider
+    if (provider.value === 'openai') {
+      apiKey.placeholder = 'Enter your OpenAI API key (sk-...)';
+    } else if (provider.value === 'gemini') {
+      apiKey.placeholder = 'Enter your Gemini API key';
+    } else if (provider.value === 'huggingface') {
+      apiKey.placeholder = 'Enter your Hugging Face token (hf_...)';
+    }
+  });
+  
   // Save settings
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    await storage.set({
+    const providerKey = `apiKey_${provider.value}`;
+    const settingsToSave = {
       provider: provider.value,
-      apiKey: apiKey.value,
       model: model.value,
+      promptPrefix: promptPrefix.value || DEFAULT_PROMPT_PREFIX,
       darkMode: darkMode.checked,
       chatHistory: chatHistory.checked
-    });
+    };
+    
+    // Save API key with provider-specific key
+    settingsToSave[providerKey] = apiKey.value;
+    
+    await storage.set(settingsToSave);
     status.textContent = translate('settingsSaved');
     setTimeout(() => status.textContent = '', 1800);
     // Notify all tabs to update the chat bubble dynamically
