@@ -65,7 +65,13 @@ if (!window.__miniGptAgentInjected) {
       setApiKeyTooltip: 'Set your API key in Settings to enable this provider.',
       
       // Copy
-      copyMessage: 'Copy message'
+      copyMessage: 'Copy message',
+      
+      // Selection toolbar
+      toolbarExplain: 'Explain',
+      toolbarSummarize: 'Summarize',
+      toolbarCorrect: 'Correct',
+      toolbarTranslate: 'Translate'
     },
     fr: {
       // Header
@@ -124,7 +130,13 @@ if (!window.__miniGptAgentInjected) {
       setApiKeyTooltip: 'Configurez votre clé API dans les paramètres pour activer ce fournisseur.',
       
       // Copy
-      copyMessage: 'Copier le message'
+      copyMessage: 'Copier le message',
+      
+      // Selection toolbar
+      toolbarExplain: 'Expliquer',
+      toolbarSummarize: 'Résumer',
+      toolbarCorrect: 'Corriger',
+      toolbarTranslate: 'Traduire'
     }
   };
   
@@ -165,7 +177,7 @@ if (!window.__miniGptAgentInjected) {
   const bubble = document.createElement('div');
   bubble.id = 'mini-gpt-bubble';
   bubble.innerHTML = `
-    <img src="${chrome.runtime.getURL('icons/easyChat.png')}" alt="EasyAI Chat" style="width:52px; height:52px; border-radius:8px;">
+    <img src="${chrome.runtime.getURL('icons/easyChat.png')}" alt="EasyAI Chat" style="width:42px; height:42px; border-radius:0; pointer-events:none; object-fit:contain;">
     <div class="tooltip">EasyAI Chat</div>
   `;
   bubble.style.position = 'fixed';
@@ -177,12 +189,13 @@ if (!window.__miniGptAgentInjected) {
   bubble.style.pointerEvents = 'auto';
   
   const originalBubblePosition = { bottom: '32px', right: '32px' };
-  bubble.style.width = '110px';
-  bubble.style.height = '110px';
-  bubble.style.background = 'rgba(255,255,255,0.95)';
-  bubble.style.borderRadius = '50%';
-  bubble.style.border = '2px solid rgba(0,0,0,0.1)';
-  bubble.style.boxShadow = '0 8px 32px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)';
+  bubble.style.width = '48px';
+  bubble.style.height = '48px';
+  bubble.style.background = 'none';
+  bubble.style.borderRadius = '0';
+  bubble.style.border = 'none';
+  bubble.style.boxShadow = 'none';
+  bubble.style.overflow = 'visible';
   bubble.style.display = 'flex';
   bubble.style.alignItems = 'center';
   bubble.style.justifyContent = 'center';
@@ -203,16 +216,7 @@ if (!window.__miniGptAgentInjected) {
   chatContainer.style.bottom = '92px';
   chatContainer.style.left = '';
   chatContainer.style.top = '';
-  chatContainer.style.width = '400px';
-  chatContainer.style.maxWidth = '98vw';
-  chatContainer.style.minWidth = '320px';
-  chatContainer.style.maxHeight = '60vh';
-  chatContainer.style.background = '#fff';
-  chatContainer.style.borderRadius = '16px';
-  chatContainer.style.boxShadow = '0 4px 24px rgba(0,0,0,0.18)';
   chatContainer.style.zIndex = '999999';
-  chatContainer.style.overflow = 'hidden';
-  chatContainer.style.flexDirection = 'column';
   chatContainer.style.visibility = 'hidden';
   chatContainer.style.opacity = '0';
   
@@ -301,11 +305,9 @@ if (!window.__miniGptAgentInjected) {
   chatContainer.innerHTML = `
     <div class="mini-gpt-header mini-gpt-header-modern">
       <div class="mini-gpt-header-title">
-        <span>
-          <img src="${chrome.runtime.getURL('icons/easyChat.png')}" alt="${translate('title')}" style="width:28px; height:28px; margin-right:8px; border-radius:4px; vertical-align:middle;">
-          EasyAI <span class="brand-accent">Chat</span>
-        </span>
-        <span class="mini-gpt-drag-indicator" title="${translate('dragToMove')}" style="margin-left:8px; opacity:0.6; font-size:12px;">⋮⋮</span>
+        <img src="${chrome.runtime.getURL('icons/easyChat.png')}" alt="${translate('title')}" class="mini-gpt-header-logo">
+        <span class="mini-gpt-header-text">EasyAI <span class="brand-accent">Chat</span></span>
+        <span class="mini-gpt-drag-indicator" title="${translate('dragToMove')}">⋮⋮</span>
       </div>
       <div class="mini-gpt-actions-bar">
         <button class="mini-gpt-action-btn" id="mini-gpt-history-btn" title="${translate('showHistory')}" aria-label="${translate('showHistory')}">
@@ -313,6 +315,9 @@ if (!window.__miniGptAgentInjected) {
         </button>
         <button class="mini-gpt-action-btn" id="mini-gpt-newchat-btn" title="${translate('newChat')}" aria-label="${translate('newChat')}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        </button>
+        <button class="mini-gpt-action-btn" id="mini-gpt-darkmode-btn" title="Toggle dark mode" aria-label="Toggle dark mode">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </button>
         <button class="mini-gpt-action-btn" id="mini-gpt-close" title="${translate('closeChat')}" aria-label="${translate('closeChat')}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -927,11 +932,13 @@ if (!window.__miniGptAgentInjected) {
       msg.style.color = '#2563eb';
       msg.style.alignSelf = 'flex-end';
       msg.style.textAlign = 'right';
+      msg.style.padding = '8px 12px 8px 36px';
     } else {
       msg.style.background = '#f5f5f7';
       msg.style.color = '#222';
       msg.style.alignSelf = 'flex-start';
       msg.style.textAlign = 'left';
+      msg.style.padding = '8px 36px 8px 12px';
     }
     
     // Add copy button
@@ -1110,6 +1117,50 @@ if (!window.__miniGptAgentInjected) {
   let streamingBotMsg = null;
   let streamingBotText = '';
 
+  // Helper: add a copy button to a bot message element
+  function addCopyBtnToMsg(msgEl, plainText) {
+    msgEl.style.position = 'relative';
+    msgEl.style.paddingRight = '36px';
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'mini-gpt-copy-btn';
+    copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+    copyBtn.title = translate('copyMessage') || 'Copy message';
+    copyBtn.setAttribute('aria-label', translate('copyMessage') || 'Copy message');
+    copyBtn.style.cssText = `
+      position: absolute; top: 6px; right: 6px;
+      background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 6px; width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; opacity: 0; transition: opacity 0.2s, background 0.2s;
+      z-index: 10; padding: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    `;
+    msgEl.addEventListener('mouseenter', () => { copyBtn.style.opacity = '1'; });
+    msgEl.addEventListener('mouseleave', () => { copyBtn.style.opacity = '0'; });
+    copyBtn.onclick = async (e) => {
+      e.stopPropagation();
+      try {
+        await navigator.clipboard.writeText(plainText);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = plainText;
+        ta.style.cssText = 'position:fixed;opacity:0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+      copyBtn.style.background = '#10b981';
+      copyBtn.style.borderColor = '#10b981';
+      setTimeout(() => {
+        copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+        copyBtn.style.background = 'rgba(255, 255, 255, 0.9)';
+        copyBtn.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+      }, 1500);
+    };
+    msgEl.appendChild(copyBtn);
+  }
+
   // Listen for streaming answer parts from background
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === 'MINI_GPT_ANSWER_PART') {
@@ -1135,51 +1186,50 @@ if (!window.__miniGptAgentInjected) {
           
           // Check if response seems incomplete
           const isIncomplete = checkIfResponseIncomplete(streamingBotText);
+          streamingBotMsg.innerHTML = convertMarkdownToHTML(streamingBotText);
           if (isIncomplete) {
             const incompleteIndicator = document.createElement('div');
             incompleteIndicator.className = 'mini-gpt-incomplete-indicator';
-            incompleteIndicator.innerHTML = `
-              <div style="margin-top: 8px; padding: 8px; background: rgba(245, 158, 11, 0.1); border-radius: 6px; border-left: 3px solid #f59e0b;">
-                <span style="color: #f59e0b; font-size: 0.8em; font-style: italic; display: block; margin-bottom: 4px;">
-                  [Response may be incomplete]
-                </span>
-                <button class="mini-gpt-continue-btn" style="background: #f59e0b; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; cursor: pointer; margin-right: 8px;">
-                  Continue
-                </button>
-                <button class="mini-gpt-regenerate-btn" style="background: #6b7280; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; cursor: pointer;">
-                  Regenerate
-                </button>
-              </div>
-            `;
+            incompleteIndicator.style.cssText = 'margin-top: 8px; padding: 8px; background: rgba(245, 158, 11, 0.1); border-radius: 6px; border-left: 3px solid #f59e0b;';
             
-            // Add event listeners for the buttons
-            const continueBtn = incompleteIndicator.querySelector('.mini-gpt-continue-btn');
-            const regenerateBtn = incompleteIndicator.querySelector('.mini-gpt-regenerate-btn');
+            const label = document.createElement('span');
+            label.style.cssText = 'color: #f59e0b; font-size: 0.8em; font-style: italic; display: block; margin-bottom: 4px;';
+            label.textContent = '[Response may be incomplete]';
             
-            continueBtn.onclick = () => {
-              // Send a continuation prompt
-              const continuationPrompt = "Please continue your previous response.";
-              input.value = continuationPrompt;
+            const continueBtn = document.createElement('button');
+            continueBtn.textContent = 'Continue';
+            continueBtn.style.cssText = 'background: #f59e0b; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; cursor: pointer; margin-right: 8px;';
+            continueBtn.addEventListener('click', () => {
+              incompleteIndicator.remove();
+              input.value = 'Please continue your previous response from where you left off.';
               sendPrompt();
-            };
+            });
             
-            regenerateBtn.onclick = () => {
-              // Remove the incomplete message and regenerate
-              streamingBotMsg.remove();
-              streamingBotMsg = null;
-              streamingBotText = '';
-              // Get the last user message and regenerate
+            const regenerateBtn = document.createElement('button');
+            regenerateBtn.textContent = 'Regenerate';
+            regenerateBtn.style.cssText = 'background: #6b7280; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; cursor: pointer;';
+            regenerateBtn.addEventListener('click', () => {
+              const botMsg = incompleteIndicator.closest('.mini-gpt-msg-bot');
+              if (botMsg) botMsg.remove();
+              // Remove last bot entry from session and context
+              const lastBotIdx = currentSession.messages.map(m => m.role).lastIndexOf('bot');
+              if (lastBotIdx !== -1) currentSession.messages.splice(lastBotIdx, 1);
+              const lastCtxIdx = conversationContext.map(m => m.role).lastIndexOf('assistant');
+              if (lastCtxIdx !== -1) conversationContext.splice(lastCtxIdx, 1);
               const lastUserMsg = currentSession.messages.filter(m => m.role === 'user').pop();
               if (lastUserMsg) {
                 input.value = lastUserMsg.text;
                 sendPrompt();
               }
-            };
+            });
             
-            streamingBotMsg.innerHTML = convertMarkdownToHTML(streamingBotText) + incompleteIndicator.outerHTML;
-          } else {
-            streamingBotMsg.innerHTML = convertMarkdownToHTML(streamingBotText);
+            incompleteIndicator.appendChild(label);
+            incompleteIndicator.appendChild(continueBtn);
+            incompleteIndicator.appendChild(regenerateBtn);
+            streamingBotMsg.appendChild(incompleteIndicator);
           }
+          // Add copy button to streamed message
+          addCopyBtnToMsg(streamingBotMsg, streamingBotText);
           streamingBotMsg = null;
           streamingBotText = '';
         }
@@ -1253,47 +1303,25 @@ if (!window.__miniGptAgentInjected) {
   
   // Function to detect incomplete responses
   function checkIfResponseIncomplete(text) {
-    if (!text || text.length < 10) return false;
+    if (!text || text.length < 50) return false;
     
     const trimmedText = text.trim();
-    const lastChar = trimmedText.slice(-1);
-    const lastSentence = trimmedText.split('.').pop().trim();
     
-    // Check for common incomplete patterns
-    const incompletePatterns = [
-      /just a moment/i,
-      /one moment/i,
-      /wait/i,
-      /loading/i,
-      /checking/i,
-      /searching/i,
-      /looking up/i,
-      /finding/i,
-      /getting/i,
-      /retrieving/i,
-      /processing/i,
-      /analyzing/i,
-      /calculating/i,
-      /please wait/i,
-      /stand by/i,
-      /hold on/i
-    ];
+    // Only flag as incomplete if it ends mid-sentence with a comma or ellipsis
+    if (/[,]$/.test(trimmedText)) return true;
+    if (/\.{3}$|…$/.test(trimmedText)) return true;
     
-    // Check if ends with incomplete phrases
-    for (const pattern of incompletePatterns) {
-      if (pattern.test(lastSentence)) {
+    // Flag if it ends with a colon followed by nothing (was about to list something)
+    if (/:$/.test(trimmedText)) return true;
+    
+    // Flag if it clearly got cut off mid-word (ends with a letter after a very long response)
+    // Only for long responses where max_tokens was likely hit
+    if (trimmedText.length > 1500 && /[a-zA-Z]$/.test(trimmedText) && !/[.!?:;)\]"']$/.test(trimmedText)) {
+      // Check the last line isn't a list item or heading (those can end without punctuation)
+      const lastLine = trimmedText.split('\n').pop().trim();
+      if (lastLine.length > 40 && !/^[-*•\d#]/.test(lastLine)) {
         return true;
       }
-    }
-    
-    // Check if ends with ellipsis or incomplete punctuation
-    if (lastChar === '...' || lastChar === '…' || lastChar === ',') {
-      return true;
-    }
-    
-    // Check if the last sentence seems incomplete (no period, question mark, or exclamation)
-    if (!/[.!?]/.test(lastChar) && lastSentence.length > 5) {
-      return true;
     }
     
     return false;
@@ -1392,40 +1420,85 @@ if (!window.__miniGptAgentInjected) {
     if (msg.type === 'MINI_GPT_ANSWER') {
       window.postMessage({ type: 'MINI_GPT_ANSWER', answer: msg.answer }, '*');
     }
+    // Sync dark mode from popup toggle
+    if (msg.type === 'EASYAI_DARKMODE_UPDATED') {
+      applyDarkMode(msg.darkMode === true);
+    }
+    // Toggle everything via keyboard shortcut (hide/show bubble + chat)
+    if (msg.type === 'EASYAI_TOGGLE_CHAT') {
+      const isChatVisible = chatContainer.style.display === 'flex' && chatContainer.style.visibility === 'visible';
+      const isBubbleVisible = bubble.style.display === 'flex' && bubble.style.visibility === 'visible';
+
+      if (isChatVisible || isBubbleVisible) {
+        // Something is visible → hide everything
+        chatContainer.style.display = 'none';
+        chatContainer.style.visibility = 'hidden';
+        chatContainer.style.opacity = '0';
+        bubble.style.display = 'none';
+        bubble.style.visibility = 'hidden';
+        bubble.style.opacity = '0';
+        if (isChatVisible) trySaveCurrentSession();
+      } else {
+        // Everything hidden → restore bubble (or chat if it was open before)
+        showBubbleInstant();
+      }
+    }
   });
 
-  // Improved dark mode detection: system or page background
-  function isPageDark() {
-    // Check the computed background color of the page
-    let el = document.body;
-    // Try to find the most relevant background (body or html)
-    while (el && getComputedStyle(el).backgroundColor === 'rgba(0, 0, 0, 0)') {
-      el = el.parentElement;
-    }
-    const bg = el ? getComputedStyle(el).backgroundColor : 'rgb(255,255,255)';
-    const rgb = bg.match(/\d+/g);
-    if (!rgb || rgb.length < 3) return false;
-    
-    // Calculate brightness (higher values = lighter)
-    const brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
-    
-    // Consider dark if brightness is below 128 (more accurate than checking individual channels)
-    return brightness < 128;
-  }
-  function applyDarkMode() {
-    if (isPageDark()) {
-      chatContainer.classList.add('mini-gpt-dark');
-      bubble.classList.add('mini-gpt-dark');
-    } else {
-      chatContainer.classList.remove('mini-gpt-dark');
-      bubble.classList.remove('mini-gpt-dark');
-    }
-  }
-  applyDarkMode();
-  // Re-check every 2 seconds in case the page theme changes dynamically
-  setInterval(applyDarkMode, 2000);
+  // --- Chat Resize Handle (top-left corner) ---
+  const resizeHandle = document.createElement('div');
+  resizeHandle.id = 'easyai-resize-handle';
+  resizeHandle.title = 'Drag to resize';
+  resizeHandle.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="11" y1="1" x2="1" y2="11"/><line x1="11" y1="5" x2="5" y2="11"/><line x1="11" y1="9" x2="9" y2="11"/></svg>`;
+  chatContainer.appendChild(resizeHandle);
 
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyDarkMode);
+  let isResizing = false;
+  let resizeStartX, resizeStartY, resizeStartW, resizeStartH, resizeStartLeft, resizeStartTop;
+
+  resizeHandle.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    isResizing = true;
+    const rect = chatContainer.getBoundingClientRect();
+    resizeStartX = e.clientX;
+    resizeStartY = e.clientY;
+    resizeStartW = rect.width;
+    resizeStartH = rect.height;
+    resizeStartLeft = rect.left;
+    resizeStartTop = rect.top;
+    document.body.style.cursor = 'nwse-resize';
+    document.body.style.userSelect = 'none';
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isResizing) return;
+    // Dragging top-left corner: moving left/up = bigger, right/down = smaller
+    const dx = resizeStartX - e.clientX;
+    const dy = resizeStartY - e.clientY;
+    const newW = Math.max(320, Math.min(resizeStartW + dx, window.innerWidth - 20));
+    const newH = Math.max(300, Math.min(resizeStartH + dy, window.innerHeight - 20));
+
+    chatContainer.style.setProperty('width', newW + 'px', 'important');
+    chatContainer.style.setProperty('height', newH + 'px', 'important');
+    chatContainer.style.setProperty('max-height', newH + 'px', 'important');
+    chatContainer.style.setProperty('min-height', newH + 'px', 'important');
+    // Adjust position so bottom-right stays anchored
+    chatContainer.style.setProperty('left', (resizeStartLeft - dx) + 'px', 'important');
+    chatContainer.style.setProperty('top', (resizeStartTop - dy) + 'px', 'important');
+    chatContainer.style.setProperty('right', 'auto', 'important');
+    chatContainer.style.setProperty('bottom', 'auto', 'important');
+    // Also allow messages area to fill
+    const msgArea = chatContainer.querySelector('#mini-gpt-messages');
+    if (msgArea) msgArea.style.setProperty('max-height', 'none', 'important');
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (isResizing) {
+      isResizing = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+  });
 
   // --- Modernized Chat Header Bar ---
   const header = chatContainer.querySelector('.mini-gpt-header');
@@ -1452,6 +1525,7 @@ if (!window.__miniGptAgentInjected) {
 
   // History button
   const historyBtn = document.createElement('button');
+  historyBtn.className = 'mini-gpt-action-btn';
   historyBtn.id = 'mini-gpt-history-btn';
   historyBtn.title = translate('showHistoryTooltip');
   historyBtn.setAttribute('aria-label', translate('showHistoryAria'));
@@ -1468,6 +1542,7 @@ if (!window.__miniGptAgentInjected) {
 
   // New Chat button
   const newChatBtn = document.createElement('button');
+  newChatBtn.className = 'mini-gpt-action-btn';
   newChatBtn.id = 'mini-gpt-newchat-btn';
   newChatBtn.title = translate('newChatTooltip');
   newChatBtn.setAttribute('aria-label', translate('newChatAria'));
@@ -1482,8 +1557,28 @@ if (!window.__miniGptAgentInjected) {
   newChatBtn.onmouseleave = () => newChatBtn.style.background = 'none';
   actionsBar.appendChild(newChatBtn);
 
+  // Dark mode toggle button
+  const darkModeBtn = document.createElement('button');
+  darkModeBtn.className = 'mini-gpt-action-btn';
+  darkModeBtn.id = 'mini-gpt-darkmode-btn';
+  darkModeBtn.title = 'Toggle dark mode';
+  darkModeBtn.setAttribute('aria-label', 'Toggle dark mode');
+  // Sun icon (shown when in dark mode — click to go light)
+  const sunIcon = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+  // Moon icon (shown when in light mode — click to go dark)
+  const moonIcon = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+  darkModeBtn.innerHTML = moonIcon;
+  darkModeBtn.style.background = 'none';
+  darkModeBtn.style.border = 'none';
+  darkModeBtn.style.padding = '6px';
+  darkModeBtn.style.borderRadius = '8px';
+  darkModeBtn.style.cursor = 'pointer';
+  darkModeBtn.style.transition = 'background 0.18s';
+  actionsBar.appendChild(darkModeBtn);
+
   // Close button
   const closeBtn = document.createElement('button');
+  closeBtn.className = 'mini-gpt-action-btn';
   closeBtn.id = 'mini-gpt-close';
   closeBtn.setAttribute('aria-label', translate('closeChatAria'));
   closeBtn.title = translate('closeChatTooltip');
@@ -1499,7 +1594,7 @@ if (!window.__miniGptAgentInjected) {
   actionsBar.appendChild(closeBtn);
 
   // Keyboard accessibility
-  [historyBtn, newChatBtn, closeBtn].forEach(btn => {
+  [historyBtn, newChatBtn, darkModeBtn, closeBtn].forEach(btn => {
     btn.tabIndex = 0;
     btn.onkeydown = (e) => {
       if (e.key === 'Enter' || e.key === ' ') btn.click();
@@ -1507,7 +1602,7 @@ if (!window.__miniGptAgentInjected) {
   });
 
   // Update action bar button styles for compact, title-matching icons
-  [historyBtn, newChatBtn, closeBtn].forEach(btn => {
+  [historyBtn, newChatBtn, darkModeBtn, closeBtn].forEach(btn => {
     btn.style.width = '28px';
     btn.style.height = '28px';
     btn.style.padding = '2px';
@@ -1545,6 +1640,40 @@ if (!window.__miniGptAgentInjected) {
 
   // Insert the modern action bar into the header
   header.appendChild(actionsBar);
+
+  // Manual dark mode toggle (must be after button creation)
+  let isDarkMode = false;
+  
+  function applyDarkMode(dark) {
+    isDarkMode = dark;
+    if (dark) {
+      chatContainer.classList.add('mini-gpt-dark');
+      bubble.classList.add('mini-gpt-dark');
+      selToolbar.classList.add('mini-gpt-dark');
+      darkModeBtn.innerHTML = sunIcon;
+    } else {
+      chatContainer.classList.remove('mini-gpt-dark');
+      bubble.classList.remove('mini-gpt-dark');
+      selToolbar.classList.remove('mini-gpt-dark');
+      darkModeBtn.innerHTML = moonIcon;
+    }
+    // Update button icon colors after mode change
+    [historyBtn, newChatBtn, darkModeBtn, closeBtn].forEach(btn => {
+      const svg = btn.querySelector('svg');
+      if (svg) svg.style.stroke = dark ? '#e8f0fe' : '#23272f';
+    });
+    // Save preference
+    chrome.storage.local.set({ darkMode: dark });
+  }
+  
+  // Load saved preference, default to light
+  chrome.storage.local.get(['darkMode'], (data) => {
+    applyDarkMode(data.darkMode === true);
+  });
+  
+  darkModeBtn.onclick = () => {
+    applyDarkMode(!isDarkMode);
+  };
 
   // Attach event listeners
   historyBtn.onclick = showHistoryPanel;
@@ -2194,6 +2323,173 @@ if (!window.__miniGptAgentInjected) {
 
   document.body.appendChild(bubble);
   document.body.appendChild(chatContainer);
+
+  // --- Floating Selection Toolbar ---
+  const selToolbar = document.createElement('div');
+  selToolbar.id = 'easyai-sel-toolbar';
+  selToolbar.style.display = 'none';
+  selToolbar.innerHTML = `
+    <button data-action="explain" title="${translate('toolbarExplain')}">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>${translate('toolbarExplain')}</span>
+    </button>
+    <button data-action="summarize" title="${translate('toolbarSummarize')}">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="11" y2="18"/></svg>
+      <span>${translate('toolbarSummarize')}</span>
+    </button>
+    <button data-action="correct" title="${translate('toolbarCorrect')}">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      <span>${translate('toolbarCorrect')}</span>
+    </button>
+    <button data-action="translate" title="${translate('toolbarTranslate')}">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/></svg>
+      <span>${translate('toolbarTranslate')}</span>
+    </button>
+  `;
+  document.body.appendChild(selToolbar);
+
+  let selToolbarVisible = false;
+
+  function hideSelToolbar() {
+    selToolbar.style.display = 'none';
+    selToolbar.style.opacity = '0';
+    selToolbarVisible = false;
+  }
+
+  function showSelToolbar(x, y) {
+    selToolbar.style.display = 'flex';
+    // Position: above the selection, centered
+    const rect = selToolbar.getBoundingClientRect();
+    const tw = rect.width || 240;
+    let left = x - tw / 2;
+    let top = y - 48;
+    // Keep within viewport
+    if (left < 8) left = 8;
+    if (left + tw > window.innerWidth - 8) left = window.innerWidth - tw - 8;
+    if (top < 8) top = y + 24; // flip below if too close to top
+    selToolbar.style.left = left + 'px';
+    selToolbar.style.top = top + 'px';
+    requestAnimationFrame(() => { selToolbar.style.opacity = '1'; });
+    selToolbarVisible = true;
+  }
+
+  function sendSelectionPrompt(action, selectedText) {
+    const prompts = {
+      explain: `Explain the following text in simple terms:\n\n"${selectedText}"`,
+      summarize: `Summarize the following text concisely:\n\n"${selectedText}"`,
+      correct: `Correct any grammar, spelling, or style issues in the following text. Show the corrected version and briefly note what you changed:\n\n"${selectedText}"`,
+      translate: isFrench
+        ? `Translate the following text to English:\n\n"${selectedText}"`
+        : `Translate the following text to French:\n\n"${selectedText}"`
+    };
+    const labels = {
+      explain: translate('toolbarExplain'),
+      summarize: translate('toolbarSummarize'),
+      correct: translate('toolbarCorrect'),
+      translate: translate('toolbarTranslate')
+    };
+
+    // Open chat if not visible
+    const isChatVisible = chatContainer.style.display === 'flex' && chatContainer.style.visibility === 'visible';
+    if (!isChatVisible) {
+      resetSession();
+      chatContainer.style.display = 'flex';
+      chatContainer.style.visibility = 'visible';
+      chatContainer.style.opacity = '1';
+      hideBubble();
+    }
+
+    // Show user-friendly label + snippet
+    const snippet = selectedText.length > 80 ? selectedText.slice(0, 80) + '…' : selectedText;
+    appendMessage(`${labels[action]}: "${snippet}"`, 'user');
+
+    // Send prompt
+    const provider = currentProvider;
+    const model = provider === 'huggingface' ? HF_MODELS[0] : DEFAULT_MODELS[provider];
+    chrome.storage.local.get([`apiKey_${provider}`, 'promptPrefix'], (settings) => {
+      const apiKey = settings[`apiKey_${provider}`] || '';
+      if (!apiKey) {
+        appendMessage(translate('pleaseSetApiKey'), 'bot');
+        return;
+      }
+      const promptPrefix = settings.promptPrefix || DEFAULT_PROMPT_PREFIX;
+      const fullPrompt = promptPrefix + prompts[action];
+
+      // Loader
+      const loader = document.createElement('div');
+      loader.className = 'mini-gpt-msg-bot';
+      loader.setAttribute('aria-label', translate('thinking'));
+      loader.innerHTML = `<span class='mini-gpt-loader'><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span></span>`;
+      messagesDiv.appendChild(loader);
+      setTimeout(() => loader.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+      requestInProgress = true;
+      input.disabled = true;
+      updateSendStopBtn();
+      streamingBotMsg = null;
+      streamingBotText = '';
+
+      const hfModels = provider === 'huggingface' ? HF_MODELS : undefined;
+      window.postMessage({
+        type: 'MINI_GPT_ASK',
+        question: fullPrompt,
+        provider,
+        model,
+        apiKey,
+        conversationContext: conversationContext,
+        hfModels
+      }, '*');
+    });
+  }
+
+  // Toolbar button clicks
+  selToolbar.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-action]');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const sel = window.getSelection();
+    const text = sel ? sel.toString().trim() : '';
+    if (!text) return;
+    hideSelToolbar();
+    sel.removeAllRanges();
+    sendSelectionPrompt(action, text);
+  });
+
+  // Show toolbar on text selection (mouseup)
+  document.addEventListener('mouseup', (e) => {
+    // Don't show inside our own UI
+    if (e.target.closest('#mini-gpt-chat-container') ||
+        e.target.closest('#mini-gpt-bubble') ||
+        e.target.closest('#easyai-sel-toolbar')) return;
+
+    setTimeout(() => {
+      const sel = window.getSelection();
+      const text = sel ? sel.toString().trim() : '';
+      if (text.length < 3) {
+        hideSelToolbar();
+        return;
+      }
+      // Get selection position (viewport coords for position:fixed)
+      const range = sel.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top;
+      showSelToolbar(cx, cy);
+    }, 10);
+  });
+
+  // Hide toolbar when clicking elsewhere or pressing Escape
+  document.addEventListener('mousedown', (e) => {
+    if (selToolbarVisible && !e.target.closest('#easyai-sel-toolbar')) {
+      // Small delay to let the click on a toolbar button register first
+      setTimeout(() => {
+        const sel = window.getSelection();
+        if (!sel || !sel.toString().trim()) hideSelToolbar();
+      }, 150);
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && selToolbarVisible) hideSelToolbar();
+  });
 
   // Hide bubble and chat in fullscreen mode
   function handleFullscreenChange() {

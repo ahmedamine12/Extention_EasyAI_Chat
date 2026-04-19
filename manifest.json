@@ -42,6 +42,15 @@
     "48": "icons/easyChat.png",
     "128": "icons/easyChat.png"
   },
+  "commands": {
+    "toggle-chat": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+E",
+        "mac": "Command+Shift+E"
+      },
+      "description": "Toggle EasyAI Chat"
+    }
+  },
   "web_accessible_resources": [
     {
       "resources": ["icons/easyChat.png"],

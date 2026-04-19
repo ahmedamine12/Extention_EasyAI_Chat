@@ -4,38 +4,39 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EasyAI Chat Settings</title>
-  <link rel="stylesheet" href="settings.css">
+  <style>
+    body {
+      font-family: 'Inter','Segoe UI',system-ui,sans-serif;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; margin: 0;
+      background: #f5f6fa; color: #23272f;
+    }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0f1117; color: #f3f4f6; }
+      .card { background: #1a1d25; border-color: #2d3039; }
+    }
+    .card {
+      text-align: center; padding: 40px 32px;
+      background: #fff; border: 1.5px solid #e5e7eb; border-radius: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06); max-width: 360px;
+    }
+    img { width: 56px; height: 56px; border-radius: 12px; margin-bottom: 16px; }
+    h1 { font-size: 22px; font-weight: 800; color: #2563eb; margin-bottom: 8px; }
+    h1 span { color: #10a37f; }
+    p { font-size: 14px; color: #6b7280; margin-bottom: 20px; line-height: 1.5; }
+  </style>
 </head>
 <body>
-  <div class="settings-container">
-    <div style="text-align:center; margin-bottom:20px;">
-      <img src="../icons/easyChat.png" alt="EasyAI Chat Logo" style="width:64px; height:64px; border-radius:10px; margin-bottom:12px;">
-      <h2 style="font-weight:900; color:#2563eb; letter-spacing:0.01em; display:flex; align-items:center; gap:8px; justify-content:center;">EasyAI <span style='color:#10a37f;'>Chat</span> Settings</h2>
-    </div>
-    <p style="font-size:1.08em; color:#444; margin-bottom:18px; text-align:center;">Effortless AI chat, anywhere.</p>
-    <form id="settings-form">
-      <label for="provider">Provider:</label>
-      <select id="provider" name="provider">
-        <option value="openai">OpenAI</option>
-        <option value="gemini">Gemini</option>
-        <option value="huggingface">Hugging Face</option>
-      </select>
-      <label for="apiKey">API Key:</label>
-      <input type="password" id="apiKey" name="apiKey" placeholder="Enter your API key" required />
-      <label for="model">Model:</label>
-      <input type="text" id="model" name="model" placeholder="e.g. gpt-3.5-turbo or gemini-2.0-flash" />
-      <label for="promptPrefix">Prompt Style Prefix:</label>
-      <input type="text" id="promptPrefix" name="promptPrefix" placeholder="e.g. Give a simple, direct, resume answer. " />
-      <small style="color:#666; font-size:0.85em; display:block; margin-top:4px;">This text will be automatically added before every prompt you send.</small>
-      <div class="toggle-group">
-        <label><input type="checkbox" id="darkMode" name="darkMode"> Dark Mode</label>
-        <label><input type="checkbox" id="chatHistory" name="chatHistory"> Enable Chat History</label>
-      </div>
-      <button type="submit">Save Settings</button>
-      <div id="status"></div>
-    </form>
+  <div class="card">
+    <img src="../icons/easyChat.png" alt="">
+    <h1>EasyAI <span>Chat</span></h1>
+    <p id="msg">Click the EasyAI Chat icon in your browser toolbar to configure your API keys and settings.</p>
   </div>
-  <script src="../utils/provider-config.js"></script>
-  <script src="settings.js"></script>
+  <script>
+    const isFr = (navigator.language || '').startsWith('fr');
+    if (isFr) {
+      document.getElementById('msg').textContent = 'Cliquez sur l\'icône EasyAI Chat dans la barre d\'outils pour configurer vos clés API et paramètres.';
+    }
+  </script>
 </body>
-</html> 
+</html>

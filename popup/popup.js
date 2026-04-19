@@ -1,243 +1,280 @@
-// Language detection and localization
 const browserLanguage = navigator.language || navigator.userLanguage || 'en';
 const isFrench = browserLanguage.startsWith('fr');
 
-// Localization strings
-const translations = {
-  en: {
-    // Popup main content
-    effortlessChat: 'Effortless AI chat, anywhere.',
-    setUpApiKey: 'Set Up API Key & Settings',
-    configureApiKeys: 'Configure your API keys to unlock chat features.',
-    noApiKeyMsg: 'To start chatting, please set up your API key in Settings below.',
-    instructions: '💡 The chat bubble will appear automatically on most pages if you have set up an API key. Use the button below to configure your API keys and settings.',
-    
-    // Settings modal
-    settings: 'Settings',
-    close: 'Close',
-    privacyNote: 'Your API keys are stored only on your device and never leave your computer.',
-    openaiApiKey: 'OpenAI API Key',
-    enterOpenaiKey: 'Enter your OpenAI API key',
-    getApiKey: 'Get your API key',
-    geminiApiKey: 'Gemini API Key',
-    enterGeminiKey: 'Enter your Gemini API key',
-    huggingfaceApiKey: 'Hugging Face Token',
-    enterHuggingFaceKey: 'Enter your Hugging Face token (hf_...)',
-    save: 'Save',
-    return: 'Return',
-    settingsSaved: 'Settings saved!',
-    
-    // Settings page
-    settingsTitle: 'EasyAI Chat Settings',
-    provider: 'Provider:',
-    apiKey: 'API Key:',
-    enterApiKey: 'Enter your API key',
-    model: 'Model:',
-    modelPlaceholder: 'e.g. gpt-3.5-turbo or gemini-2.0-flash',
-    darkMode: 'Dark Mode',
-    enableChatHistory: 'Enable Chat History',
-    saveSettings: 'Save Settings'
-  },
-  fr: {
-    // Popup main content
-    effortlessChat: 'Chat IA sans effort, partout.',
-    setUpApiKey: 'Configurer la clé API et les paramètres',
-    configureApiKeys: 'Configurez vos clés API pour débloquer les fonctionnalités de chat.',
-    noApiKeyMsg: 'Pour commencer à discuter, veuillez configurer votre clé API dans les paramètres ci-dessous.',
-    instructions: '💡 La bulle de chat apparaîtra automatiquement sur la plupart des pages si vous avez configuré une clé API. Utilisez le bouton ci-dessous pour configurer vos clés API et paramètres.',
-    
-    // Settings modal
-    settings: 'Paramètres',
-    close: 'Fermer',
-    privacyNote: 'Vos clés API sont stockées uniquement sur votre appareil et ne quittent jamais votre ordinateur.',
-    openaiApiKey: 'Clé API OpenAI',
-    enterOpenaiKey: 'Entrez votre clé API OpenAI',
-    getApiKey: 'Obtenir votre clé API',
-    geminiApiKey: 'Clé API Gemini',
-    enterGeminiKey: 'Entrez votre clé API Gemini',
-    huggingfaceApiKey: 'Token Hugging Face',
-    enterHuggingFaceKey: 'Entrez votre token Hugging Face (hf_...)',
-    save: 'Enregistrer',
-    return: 'Retour',
-    settingsSaved: 'Paramètres enregistrés !',
-    
-    // Settings page
-    settingsTitle: 'Paramètres EasyAI Chat',
-    provider: 'Fournisseur :',
-    apiKey: 'Clé API :',
-    enterApiKey: 'Entrez votre clé API',
-    model: 'Modèle :',
-    modelPlaceholder: 'ex. gpt-3.5-turbo ou gemini-2.0-flash',
-    darkMode: 'Mode sombre',
-    enableChatHistory: 'Activer l\'historique des chats',
-    saveSettings: 'Enregistrer les paramètres'
-  }
+const t = {
+  apiKeys: isFrench ? 'Clés API' : 'API Keys',
+  darkMode: isFrench ? 'Mode sombre' : 'Dark Mode',
+  keysLocal: isFrench ? 'Clés stockées localement' : 'Keys stored locally',
+  using: isFrench ? 'Utilise' : 'Using',
+  save: isFrench ? 'Enregistrer' : 'Save',
+  saving: isFrench ? 'Vérification...' : 'Validating...',
+  saved: isFrench ? 'Enregistré !' : 'Saved!',
+  validating: isFrench ? 'Vérification…' : 'Checking…',
+  valid: isFrench ? 'Clé valide ✓' : 'Valid key ✓',
+  invalid: isFrench ? 'Clé invalide ✗' : 'Invalid key ✗',
+  noKeysToSave: isFrench ? 'Entrez au moins une clé' : 'Enter at least one key'
 };
 
-// Get current language strings
-const t = translations[isFrench ? 'fr' : 'en'];
+const providerConfig = globalThis.EASYAI_PROVIDER_CONFIG || {};
+const providerNames = { openai: 'OpenAI', gemini: 'Gemini', huggingface: 'Hugging Face' };
 
-// Helper function to translate text
-function translate(key) {
-  return t[key] || translations.en[key] || key;
-}
+document.addEventListener('DOMContentLoaded', () => {
+  // Translate
+  document.getElementById('settingsBtnLabel').textContent = t.apiKeys;
+  document.getElementById('darkModeLabel').textContent = t.darkMode;
+  document.getElementById('privacyLabel').textContent = t.keysLocal;
+  document.getElementById('settingsTitle').textContent = t.apiKeys;
+  document.getElementById('saveBtn').textContent = t.save;
 
-document.addEventListener('DOMContentLoaded', function() {
-  const popupApiKeyOpenAI = document.getElementById('popupApiKeyOpenAI');
-  const popupApiKeyGemini = document.getElementById('popupApiKeyGemini');
-  const popupApiKeyHuggingFace = document.getElementById('popupApiKeyHuggingFace');
-  const popupSettingsForm = document.getElementById('popupSettingsForm');
-  const popupSettingsStatus = document.getElementById('popupSettingsStatus');
-  const toggleOpenAIEye = document.getElementById('toggleOpenAIEye');
-  const toggleGeminiEye = document.getElementById('toggleGeminiEye');
-  const toggleHuggingFaceEye = document.getElementById('toggleHuggingFaceEye');
-  const openaiEyeShow = document.getElementById('openai-eye-show');
-  const openaiEyeHide = document.getElementById('openai-eye-hide');
-  const geminiEyeShow = document.getElementById('gemini-eye-show');
-  const geminiEyeHide = document.getElementById('gemini-eye-hide');
-  const huggingfaceEyeShow = document.getElementById('huggingface-eye-show');
-  const huggingfaceEyeHide = document.getElementById('huggingface-eye-hide');
-  const settingsBtn = document.getElementById('settingsBtn');
-  const settingsModal = document.getElementById('settingsModal');
-  const popupSaveBtn = document.getElementById('popupSaveBtn');
-  const popupToast = document.getElementById('popupToast');
+  // DOM
+  const viewDashboard = document.getElementById('viewDashboard');
+  const viewSettings = document.getElementById('viewSettings');
+  const cards = document.querySelectorAll('.provider-card');
+  const activeInfo = document.getElementById('activeInfo');
+  const darkModeToggle = document.getElementById('darkModeToggle');
+  const toast = document.getElementById('toast');
 
-  // Enable Save button only if at least one API key is entered
-  function updateSaveBtnState() {
-    const hasKey = popupApiKeyOpenAI.value.trim() || popupApiKeyGemini.value.trim() || popupApiKeyHuggingFace.value.trim();
-    popupSaveBtn.disabled = !hasKey;
-  }
-  popupApiKeyOpenAI.addEventListener('input', updateSaveBtnState);
-  popupApiKeyGemini.addEventListener('input', updateSaveBtnState);
-  popupApiKeyHuggingFace.addEventListener('input', updateSaveBtnState);
-  updateSaveBtnState();
-
-  // Load saved API keys on popup open
-  chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface'], (data) => {
-    popupApiKeyOpenAI.value = data.apiKey_openai || '';
-    popupApiKeyGemini.value = data.apiKey_gemini || '';
-    popupApiKeyHuggingFace.value = data.apiKey_huggingface || '';
-    updateSaveBtnState();
-    // Auto-focus on first empty field
-    if (!popupApiKeyOpenAI.value) {
-      popupApiKeyOpenAI.focus();
-    } else if (!popupApiKeyGemini.value) {
-      popupApiKeyGemini.focus();
-    } else if (!popupApiKeyHuggingFace.value) {
-      popupApiKeyHuggingFace.focus();
-    }
+  // View switching
+  document.getElementById('showSettings').addEventListener('click', () => {
+    viewDashboard.classList.add('hidden');
+    viewSettings.classList.remove('hidden');
+  });
+  document.getElementById('backBtn').addEventListener('click', () => {
+    viewSettings.classList.add('hidden');
+    viewDashboard.classList.remove('hidden');
+    loadDashboard(); // refresh dots after saving keys
   });
 
-  // Show/hide API key logic with SVG toggle
-  toggleOpenAIEye.onclick = function() {
-    const show = popupApiKeyOpenAI.type === 'password';
-    popupApiKeyOpenAI.type = show ? 'text' : 'password';
-    openaiEyeShow.style.display = show ? 'none' : '';
-    openaiEyeHide.style.display = show ? '' : 'none';
-  };
-  toggleGeminiEye.onclick = function() {
-    const show = popupApiKeyGemini.type === 'password';
-    popupApiKeyGemini.type = show ? 'text' : 'password';
-    geminiEyeShow.style.display = show ? 'none' : '';
-    geminiEyeHide.style.display = show ? '' : 'none';
-  };
-  toggleHuggingFaceEye.onclick = function() {
-    const show = popupApiKeyHuggingFace.type === 'password';
-    popupApiKeyHuggingFace.type = show ? 'text' : 'password';
-    huggingfaceEyeShow.style.display = show ? 'none' : '';
-    huggingfaceEyeHide.style.display = show ? '' : 'none';
-  };
-
-  // Apply translations to HTML elements
-  document.querySelector('p').textContent = translate('effortlessChat');
-  document.getElementById('settingsBtn').textContent = translate('setUpApiKey');
-  document.getElementById('settingsBtn').title = translate('configureApiKeys');
-  document.getElementById('no-api-key-msg').innerHTML = `<b>${translate('noApiKeyMsg')}</b>`;
-  document.querySelector('.instructions small').textContent = translate('instructions');
-  
-  // Settings modal translations
-  document.querySelector('.settings-card h3').textContent = translate('settings');
-  document.querySelector('.settings-modal-close').setAttribute('aria-label', translate('close'));
-  document.querySelector('label[for="popupApiKeyOpenAI"]').textContent = translate('openaiApiKey');
-  document.getElementById('popupApiKeyOpenAI').placeholder = translate('enterOpenaiKey');
-  document.getElementById('popupApiKeyOpenAI').setAttribute('aria-label', translate('openaiApiKey'));
-  document.getElementById('popupApiKeyLinkOpenAI').textContent = translate('getApiKey');
-  document.querySelector('label[for="popupApiKeyGemini"]').textContent = translate('geminiApiKey');
-  document.getElementById('popupApiKeyGemini').placeholder = translate('enterGeminiKey');
-  document.getElementById('popupApiKeyGemini').setAttribute('aria-label', translate('geminiApiKey'));
-  document.getElementById('popupApiKeyLinkGemini').textContent = translate('getApiKey');
-  document.querySelector('label[for="popupApiKeyHuggingFace"]').textContent = translate('huggingfaceApiKey');
-  document.getElementById('popupApiKeyHuggingFace').placeholder = translate('enterHuggingFaceKey');
-  document.getElementById('popupApiKeyHuggingFace').setAttribute('aria-label', translate('huggingfaceApiKey'));
-  document.getElementById('popupApiKeyLinkHuggingFace').textContent = translate('getApiKey');
-  document.getElementById('popupSaveBtn').textContent = translate('save');
-  document.querySelector('.settings-modal-close.secondary-btn').textContent = translate('return');
-
-  // Add privacy note to settings UI
-  const privacyNote = document.createElement('div');
-  privacyNote.style.fontSize = '0.98em';
-  privacyNote.style.color = '#888';
-  privacyNote.style.margin = '10px 0 18px 0';
-  privacyNote.style.textAlign = 'center';
-  privacyNote.textContent = translate('privacyNote');
-  const form = document.getElementById('popupSettingsForm');
-  if (form) form.insertBefore(privacyNote, form.firstChild);
-
-  popupSettingsForm.onsubmit = (e) => {
-    e.preventDefault();
-    const apiKeyOpenAI = popupApiKeyOpenAI.value;
-    const apiKeyGemini = popupApiKeyGemini.value;
-    const apiKeyHuggingFace = popupApiKeyHuggingFace.value;
-    chrome.storage.local.set({
-      apiKey_openai: apiKeyOpenAI,
-      apiKey_gemini: apiKeyGemini,
-      apiKey_huggingface: apiKeyHuggingFace
-    }, () => {
-      popupSettingsStatus.textContent = '';
-      // Show modern toast
-      popupToast.innerHTML = `<span class="toast-icon">✔️</span>${translate('settingsSaved')}`;
-      popupToast.style.display = 'block';
-      popupToast.style.animation = 'none';
-      // Restart animation
-      void popupToast.offsetWidth;
-      popupToast.style.animation = '';
-      setTimeout(() => {
-        popupToast.style.display = 'none';
-      }, 2600);
+  // Eye toggles
+  document.querySelectorAll('.eye-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.target);
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      btn.querySelector('.eye-open').style.display = show ? 'none' : '';
+      btn.querySelector('.eye-closed').style.display = show ? '' : 'none';
     });
-  };
+  });
 
-  // Modal logic for settings
-  if (settingsBtn && settingsModal) {
-    settingsBtn.onclick = () => {
-      settingsModal.style.display = 'block';
-      setTimeout(() => {
-        if (!popupApiKeyOpenAI.value) {
-          popupApiKeyOpenAI.focus();
-        } else {
-          popupApiKeyGemini.focus();
+  // Load dashboard state
+  function loadDashboard() {
+    chrome.storage.local.get(
+      ['provider', 'apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface', 'darkMode'],
+      (data) => {
+        const active = data.provider || 'openai';
+
+        // Dots
+        ['openai', 'gemini', 'huggingface'].forEach(p => {
+          const dot = document.getElementById(`dot-${p}`);
+          const key = data[`apiKey_${p}`];
+          dot.classList.toggle('has-key', !!(key && key.trim()));
+        });
+
+        // Cards
+        cards.forEach(c => c.classList.toggle('active', c.dataset.provider === active));
+
+        // Active info
+        const defaults = providerConfig.defaultModels || {};
+        const model = (defaults[active] || '').split('/').pop();
+        activeInfo.textContent = `${t.using}: ${providerNames[active]}${model ? ' · ' + model : ''}`;
+
+        // Dark mode
+        const isDark = data.darkMode === true || data.darkMode === 'true';
+        applyPopupTheme(isDark);
+      }
+    );
+  }
+
+  // Load settings view
+  function loadSettings() {
+    chrome.storage.local.get(
+      ['provider', 'apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface'],
+      (data) => {
+        document.getElementById('key-openai').value = data.apiKey_openai || '';
+        document.getElementById('key-gemini').value = data.apiKey_gemini || '';
+        document.getElementById('key-huggingface').value = data.apiKey_huggingface || '';
+
+        const active = data.provider || 'openai';
+        const radio = document.querySelector(`input[name="activeProvider"][value="${active}"]`);
+        if (radio) radio.checked = true;
+      }
+    );
+  }
+
+  // Click card to switch provider
+  cards.forEach(card => {
+    card.addEventListener('click', () => {
+      const provider = card.dataset.provider;
+      chrome.storage.local.get([`apiKey_${provider}`], (data) => {
+        const key = data[`apiKey_${provider}`];
+        if (!key || !key.trim()) {
+          // No key — go to settings
+          viewDashboard.classList.add('hidden');
+          viewSettings.classList.remove('hidden');
+          loadSettings();
+          document.getElementById(`key-${provider}`).focus();
+          return;
         }
-      }, 200);
+        chrome.storage.local.set({ provider }, () => {
+          loadDashboard();
+          notifyTabs();
+        });
+      });
+    });
+  });
+
+  // Dark mode — apply to popup + sync to chat bubble
+  function applyPopupTheme(dark) {
+    document.body.classList.toggle('dark', dark);
+    darkModeToggle.checked = dark;
+  }
+
+  darkModeToggle.addEventListener('change', () => {
+    const dark = darkModeToggle.checked;
+    applyPopupTheme(dark);
+    chrome.storage.local.set({ darkMode: dark });
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach(tab => {
+        chrome.tabs.sendMessage(tab.id, { type: 'EASYAI_DARKMODE_UPDATED', darkMode: dark }).catch(() => {});
+      });
+    });
+  });
+
+  // --- API key validation functions ---
+  async function validateOpenAI(apiKey) {
+    const res = await fetch('https://api.openai.com/v1/models', {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error?.message || `HTTP ${res.status}`);
+    }
+    return true;
+  }
+
+  async function validateGemini(apiKey) {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error?.message || `HTTP ${res.status}`);
+    }
+    return true;
+  }
+
+  async function validateHuggingFace(apiKey) {
+    const res = await fetch('https://huggingface.co/api/whoami-v2', {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    });
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    return true;
+  }
+
+  function setKeyStatus(provider, state, message) {
+    const el = document.getElementById(`status-${provider}`);
+    if (!el) return;
+    el.className = 'key-status';
+    if (state) el.classList.add(state);
+    el.textContent = message || '';
+  }
+
+  // Save keys with validation
+  document.getElementById('keysForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const saveBtn = document.getElementById('saveBtn');
+    const activeProvider = document.querySelector('input[name="activeProvider"]:checked')?.value || 'openai';
+    const defaults = providerConfig.defaultModels || {};
+
+    const keys = {
+      openai: document.getElementById('key-openai').value.trim(),
+      gemini: document.getElementById('key-gemini').value.trim(),
+      huggingface: document.getElementById('key-huggingface').value.trim()
     };
-    // Close modal when clicking outside or pressing Escape
-    settingsModal.addEventListener('click', (e) => {
-      if (e.target === settingsModal) {
-        settingsModal.style.display = 'none';
+
+    // Clear previous statuses
+    ['openai', 'gemini', 'huggingface'].forEach(p => setKeyStatus(p, '', ''));
+
+    // Check at least one key exists
+    if (!keys.openai && !keys.gemini && !keys.huggingface) {
+      toast.textContent = t.noKeysToSave;
+      toast.className = 'toast toast-error show';
+      setTimeout(() => toast.className = 'toast', 2500);
+      return;
+    }
+
+    // Disable button during validation
+    saveBtn.disabled = true;
+    saveBtn.textContent = t.saving;
+
+    // Validate all keys that have values
+    const validators = {
+      openai: validateOpenAI,
+      gemini: validateGemini,
+      huggingface: validateHuggingFace
+    };
+
+    const results = {};
+    const promises = [];
+
+    for (const [provider, key] of Object.entries(keys)) {
+      if (!key) continue;
+      setKeyStatus(provider, 'validating', t.validating);
+      promises.push(
+        validators[provider](key)
+          .then(() => {
+            results[provider] = true;
+            setKeyStatus(provider, 'valid', t.valid);
+          })
+          .catch((err) => {
+            results[provider] = false;
+            const shortErr = err.message.length > 60 ? err.message.slice(0, 60) + '…' : err.message;
+            setKeyStatus(provider, 'invalid', `${t.invalid} — ${shortErr}`);
+          })
+      );
+    }
+
+    await Promise.all(promises);
+
+    // Save all keys (even invalid ones — user might fix later)
+    chrome.storage.local.set({
+      provider: activeProvider,
+      apiKey_openai: keys.openai,
+      apiKey_gemini: keys.gemini,
+      apiKey_huggingface: keys.huggingface,
+      model: defaults[activeProvider] || '',
+      chatHistory: true
+    }, () => {
+      const anyValid = Object.values(results).some(v => v === true);
+      const anyInvalid = Object.values(results).some(v => v === false);
+
+      if (anyInvalid && !anyValid) {
+        toast.textContent = isFrench ? 'Clés enregistrées — vérifiez les erreurs' : 'Keys saved — check errors above';
+        toast.className = 'toast toast-error show';
+      } else if (anyInvalid) {
+        toast.textContent = isFrench ? 'Enregistré — certaines clés invalides' : 'Saved — some keys invalid';
+        toast.className = 'toast toast-error show';
+      } else {
+        toast.textContent = t.saved;
+        toast.className = 'toast show';
       }
+
+      setTimeout(() => toast.className = 'toast', 3000);
+      saveBtn.disabled = false;
+      saveBtn.textContent = t.save;
+      notifyTabs();
     });
-    document.addEventListener('keydown', (e) => {
-      if (settingsModal.style.display === 'block' && e.key === 'Escape') {
-        settingsModal.style.display = 'none';
-      }
-    });
-    // All close/return buttons close the modal
-    Array.from(settingsModal.querySelectorAll('.settings-modal-close')).forEach(btn => {
-      btn.onclick = () => {
-        settingsModal.style.display = 'none';
-      };
+  });
+
+  function notifyTabs() {
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach(tab => {
+        chrome.tabs.sendMessage(tab.id, { type: 'EASYAI_APIKEY_UPDATED' }).catch(() => {});
+      });
     });
   }
-});
 
-// Removed obsolete code for non-existent 'open-bubble' element
-// The chat bubble is automatically shown on pages when API keys are configured 
+  // Init
+  loadDashboard();
+  loadSettings();
+});
