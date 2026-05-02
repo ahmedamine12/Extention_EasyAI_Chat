@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "BrowseMate",
   "version": "2.0.0",
-  "description": "BrowseMate V2 — floating AI chat with OpenAI, Gemini & Hugging Face, voice input, page screenshots, reminders, dark mode. Keys stay on your device.",
+  "description": "BrowseMate V2: floating AI chat — OpenAI, Gemini, Hugging Face. Voice, screenshots, reminders. Keys local only.",
   "author": "BrowseMate Team",
   "homepage_url": "https://ahmedamine12.github.io/Extention_EasyAI_Chat/homepage.html",
   "action": {
