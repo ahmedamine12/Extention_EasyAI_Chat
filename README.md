@@ -2,6 +2,12 @@
 
 A privacy-focused AI companion for browsing: chat on any page with **OpenAI**, **Google Gemini**, or **Hugging Face** through a floating panel. **Version 2** adds voice input, reminders, clearer errors, and tighter BrowseMate branding.
 
+<p align="center">
+  <img src="icons/easyChat.png" alt="BrowseMate — toolbar icon and floating bubble" width="120" />
+</p>
+
+<p align="center">Chrome toolbar icon (same asset as the on-page floating launcher). Open it to add API keys and controls.</p>
+
 ## Features
 
 - **Floating chat** — Draggable, resizable panel on any site (hidden until you add at least one API key).

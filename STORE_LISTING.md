@@ -72,15 +72,3 @@ Compared to **1.x**, V2 is the same privacy model (local keys, direct APIs) with
 
 - Package for upload: `npm run package` → `browsemate-v2.0.0.zip`
 - Version lives in `manifest.json` and is shown in the popup footer from the manifest at runtime.
-
----
-
-## GitHub Release (attach the store zip)
-
-1. Run `npm run package` (produces `browsemate-v2.0.0.zip`; file is gitignored).
-2. Open: [**Create release for tag v2.0.0**](https://github.com/ahmedamine12/Extention_EasyAI_Chat/releases/new?tag=v2.0.0&title=BrowseMate%202.0.0)
-3. Set **title** to e.g. `BrowseMate 2.0.0` and paste notes from [CHANGELOG.md](./CHANGELOG.md) (V2 section).
-4. **Attach** `browsemate-v2.0.0.zip` under release assets.
-5. Publish the release.
-
-If the release already exists, use **Edit** on that release and add the zip under **Attach binaries**.
