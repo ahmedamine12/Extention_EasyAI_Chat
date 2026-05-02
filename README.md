@@ -59,7 +59,9 @@ See **`CHANGELOG.md`** for detail. Summary:
 - BrowseMate blue/teal branding and improved error text (network, quota, invalid key)  
 - One-time onboarding tab when no keys exist  
 
-For **store copy and release posts**, use **`STORE_LISTING.md`**.
+For **Chrome Web Store copy**, see **`BROWSEMATE_V2_MARKETING.md`**. Short snippets: **`STORE_LISTING.md`**.
+
+For your **own** reminders (V2 vs old version, comparison table, social drafts), use **`BROWSEMATE_V2_LOCAL_NOTES.md`** — filename is **gitignored**; see **`BROWSEMATE_V2_LOCAL_NOTES.example.md`**.
 
 ## Tips
 
@@ -74,7 +76,7 @@ For **store copy and release posts**, use **`STORE_LISTING.md`**.
 npm run package
 ```
 
-Produces **`browsemate-v2.0.0.zip`** including manifest, scripts, styles, popup, settings, utils, `CHANGELOG.md`, and `STORE_LISTING.md`.
+Produces **`browsemate-v2.0.0.zip`** including manifest, scripts, styles, popup, settings, utils, `CHANGELOG.md`, `STORE_LISTING.md`, `BROWSEMATE_V2_MARKETING.md`, and `BROWSEMATE_V2_LOCAL_NOTES.example.md`.
 
 ## Support
 

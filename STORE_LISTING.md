@@ -1,6 +1,10 @@
 # BrowseMate — Chrome Web Store listing copy (V2)
 
-Use the sections below for the store submission and blog/social posts.
+For the **full Chrome Web Store long description** (EasyAI-style narrative), see **`BROWSEMATE_V2_MARKETING.md`**.
+
+For a **private** reminder (comparison vs old version, optional social drafts), create **`BROWSEMATE_V2_LOCAL_NOTES.md`** — it is **gitignored**; see **`BROWSEMATE_V2_LOCAL_NOTES.example.md`**.
+
+Use the sections below for quick store snippets and tables.
 
 ## Short description (≤132 characters)
 

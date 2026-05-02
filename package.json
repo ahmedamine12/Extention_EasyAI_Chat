@@ -4,7 +4,7 @@
   "description": "BrowseMate — AI browsing companion with OpenAI, Gemini, and more.",
   "main": "content.js",
   "scripts": {
-    "package": "zip -r browsemate-v2.0.0.zip manifest.json background.js content.js styles.css package.json README.md CHANGELOG.md STORE_LISTING.md LICENSE icons/ popup/ settings/ utils/"
+    "package": "zip -r browsemate-v2.0.0.zip manifest.json background.js content.js styles.css package.json README.md CHANGELOG.md STORE_LISTING.md BROWSEMATE_V2_MARKETING.md BROWSEMATE_V2_LOCAL_NOTES.example.md LICENSE icons/ popup/ settings/ utils/"
   },
   "keywords": [
     "chrome-extension",

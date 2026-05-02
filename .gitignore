@@ -49,6 +49,9 @@ temp/
 *.pem
 *.zip
 
+# Local-only notes (V2 vs old comparison, social drafts — not committed)
+BROWSEMATE_V2_LOCAL_NOTES.md
+
 # Environment variables
 .env
 .env.local
