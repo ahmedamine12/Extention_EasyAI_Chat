@@ -44,10 +44,16 @@ On **first install or update**, if no keys are saved yet, the extension opens th
 
 ## Documentation & links
 
-- **Help / homepage**: linked via `homepage_url` in `manifest.json` (GitHub Pages).
-- **Privacy policy**: same site — see manifest or store listing.
+- **Help / homepage** (GitHub Pages from the `docs/` folder):  
+  `https://ahmedamine12.github.io/Extention_EasyAI_Chat/homepage.html`  
+  In the repo: `docs/homepage.html`.
+- **Privacy policy**:  
+  `https://ahmedamine12.github.io/Extention_EasyAI_Chat/privacy-policy.html`  
+  In the repo: `docs/privacy-policy.html`.
 
-> **Note:** GitHub Pages URLs may still contain the legacy folder name `Extention_EasyAI_Chat`. The product name is **BrowseMate**. Adding redirects on Pages to paths containing `BrowseMate` is recommended for store reviewers and users.
+Enable **Settings → Pages → Branch: main, folder `/docs`** on GitHub so these URLs go live. The `homepage_url` in `manifest.json` should match.
+
+> **Note:** The site path may still use the legacy repo folder name `Extention_EasyAI_Chat` in the URL; the product name is **BrowseMate**.
 
 ## What’s new in V2
 

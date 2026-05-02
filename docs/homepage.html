@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BrowseMate — Help</title>
+  <style>
+    :root {
+      --browse: #2563eb;
+      --mate: #0d9488;
+      --text: #1e293b;
+      --muted: #64748b;
+      --bg: #f8fafc;
+      --card: #fff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.6;
+    }
+    header {
+      background: linear-gradient(135deg, rgba(37,99,235,0.08), rgba(13,148,136,0.08));
+      border-bottom: 1px solid #e2e8f0;
+      padding: 2rem 1.25rem;
+      text-align: center;
+    }
+    h1 {
+      margin: 0 0 0.35rem;
+      font-size: 1.75rem;
+      font-weight: 800;
+    }
+    h1 span:first-child { color: var(--browse); }
+    h1 span:last-child { color: var(--mate); }
+    .tagline { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 36rem; margin-inline: auto; }
+    main { max-width: 40rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    h2 { margin: 0 0 0.75rem; font-size: 1.1rem; color: var(--browse); }
+    ul { margin: 0; padding-left: 1.2rem; }
+    li { margin-bottom: 0.35rem; }
+    a { color: var(--browse); font-weight: 600; text-decoration: none; }
+    a:hover { text-decoration: underline; color: #1d4ed8; }
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      border-top: 1px solid #e2e8f0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><span>Browse</span><span>Mate</span></h1>
+    <p class="tagline">AI chat on any webpage — OpenAI, Gemini &amp; Hugging Face. Your keys stay on your device.</p>
+  </header>
+  <main>
+    <div class="card">
+      <h2>Quick start</h2>
+      <ul>
+        <li>Install BrowseMate from the <strong>Chrome Web Store</strong>.</li>
+        <li>Click the BrowseMate icon → <strong>API Keys</strong> and add at least one key (OpenAI, Google Gemini, and/or Hugging Face).</li>
+        <li>Use the <strong>floating bubble</strong> on normal websites to open the chat panel.</li>
+        <li>Switch <strong>provider and model</strong> from the chat header.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Documentation &amp; privacy</h2>
+      <ul>
+        <li><a href="privacy-policy.html">Privacy policy</a> — how BrowseMate handles your data.</li>
+        <li><a href="https://github.com/ahmedamine12/Extention_EasyAI_Chat" rel="noopener noreferrer">Source code on GitHub</a></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Support</h2>
+      <p style="margin:0;">Questions: <a href="mailto:support@browsemate.com">support@browsemate.com</a></p>
+    </div>
+  </main>
+  <footer>BrowseMate — local keys, direct APIs to your chosen providers.</footer>
+</body>
+</html>
