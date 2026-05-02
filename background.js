@@ -19,10 +19,142 @@ const resolveProviderFromSettings = providerHelpers.resolveProviderFromSettings 
   }
   return provider;
 });
-const DEFAULT_PROMPT_PREFIX = providerConfig.defaultPromptPrefix || 'Give a simple, direct, resume answer. ';
+const getDefaultVisionModelForProvider = providerHelpers.getDefaultVisionModelForProvider || ((provider) => {
+  const v = providerConfig.visionDefaultModels || {};
+  return v[provider] || getDefaultModelForProvider(provider);
+});
+const getHfVisionModels = providerHelpers.getHfVisionModels || (() => providerConfig.hfVisionModels || []);
+const DEFAULT_PROMPT_PREFIX = providerConfig.defaultPromptPrefix || 'Give a short, direct answer. Be concise. ';
 
 // Map to store AbortController per tab
 const abortControllers = {};
+
+function deliverEasyAiReminder(title, note) {
+  const safeTitle = (title || 'BrowseMate').slice(0, 200);
+  const safeMsg = (note || '').trim().slice(0, 240) || 'Reminder';
+  const iconUrl = chrome.runtime.getURL('icons/easyChat.png');
+
+  function showOsFallback() {
+    if (!isExtensionContextValid()) return;
+    chrome.notifications.create(
+      `easyai-n-${Date.now()}`,
+      {
+        type: 'basic',
+        iconUrl,
+        title: safeTitle,
+        message: safeMsg
+      },
+      () => {
+        if (chrome.runtime.lastError) {
+          /* User may have blocked notifications; nothing else we can do from SW */
+        }
+      }
+    );
+  }
+
+  chrome.tabs.query({}, (tabs) => {
+    const list = tabs || [];
+    const tryable = list.filter((t) => {
+      if (!t.id) return false;
+      const u = t.url || '';
+      if (
+        /^(chrome|chrome-extension|about|devtools|chrome-devtools|brave|edge|vivaldi|opera):/i.test(
+          u
+        )
+      ) {
+        return false;
+      }
+      return true;
+    });
+
+    tryable.sort((a, b) => {
+      if (a.active !== b.active) return a.active ? -1 : 1;
+      return (b.lastAccessed || 0) - (a.lastAccessed || 0);
+    });
+
+    let i = 0;
+    function tryNext() {
+      if (i >= tryable.length) {
+        showOsFallback();
+        return;
+      }
+      const tab = tryable[i++];
+      chrome.tabs.sendMessage(tab.id, { type: 'EASYAI_REMINDER_SHOW', title: safeTitle, note: note || '' }, () => {
+        if (chrome.runtime.lastError) tryNext();
+      });
+    }
+    tryNext();
+  });
+}
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (!alarm.name || !alarm.name.startsWith('easyaiR_')) return;
+  chrome.storage.local.get(alarm.name, (data) => {
+    const payload = data[alarm.name];
+    chrome.storage.local.remove(alarm.name);
+    if (!payload || !isExtensionContextValid()) {
+      return;
+    }
+    const title = payload.title || 'Reminder';
+    const note = typeof payload.note === 'string' ? payload.note : '';
+    deliverEasyAiReminder(title, note);
+  });
+});
+
+/** Chrome clears alarms on extension reload; storage keeps payload. Recreate missing alarms. */
+function reconcileEasyAiReminderAlarms() {
+  chrome.storage.local.get(null, (all) => {
+    if (chrome.runtime.lastError) return;
+    chrome.alarms.getAll((alarms) => {
+      const names = new Set((alarms || []).map((a) => a.name));
+      const now = Date.now();
+      for (const [key, val] of Object.entries(all || {})) {
+        if (!key.startsWith('easyaiR_') || !val || typeof val !== 'object') continue;
+        const fireAt = typeof val.fireAt === 'number' ? val.fireAt : null;
+        if (fireAt == null) {
+          if (!names.has(key)) {
+            chrome.storage.local.remove(key);
+          }
+          continue;
+        }
+        if (now - fireAt > 60000) {
+          chrome.storage.local.remove(key);
+          continue;
+        }
+        if (!names.has(key)) {
+          try {
+            const whenMs = fireAt < now ? now + 500 : fireAt;
+            chrome.alarms.create(key, { when: Math.floor(whenMs) });
+          } catch (_) {
+            chrome.storage.local.remove(key);
+          }
+        }
+      }
+    });
+  });
+}
+reconcileEasyAiReminderAlarms();
+
+/** First-time setup: open the extension popup UI once if no API keys (toolbar UI is where keys are configured). */
+const BM_API_KEY_FIELDS = ['apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface'];
+const BM_ONBOARDING_SETUP_KEY = 'browseMate_v2_setupUiOpenedOnce';
+
+function bmHasAnyApiKey(data) {
+  return BM_API_KEY_FIELDS.some((k) => data[k] && String(data[k]).trim());
+}
+
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.storage.local.get([...BM_API_KEY_FIELDS, BM_ONBOARDING_SETUP_KEY], (data) => {
+    if (chrome.runtime.lastError) return;
+    if (bmHasAnyApiKey(data)) return;
+    if (data[BM_ONBOARDING_SETUP_KEY]) return;
+    const url = chrome.runtime.getURL('popup/popup.html');
+    chrome.tabs.create({ url }, () => {
+      if (chrome.runtime.lastError) return;
+      chrome.storage.local.set({ [BM_ONBOARDING_SETUP_KEY]: true });
+    });
+  });
+});
 
 // Helper function to safely access chrome APIs
 function isExtensionContextValid() {
@@ -33,60 +165,113 @@ function isExtensionContextValid() {
   }
 }
 
+const SETTINGS_HINT =
+  '\n\n—\nToolbar → BrowseMate icon → API Keys: confirm provider and paste a valid key. Retry your message after fixing.';
+
+function appendSettingsHint(text) {
+  return text + SETTINGS_HINT;
+}
+
+function isLikelyNetworkError(errorMsg) {
+  const m = String(errorMsg || '').toLowerCase();
+  if (!m.trim()) return false;
+  return (
+    m.includes('failed to fetch') ||
+    m.includes('networkerror') ||
+    (m.includes('fetch') && m.includes('fail')) ||
+    m.includes('load failed') ||
+    m.includes('could not connect') ||
+    m.includes('connection refused') ||
+    m.includes('network request failed') ||
+    m.includes('err_connection') ||
+    m.includes('err_name_not_resolved') ||
+    m.includes('internet disconnected') ||
+    m.includes('you are offline') ||
+    m.includes('offline') ||
+    m.includes('timed out') ||
+    (m.includes('timeout') && !m.includes('quota')) ||
+    m.includes('econnreset') ||
+    m.includes('socket hang') ||
+    (m.includes('dns') && m.includes('error'))
+  );
+}
+
 // Unified error message formatter for all providers
 function formatErrorMessage(errorMsg, provider = 'openai') {
   const providerNames = {
-    'openai': 'OpenAI',
-    'gemini': 'Gemini',
-    'huggingface': 'Hugging Face'
+    openai: 'OpenAI',
+    gemini: 'Gemini',
+    huggingface: 'Hugging Face'
   };
   const providerLinks = {
-    'openai': 'https://platform.openai.com/account/billing',
-    'gemini': 'https://ai.google.dev/pricing',
-    'huggingface': 'https://huggingface.co/pricing'
+    openai: 'https://platform.openai.com/account/billing',
+    gemini: 'https://ai.google.dev/pricing',
+    huggingface: 'https://huggingface.co/pricing'
   };
   const apiKeyHints = {
-    'openai': 'Make sure it starts with "sk-".',
-    'gemini': 'Check your API key in Settings.',
-    'huggingface': 'Make sure it starts with "hf_".'
+    openai: 'Make sure it starts with "sk-".',
+    gemini: 'Create a key in Google AI Studio and paste it in BrowseMate API Keys.',
+    huggingface: 'Make sure it starts with "hf_" and has Inference Providers enabled.'
   };
-  
+
   const providerName = providerNames[provider] || provider;
   const providerLink = providerLinks[provider] || '';
-  const apiKeyHint = apiKeyHints[provider] || 'Check your API key in Settings.';
-  
+  const apiKeyHint = apiKeyHints[provider] || 'Check your API key in BrowseMate API Keys.';
+  const raw = String(errorMsg || '');
+
+  if (isLikelyNetworkError(raw)) {
+    return appendSettingsHint(
+      '⚠️ Connection problem\n\n' +
+        'BrowseMate could not reach the AI service. Check your internet connection, VPN, or firewall, then try again.'
+    );
+  }
+
   let userFriendlyError = '';
-  
+
   // Invalid API key
-  if (errorMsg.includes('Invalid API key') || errorMsg.includes('Incorrect API key') || 
-      errorMsg.includes('API key') && errorMsg.includes('invalid') || 
-      errorMsg.includes('401') || errorMsg.includes('Unauthorized')) {
-    userFriendlyError = `❌ Invalid API Key\n\nPlease check your ${providerName} API key in Settings. ${apiKeyHint}`;
+  if (
+    raw.includes('Invalid API key') ||
+    raw.includes('Incorrect API key') ||
+    (raw.includes('API key') && raw.includes('invalid')) ||
+    raw.includes('401') ||
+    raw.includes('Unauthorized')
+  ) {
+    userFriendlyError = appendSettingsHint(
+      `❌ Invalid API key\n\nPlease check your ${providerName} key in BrowseMate. ${apiKeyHint}`
+    );
+  } else if (
+    raw.includes('quota') ||
+    raw.includes('Quota exceeded') ||
+    raw.includes('rate limit') ||
+    raw.includes('rate-limits') ||
+    raw.includes('429') ||
+    raw.includes('Rate limit') ||
+    raw.includes('too many requests')
+  ) {
+    userFriendlyError = appendSettingsHint(
+      `⚠️ Quota or rate limit\n\n` +
+        `Your ${providerName} quota or rate limit was hit.\n\n` +
+        `• Wait a few minutes and retry\n` +
+        `• Switch provider in the chat header if you have another key\n` +
+        `• Billing / limits: ${providerLink}`
+    );
+  } else if (
+    raw.includes('billing') ||
+    raw.includes('payment') ||
+    raw.includes('402') ||
+    raw.includes('insufficient_quota')
+  ) {
+    userFriendlyError = appendSettingsHint(
+      `❌ Billing or account limit\n\n${raw}\n\nCheck your ${providerName} account: ${providerLink}`
+    );
+  } else if (raw.includes('403') && !raw.includes('429')) {
+    userFriendlyError = appendSettingsHint(
+      `❌ Access denied (403)\n\n${providerName} rejected the request. This is often a billing or permissions issue.\n\nAccount: ${providerLink}`
+    );
+  } else {
+    userFriendlyError = appendSettingsHint(`❌ Something went wrong\n\n${raw}`);
   }
-  // Quota/Rate limit errors
-  else if (errorMsg.includes('quota') || errorMsg.includes('Quota exceeded') || 
-           errorMsg.includes('rate limit') || errorMsg.includes('rate-limits') ||
-           errorMsg.includes('429') || errorMsg.includes('Rate limit')) {
-    userFriendlyError = `⚠️ Quota/Rate Limit Exceeded\n\n` +
-      `Your ${providerName} quota or rate limit has been reached.\n\n` +
-      `Options:\n` +
-      `• Wait a few minutes and try again\n` +
-      `• Switch to ${provider === 'openai' ? 'Gemini' : 'OpenAI'} provider\n` +
-      `• Upgrade your plan at: ${providerLink}`;
-  }
-  // Billing/Payment errors
-  else if (errorMsg.includes('billing') || errorMsg.includes('payment') || 
-           errorMsg.includes('402') || errorMsg.includes('403') ||
-           errorMsg.includes('insufficient_quota')) {
-    userFriendlyError = `❌ Billing/Quota Issue\n\n` +
-      `${errorMsg}\n\n` +
-      `Check your ${providerName} account at: ${providerLink}`;
-  }
-  // Generic errors
-  else {
-    userFriendlyError = `❌ Error: ${errorMsg}`;
-  }
-  
+
   return userFriendlyError;
 }
 
@@ -324,6 +509,378 @@ async function askGemini({ apiKey, model, prompt, tabId, conversationContext = [
   }
 }
 
+/** OpenAI chat with one image (streaming). */
+async function askOpenAIVision({ apiKey, model, prompt, imageBase64, imageMime, tabId, conversationContext = [] }) {
+  const url = 'https://api.openai.com/v1/chat/completions';
+  const controller = new AbortController();
+  if (tabId) abortControllers[tabId] = controller;
+  const mime = imageMime || 'image/jpeg';
+  const imageUrl = `data:${mime};base64,${imageBase64}`;
+
+  const messages = [];
+  if (conversationContext && conversationContext.length > 0) {
+    messages.push(...conversationContext.map((msg) => ({ role: msg.role, content: msg.content })));
+  }
+  messages.push({
+    role: 'user',
+    content: [
+      { type: 'text', text: prompt },
+      { type: 'image_url', image_url: { url: imageUrl } }
+    ]
+  });
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        max_tokens: 4096,
+        stream: true
+      }),
+      signal: controller.signal
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: { message: `HTTP ${res.status}: ${res.statusText}` } }));
+      const errorMsg = errorData.error?.message || `HTTP ${res.status}: ${res.statusText}`;
+      const userFriendlyError = formatErrorMessage(errorMsg, 'openai');
+      if (isExtensionContextValid() && tabId) {
+        try {
+          chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: userFriendlyError, done: true });
+        } catch (e) {}
+      }
+      if (tabId) delete abortControllers[tabId];
+      return { ok: false, answer: userFriendlyError };
+    }
+
+    if (!res.body) throw new Error('No response body');
+    const reader = res.body.getReader();
+    let buffer = '';
+    let done = false;
+    let answer = '';
+    while (!done) {
+      const { value, done: doneReading } = await reader.read();
+      done = doneReading;
+      if (value) {
+        buffer += new TextDecoder().decode(value);
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (line.trim().startsWith('data:')) {
+            const data = line.replace('data:', '').trim();
+            if (data === '[DONE]') {
+              if (isExtensionContextValid() && tabId) {
+                try {
+                  chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '', done: true });
+                } catch (e) {}
+              }
+              if (tabId) delete abortControllers[tabId];
+              return { ok: true, answer };
+            }
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.error) {
+                const userFriendlyError = formatErrorMessage(parsed.error.message || 'Unknown error', 'openai');
+                if (isExtensionContextValid() && tabId) {
+                  try {
+                    chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: userFriendlyError, done: true });
+                  } catch (e) {}
+                }
+                if (tabId) delete abortControllers[tabId];
+                return { ok: false, answer: userFriendlyError };
+              }
+              const delta = parsed.choices?.[0]?.delta?.content || '';
+              if (delta) {
+                answer += delta;
+                if (isExtensionContextValid() && tabId) {
+                  try {
+                    chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: delta, done: false });
+                  } catch (e) {}
+                }
+              }
+            } catch (e) {
+              /* skip */
+            }
+          }
+        }
+      }
+    }
+    if (tabId) delete abortControllers[tabId];
+    if (isExtensionContextValid() && tabId) {
+      try {
+        chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '', done: true });
+      } catch (e) {}
+    }
+    return { ok: true, answer };
+  } catch (e) {
+    if (tabId) delete abortControllers[tabId];
+    if (e.name === 'AbortError') {
+      if (isExtensionContextValid() && tabId) {
+        try {
+          chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Stopped by user]', done: true });
+        } catch (err) {}
+      }
+      return { ok: false, answer: 'Request stopped by user.' };
+    }
+    const errorMessage = formatErrorMessage(e.message || 'Network error.', 'openai');
+    if (isExtensionContextValid() && tabId) {
+      try {
+        chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: errorMessage, done: true });
+      } catch (err) {}
+    }
+    return { ok: false, answer: errorMessage };
+  }
+}
+
+/** Gemini generateContent with inline image (non-streaming). */
+async function askGeminiVision({ apiKey, model, prompt, imageBase64, imageMime, tabId, conversationContext = [] }) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const controller = new AbortController();
+  if (tabId) abortControllers[tabId] = controller;
+
+  let fullPrompt = prompt;
+  if (conversationContext && conversationContext.length > 0) {
+    const contextText = conversationContext.map((msg) => msg.content).join('\n\n');
+    fullPrompt = `Previous conversation:\n${contextText}\n\nUser: ${prompt}`;
+  }
+
+  const mime = imageMime || 'image/jpeg';
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { text: fullPrompt },
+              { inline_data: { mime_type: mime, data: imageBase64 } }
+            ]
+          }
+        ]
+      }),
+      signal: controller.signal
+    });
+    if (tabId) delete abortControllers[tabId];
+    const data = await res.json();
+
+    if (data.error) {
+      const userFriendlyError = formatErrorMessage(data.error.message || '', 'gemini');
+      if (isExtensionContextValid() && tabId) {
+        try {
+          chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: userFriendlyError, done: true });
+        } catch (e) {}
+      }
+      return { ok: false, answer: userFriendlyError };
+    }
+
+    let answer = '';
+    if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+      answer = data.candidates[0].content.parts[0].text;
+    } else {
+      answer = 'No answer from Gemini.';
+    }
+    if (isExtensionContextValid() && tabId) {
+      try {
+        chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: answer, done: true });
+      } catch (e) {}
+    }
+    return { ok: true, answer };
+  } catch (e) {
+    if (tabId) delete abortControllers[tabId];
+    if (e.name === 'AbortError') {
+      if (isExtensionContextValid() && tabId) {
+        try {
+          chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Stopped by user]', done: true });
+        } catch (err) {}
+      }
+      return { ok: false, answer: 'Request stopped by user.' };
+    }
+    const errorMessage = formatErrorMessage(e.message || 'Network error.', 'gemini');
+    if (isExtensionContextValid() && tabId) {
+      try {
+        chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: errorMessage, done: true });
+      } catch (err) {}
+    }
+    return { ok: false, answer: errorMessage };
+  }
+}
+
+/** HF router: vision models only, multimodal user message, streaming. */
+async function askHuggingFaceVision({ apiKey, model, prompt, imageBase64, imageMime, tabId, conversationContext = [], hfVisionModels }) {
+  const mime = imageMime || 'image/jpeg';
+  const imageUrl = `data:${mime};base64,${imageBase64}`;
+
+  const messages = [{ role: 'system', content: 'You are a helpful assistant. Describe what you see and answer briefly.' }];
+
+  if (conversationContext && conversationContext.length > 0) {
+    for (const msg of conversationContext) {
+      messages.push({
+        role: msg.role === 'user' ? 'user' : 'assistant',
+        content: msg.content
+      });
+    }
+  }
+
+  messages.push({
+    role: 'user',
+    content: [
+      { type: 'text', text: prompt },
+      { type: 'image_url', image_url: { url: imageUrl } }
+    ]
+  });
+
+  const modelsToTry = (hfVisionModels && hfVisionModels.length ? hfVisionModels : getHfVisionModels()).filter(Boolean);
+  if (!modelsToTry.length) {
+    const err = formatErrorMessage('No vision models configured for Hugging Face.', 'huggingface');
+    if (isExtensionContextValid() && tabId) {
+      try {
+        chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: err, done: true });
+      } catch (e) {}
+    }
+    if (tabId) delete abortControllers[tabId];
+    return { ok: false, answer: err };
+  }
+
+  let lastError = null;
+  const tryModels = model && modelsToTry.includes(model) ? [model, ...modelsToTry.filter((m) => m !== model)] : modelsToTry;
+
+  for (let i = 0; i < tryModels.length; i++) {
+    const currentModel = tryModels[i];
+    const url = 'https://router.huggingface.co/v1/chat/completions';
+    const controller = new AbortController();
+    if (tabId) abortControllers[tabId] = controller;
+
+    try {
+      const timeoutId = setTimeout(() => controller.abort(), 120000);
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: currentModel,
+          messages,
+          max_tokens: 4096,
+          temperature: 0.7,
+          stream: true
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (res.status === 401 || res.status === 403) {
+        const authError = appendSettingsHint(
+          '⚠️ Hugging Face authentication\n\n' +
+            'Your token may be invalid or missing "Inference Providers" for router models.\n\n' +
+            'Tokens: https://huggingface.co/settings/tokens'
+        );
+        if (isExtensionContextValid() && tabId) {
+          try {
+            chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: authError, done: true });
+          } catch (e) {}
+        }
+        if (tabId) delete abortControllers[tabId];
+        return { ok: false, answer: authError };
+      }
+
+      if (res.status === 503 || res.status === 429) {
+        lastError = `HTTP ${res.status} on ${currentModel}`;
+        continue;
+      }
+
+      if (!res.ok) {
+        const errorText = await res.text().catch(() => '');
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = {};
+        }
+        lastError = errorData.error?.message || errorText.slice(0, 300) || `HTTP ${res.status}`;
+        continue;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullAnswer = '';
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith('data: ')) continue;
+          const data = trimmed.slice(6);
+          if (data === '[DONE]') break;
+          try {
+            const parsed = JSON.parse(data);
+            const delta = parsed.choices?.[0]?.delta?.content;
+            if (delta) {
+              fullAnswer += delta;
+              if (isExtensionContextValid() && tabId) {
+                try {
+                  chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: delta, done: false, modelUsed: currentModel });
+                } catch (e) {}
+              }
+            }
+          } catch (e) {
+            /* skip */
+          }
+        }
+      }
+
+      if (fullAnswer) {
+        if (isExtensionContextValid() && tabId) {
+          try {
+            chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '', done: true, modelUsed: currentModel });
+          } catch (e) {}
+        }
+        if (tabId) delete abortControllers[tabId];
+        return { ok: true, answer: fullAnswer, modelUsed: currentModel };
+      }
+
+      lastError = 'Empty response from vision model';
+    } catch (e) {
+      if (e.name === 'AbortError') {
+        if (isExtensionContextValid() && tabId) {
+          try {
+            chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '\n[Request timeout or stopped]', done: true });
+          } catch (err) {}
+        }
+        if (tabId) delete abortControllers[tabId];
+        return { ok: false, answer: 'Request timeout or stopped by user.' };
+      }
+      lastError = e.message || 'Network error';
+    }
+  }
+
+  if (tabId) delete abortControllers[tabId];
+  const finalError = formatErrorMessage(
+    `Vision request failed for all configured models. Last: ${lastError || 'Unknown'}. Try OpenAI/Gemini or another HF vision model id in provider-config.`,
+    'huggingface'
+  );
+  if (isExtensionContextValid() && tabId) {
+    try {
+      chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: finalError, done: true });
+    } catch (e) {}
+  }
+  return { ok: false, answer: finalError };
+}
+
 // Predefined Hugging Face models for auto-switching
 const HF_MODELS = providerConfig.hfModels || [
   'meta-llama/Llama-3.1-8B-Instruct',
@@ -387,15 +944,13 @@ async function askHuggingFace({ apiKey, model, prompt, tabId, conversationContex
 
       // Check for auth errors before trying to read stream
       if (res.status === 401 || res.status === 403) {
-        const authError = `⚠️ Hugging Face Authentication Error\n\n` +
-          `Your API token is not valid or doesn't have the required permissions.\n\n` +
-          `To fix this:\n` +
-          `1. Go to https://huggingface.co/settings/tokens\n` +
-          `2. Create a new "Fine-grained" token\n` +
-          `3. Make sure to check:\n` +
-          `   ✓ "Make calls to Inference Providers"\n` +
-          `4. Copy the token (starts with "hf_")\n` +
-          `5. Paste it in the extension settings`;
+        const authError = appendSettingsHint(
+          `⚠️ Hugging Face authentication\n\n` +
+            `Your token is not valid or lacks permissions.\n\n` +
+            `1. https://huggingface.co/settings/tokens — create a Fine-grained token\n` +
+            `2. Enable "Make calls to Inference Providers"\n` +
+            `3. Copy the hf_ token into BrowseMate → API Keys`
+        );
 
         if (isExtensionContextValid() && tabId) {
           try {
@@ -549,22 +1104,57 @@ const MINI_GPT_ACTIONS = [
     id: 'explain', 
     label: isFrench ? 'Expliquer' : 'Explain', 
     prefix: isFrench ? 
-      'Veuillez expliquer le texte suivant de manière claire et concise. Fournissez uniquement l\'explication, sans détails supplémentaires, listes ou commentaires : ' :
-      'Please explain the following text in a clear and concise way. Provide only the explanation, without extra details, lists, or commentary: ' 
+      'Explique ce texte en 2 ou 3 phrases courtes. Sois bref. Ne donne aucune information supplémentaire, seulement l\'explication : ' :
+      'Explain this text in 2 to 3 short sentences. Be brief. Do not add extra information, only the explanation: '
   },
   { 
     id: 'correct', 
     label: isFrench ? 'Corriger' : 'Correct', 
     prefix: isFrench ? 
-      'Veuillez corriger et formater ce texte. Fournissez uniquement la version corrigée sans explications ou analyses : ' :
-      'Please correct and format this text. Provide only the corrected version without explanations or analysis: ' 
+      'Tu es un correcteur de texte. Corrige UNIQUEMENT les fautes d\'orthographe, de grammaire et de ponctuation dans le texte ci-dessous. Règles strictes : (1) même nombre de lignes que l\'original, (2) mêmes caractères de mise en forme (tirets, puces, majuscules, etc.), (3) n\'ajoute rien, ne supprime rien, n\'explique rien, (4) arrête-toi exactement à la fin du texte fourni. Retourne UNIQUEMENT le texte corrigé :\n\n' :
+      'You are a proofreader. Fix ONLY spelling, grammar and punctuation in the text below. Strict rules: (1) same number of lines as the original, (2) same formatting characters (dashes, bullets, capitalisation, etc.), (3) add nothing, remove nothing, explain nothing, (4) stop exactly at the end of the provided text. Return ONLY the corrected text:\n\n'
   },
-  { 
-    id: 'summarize', 
-    label: isFrench ? 'Résumer' : 'Summarize', 
-    prefix: isFrench ? 
-      'Veuillez résumer le texte suivant de manière brève et directe. Fournissez uniquement le résumé, sans détails supplémentaires, listes ou commentaires : ' :
-      'Please summarize the following text in a brief and direct way. Provide only the summary, without extra details, lists, or commentary: ' 
+  {
+    id: 'summarize',
+    label: isFrench ? 'Résumer' : 'Summarize',
+    prefix: isFrench ?
+      'Résume ce texte en 2 ou 3 phrases courtes. Sois bref. Ne donne aucune information supplémentaire, seulement le résumé : ' :
+      'Summarize this text in 2 to 3 short sentences. Be brief. Do not add extra information, only the summary: '
+  },
+  {
+    id: 'rephrase',
+    label: isFrench ? 'Reformuler' : 'Rephrase',
+    prefix: isFrench ?
+      'Reformule le texte ci-dessous avec d\'autres mots, en gardant exactement le même sens et le même niveau de langue. Ne change pas la longueur de manière significative. Retourne UNIQUEMENT le texte reformulé, rien d\'autre :\n\n' :
+      'Rephrase the text below using different words while keeping the exact same meaning and tone. Do not change the length significantly. Return ONLY the rephrased text, nothing else:\n\n'
+  },
+  {
+    id: 'translate',
+    label: isFrench ? 'Traduire' : 'Translate',
+    prefix: isFrench ?
+      'Détecte la langue du texte ci-dessous et traduis-le : s\'il est en français, traduis en anglais ; s\'il est en anglais, traduis en français ; sinon traduis en anglais. Retourne UNIQUEMENT le texte traduit, sans explication :\n\n' :
+      'Detect the language of the text below and translate it: if French translate to English, if English translate to French, otherwise translate to English. Return ONLY the translated text, no explanation:\n\n'
+  },
+  {
+    id: 'formal',
+    label: isFrench ? 'Rendre formel' : 'Make formal',
+    prefix: isFrench ?
+      'Réécris le texte ci-dessous dans un style professionnel et formel, en conservant le sens et la langue d\'origine. Retourne UNIQUEMENT le texte réécrit, rien d\'autre :\n\n' :
+      'Rewrite the text below in a professional and formal tone, keeping the original meaning and language. Return ONLY the rewritten text, nothing else:\n\n'
+  },
+  {
+    id: 'shorten',
+    label: isFrench ? 'Raccourcir' : 'Shorten',
+    prefix: isFrench ?
+      'Raccourcis le texte ci-dessous en gardant uniquement l\'essentiel. Vise environ la moitié de la longueur originale. Même langue, même ton. Retourne UNIQUEMENT le texte raccourci :\n\n' :
+      'Shorten the text below, keeping only the essential information. Aim for roughly half the original length. Same language, same tone. Return ONLY the shortened text:\n\n'
+  },
+  {
+    id: 'reply',
+    label: isFrench ? 'Suggérer une réponse' : 'Suggest reply',
+    prefix: isFrench ?
+      'Rédige une réponse courte et professionnelle au message ci-dessous. 2 à 4 phrases maximum. Même langue que le message. Retourne UNIQUEMENT la réponse rédigée, sans explication :\n\n' :
+      'Write a short professional reply to the message below. 2 to 4 sentences maximum. Same language as the message. Return ONLY the reply, no explanation:\n\n'
   }
 ];
 
@@ -600,7 +1190,7 @@ chrome.runtime.onInstalled.addListener(() => {
     // Add a non-clickable header at the top
     chrome.contextMenus.create({
       id: 'mini-gpt-header',
-        title: isFrench ? 'EasyAI Chat (réponses courtes)' : 'EasyAI Chat (short answers)',
+        title: isFrench ? 'BrowseMate (réponses courtes)' : 'BrowseMate (short answers)',
       contexts: ['selection'],
       enabled: false
     });
@@ -624,16 +1214,16 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   const action = MINI_GPT_ACTIONS.find(a => info.menuItemId === `mini-gpt-${a.id}`);
   if (action && info.selectionText) {
     // Fetch provider and API keys from storage
-    safeStorageGet(['provider', 'apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface', 'promptPrefix'], (data) => {
-      // Apply prompt prefix to context menu actions too
-      const promptPrefix = data.promptPrefix || DEFAULT_PROMPT_PREFIX;
-      const question = promptPrefix + action.prefix + info.selectionText;
+    safeStorageGet(['provider', 'apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface'], (data) => {
+      // Right-click actions have their own concise instructions — no extra prefix needed
+      const question = action.prefix + info.selectionText;
       // Determine provider: use last-used, or fallback to one with a key
       const provider = resolveProviderFromSettings(data);
       const apiKey = data[`apiKey_${provider}`] || '';
       const model = getDefaultModelForProvider(provider);
       
       try {
+      chrome.storage.local.set({ easyaiUiSuppressed: false }, () => {
       chrome.scripting.executeScript({
         target: { tabId: tab.id },
           func: (q, provider, model, apiKey, actionId, selectionText, isFrench, hfModels) => {
@@ -675,7 +1265,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
               userMsg.style.wordBreak = 'break-word';
               userMsg.style.fontSize = '15px';
               userMsg.style.background = '#e8f0fe';
-              userMsg.style.color = '#2563eb';
+              userMsg.style.color = 'var(--browsemate-browse)';
               userMsg.style.alignSelf = 'flex-end';
               userMsg.style.textAlign = 'right';
               messagesDiv.appendChild(userMsg);
@@ -684,7 +1274,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
               const last = messagesDiv.lastChild;
               if (!last || !last.querySelector || !last.querySelector('.mini-gpt-loader')) {
                 const loader = document.createElement('div');
-                loader.className = 'mini-gpt-msg-bot';
+                loader.className = 'mini-gpt-msg-bot mini-gpt-msg-loader-bubble';
                   loader.setAttribute('aria-label', isFrench ? 'Mini-GPT réfléchit' : 'Mini-GPT is thinking');
                 loader.innerHTML = `<span class='mini-gpt-loader'><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span></span>`;
                 loader.style.margin = '8px 0';
@@ -703,11 +1293,38 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
               messagesDiv.scrollTop = messagesDiv.scrollHeight;
             }
           }
+          // Detect if the selection came from an editable field (input, textarea, contenteditable)
+          // so content.js can offer a Replace button on the response
+          try {
+            const activeEl = document.activeElement;
+            const tag = activeEl ? activeEl.tagName : '';
+            if (activeEl && (tag === 'INPUT' || tag === 'TEXTAREA')) {
+              window.__easyaiEditableTarget = {
+                el: activeEl,
+                start: activeEl.selectionStart,
+                end: activeEl.selectionEnd,
+                type: 'input'
+              };
+            } else if (activeEl && activeEl.isContentEditable) {
+              const sel = window.getSelection();
+              window.__easyaiEditableTarget = {
+                el: activeEl,
+                range: (sel && sel.rangeCount > 0) ? sel.getRangeAt(0).cloneRange() : null,
+                type: 'contenteditable'
+              };
+            } else {
+              window.__easyaiEditableTarget = null;
+            }
+          } catch (_) {
+            window.__easyaiEditableTarget = null;
+          }
+
           // Send provider/model/apiKey with the message
           // For Hugging Face, include models list for auto-switching
           window.postMessage({ type: 'MINI_GPT_ASK', question: q, provider, model, apiKey, hfModels: hfModels || undefined }, '*');
         },
           args: [question, provider, model, apiKey, action.id, info.selectionText, isFrench, provider === 'huggingface' ? HF_MODELS : null]
+      });
       });
       } catch (e) {
         // console.log('Script execution failed:', e); // Replaced with silent handling
@@ -735,18 +1352,98 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
   
+  if (msg.type === 'EASYAI_CAPTURE_TAB') {
+    const winId = sender.tab && sender.tab.windowId;
+    try {
+      chrome.tabs.captureVisibleTab(winId == null ? null : winId, { format: 'jpeg', quality: 86 }, (dataUrl) => {
+        if (chrome.runtime.lastError) {
+          sendResponse({ ok: false, error: chrome.runtime.lastError.message || 'Capture failed' });
+          return;
+        }
+        sendResponse({ ok: true, dataUrl: dataUrl || '' });
+      });
+    } catch (e) {
+      sendResponse({ ok: false, error: e.message || 'Capture failed' });
+    }
+    return true;
+  }
+
   if (msg.type === 'MINI_GPT_ASK') {
     const provider = msg.provider || 'openai';
-    const model = msg.model || getDefaultModelForProvider(provider);
     const apiKey = msg.apiKey || '';
     const tabId = sender.tab && sender.tab.id;
-    const conversationContext = msg.conversationContext || []; // Get conversation context
-    const hfModels = msg.hfModels || HF_MODELS; // Get Hugging Face models list
-    const providerHandlers = {
-      openai: () => askOpenAI({ apiKey, model, prompt: msg.question, tabId, conversationContext }),
-      gemini: () => askGemini({ apiKey, model, prompt: msg.question, tabId, conversationContext }),
-      huggingface: () => askHuggingFace({ apiKey, model, prompt: msg.question, tabId, conversationContext, hfModels })
-    };
+    const conversationContext = msg.conversationContext || [];
+    const hfModels = msg.hfModels || HF_MODELS;
+    const hasImage =
+      typeof msg.imageBase64 === 'string' &&
+      msg.imageBase64.length > 80 &&
+      (!msg.imageMime || String(msg.imageMime).startsWith('image/'));
+
+    const visionModel = msg.model || getDefaultVisionModelForProvider(provider);
+    const hfVisionList = msg.hfVisionModels && msg.hfVisionModels.length ? msg.hfVisionModels : getHfVisionModels();
+
+    const providerHandlers = hasImage
+      ? {
+          openai: () =>
+            askOpenAIVision({
+              apiKey,
+              model: visionModel,
+              prompt: msg.question,
+              imageBase64: msg.imageBase64,
+              imageMime: msg.imageMime || 'image/jpeg',
+              tabId,
+              conversationContext
+            }),
+          gemini: () =>
+            askGeminiVision({
+              apiKey,
+              model: visionModel,
+              prompt: msg.question,
+              imageBase64: msg.imageBase64,
+              imageMime: msg.imageMime || 'image/jpeg',
+              tabId,
+              conversationContext
+            }),
+          huggingface: () =>
+            askHuggingFaceVision({
+              apiKey,
+              model: visionModel,
+              prompt: msg.question,
+              imageBase64: msg.imageBase64,
+              imageMime: msg.imageMime || 'image/jpeg',
+              tabId,
+              conversationContext,
+              hfVisionModels: hfVisionList
+            })
+        }
+      : {
+          openai: () =>
+            askOpenAI({
+              apiKey,
+              model: msg.model || getDefaultModelForProvider(provider),
+              prompt: msg.question,
+              tabId,
+              conversationContext
+            }),
+          gemini: () =>
+            askGemini({
+              apiKey,
+              model: msg.model || getDefaultModelForProvider(provider),
+              prompt: msg.question,
+              tabId,
+              conversationContext
+            }),
+          huggingface: () =>
+            askHuggingFace({
+              apiKey,
+              model: msg.model || getDefaultModelForProvider(provider),
+              prompt: msg.question,
+              tabId,
+              conversationContext,
+              hfModels
+            })
+        };
+
     (async () => {
       try {
         const handler = providerHandlers[provider];
@@ -785,5 +1482,36 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     sendResponse({ ok: true });
     return true;
   }
+
+  if (msg.type === 'EASYAI_REMINDER_SCHEDULE') {
+    const title = String(msg.title || '').trim().slice(0, 120);
+    const note = String(msg.note || '').trim().slice(0, 2000);
+    const when = Number(msg.when);
+    const now = Date.now();
+    const maxWhen = now + 30 * 24 * 60 * 60 * 1000;
+    if (!title || !Number.isFinite(when) || when < now + 500 || when > maxWhen) {
+      sendResponse({ ok: false, error: 'invalid' });
+      return true;
+    }
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
+    const alarmName = `easyaiR_${id}`;
+    const fireAt = Math.floor(when);
+    chrome.storage.local.set({ [alarmName]: { title, note, created: now, fireAt } }, () => {
+      if (chrome.runtime.lastError) {
+        sendResponse({ ok: false, error: chrome.runtime.lastError.message });
+        return;
+      }
+      try {
+        chrome.alarms.create(alarmName, { when: fireAt });
+      } catch (e) {
+        chrome.storage.local.remove(alarmName);
+        sendResponse({ ok: false, error: e.message || 'alarm' });
+        return;
+      }
+      sendResponse({ ok: true, alarmName });
+    });
+    return true;
+  }
+
   sendResponse({ok: true});
 });

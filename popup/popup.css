@@ -1,12 +1,15 @@
 /* === Popup === */
 :root {
+  /* BrowseMate — Browse (blue), Mate (teal); keep in sync with styles.css */
+  --browsemate-browse: #2563eb;
+  --browsemate-mate: #0d9488;
   --p-bg: #f7fafd;
   --p-card: #ffffff;
   --p-border: #e5e7eb;
   --p-text: #23272f;
   --p-text2: #6b7280;
-  --p-accent: #2563eb;
-  --p-accent2: #10a37f;
+  --p-accent: var(--browsemate-browse);
+  --p-accent2: var(--browsemate-mate);
   --p-input-bg: #f3f4f6;
   --p-input-border: #d1d5db;
   --p-shadow: 0 1px 3px rgba(0,0,0,0.06);
@@ -41,8 +44,9 @@ body {
   margin-bottom: 16px;
 }
 .popup-logo { width:32px; height:32px; border-radius:8px; }
-.popup-title { font-size:17px; font-weight:800; color:var(--p-accent); }
-.popup-title .accent { color:var(--p-accent2); }
+.popup-title { font-size:17px; font-weight:800; }
+.popup-title .brand-browse { color: var(--browsemate-browse); }
+.popup-title .accent { color: var(--browsemate-mate); }
 
 /* Provider cards */
 .provider-cards { display:flex; gap:8px; margin-bottom:8px; }
@@ -70,7 +74,7 @@ body {
 .free-badge {
   position:absolute; top:-6px; left:50%; transform:translateX(-50%);
   font-size:8px; font-weight:800; color:#fff;
-  background:linear-gradient(90deg,#10a37f,#059669);
+  background:linear-gradient(90deg,var(--browsemate-mate),#0f766e);
   padding:1px 5px; border-radius:5px; letter-spacing:0.04em;
 }
 
@@ -103,6 +107,29 @@ body {
 }
 .switch input:checked + .slider { background:var(--p-accent); }
 .switch input:checked + .slider::before { transform:translateX(16px); }
+
+.voice-lang-row { flex-wrap: wrap; gap: 8px; align-items: center; }
+.voice-lang-row .toggle-label { flex: 1; min-width: 100px; margin: 0; cursor: pointer; }
+.speech-lang-select {
+  flex: 1;
+  min-width: 130px;
+  max-width: 200px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1.5px solid var(--p-input-border);
+  background: var(--p-input-bg);
+  color: var(--p-text);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.voice-hint {
+  font-size: 10px;
+  color: var(--p-text2);
+  line-height: 1.45;
+  padding: 2px 12px 10px;
+  margin: 0;
+}
 
 /* Settings button */
 .settings-btn {
@@ -155,7 +182,7 @@ body {
 .key-provider { font-size:13px; font-weight:700; color:var(--p-text); }
 .free-tag {
   font-size:9px; font-weight:800; color:#fff;
-  background:linear-gradient(90deg,#10a37f,#059669);
+  background:linear-gradient(90deg,var(--browsemate-mate),#0f766e);
   padding:1px 6px; border-radius:5px;
 }
 

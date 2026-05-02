@@ -10,7 +10,7 @@ if (!window.__miniGptAgentInjected) {
   const translations = {
     en: {
       // Header
-      title: 'EasyAI Chat',
+      title: 'BrowseMate',
       dragToMove: 'Drag to move',
       showHistory: 'Show chat history',
       newChat: 'New Chat',
@@ -26,7 +26,7 @@ if (!window.__miniGptAgentInjected) {
       explainPage: 'Explain Page',
       
       // Messages
-      welcome: '👋 Welcome! This is EasyAI Chat. Ask anything, anytime.',
+      welcome: '👋 Welcome! This is BrowseMate. Ask anything, anytime.',
       noTextFound: 'No readable text found on this page.',
       pleaseSetApiKey: 'Please set your API key in the extension popup.',
       thinking: 'Mini-GPT is thinking',
@@ -51,14 +51,24 @@ if (!window.__miniGptAgentInjected) {
       explain: 'Explain this page',
       
       // Tooltips and Labels
-      showHistoryTooltip: 'Show chat history (Ctrl+H)',
+      showHistoryTooltip: 'Show chat history (Ctrl+Shift+H)',
       showHistoryAria: 'Show chat history',
       newChatTooltip: 'New Chat',
       newChatAria: 'Start new chat',
       closeChatTooltip: 'Close chat',
       closeChatAria: 'Close chat',
+      moreMenuTooltip: 'More actions',
+      moreMenuAria: 'More: history, reminder, settings, copy conversation, theme',
+      menuSettings: 'API & settings',
+      menuSettingsAria: 'Open extension settings and API keys',
+      menuCopyConversation: 'Copy conversation',
+      menuCopyConversationAria: 'Copy entire conversation to clipboard',
+      chatCopied: 'Conversation copied.',
+      nothingToCopyChat: 'Nothing to copy yet.',
+      copyConvYou: 'You',
+      copyConvAssistant: 'Assistant',
       quickActionsTooltip: 'Quick Actions',
-      quickActionsDisabledTooltip: "Quick actions aren't available on this page. Select and copy text, then paste it into EasyAI Chat.",
+      quickActionsDisabledTooltip: "Quick actions aren't available on this page. Select and copy text, then paste it into BrowseMate.",
       
       // Provider
       currentProvider: 'Current provider: ',
@@ -71,11 +81,57 @@ if (!window.__miniGptAgentInjected) {
       toolbarExplain: 'Explain',
       toolbarSummarize: 'Summarize',
       toolbarCorrect: 'Correct',
-      toolbarTranslate: 'Translate'
+      toolbarTranslate: 'Translate',
+      replaceInField: 'Replace in field',
+      replaceInFieldAria: 'Replace the selected text in the field with this answer',
+      replaceDone: 'Replaced!',
+      
+      // Voice
+      voiceInput: 'Voice input',
+      voiceListening: 'Listening…',
+      voiceNotSupported: 'Voice input is not supported in this browser.',
+      voiceMicDenied: 'Microphone access was denied.',
+      voiceNoSpeech: 'No speech detected. Try again.',
+      voiceAborted: 'Voice input stopped.',
+      voiceNetwork: 'Voice typing didn’t work. Try again.',
+      readAloud: 'Read aloud',
+      readAloudAria: 'Read this message aloud',
+      readAloudPlaying: 'Reading aloud…',
+      readAloudPlayingAria: 'Reading aloud',
+      voicePrivacyHint: 'Dictation may use your browser’s speech service (e.g. Google in Chrome).',
+      voiceDismiss: 'Dismiss',
+
+      // Screenshot / vision
+      screenshotPage: 'Screenshot tab',
+      screenshotAria: 'Attach a screenshot of the visible tab',
+      visionCapturing: 'Capturing…',
+      visionCaptureFailed: 'Could not capture the tab.',
+      visionPendingLabel: 'Screenshot attached',
+      visionRemove: 'Remove screenshot',
+      visionDefaultAsk: 'What do you see? Answer briefly.',
+      visionProviderOnly: 'Screenshots are available with OpenAI or Gemini. Switch provider or use text only.',
+
+      // Reminders
+      reminderBtnTitle: 'Set a reminder',
+      reminderBtnAria: 'Set a reminder',
+      reminderModalTitle: 'Reminder',
+      reminderTitleLabel: 'Title',
+      reminderTitlePlaceholder: 'What to remember',
+      reminderNoteLabel: 'Note (optional)',
+      reminderNotePlaceholder: 'Details…',
+      reminderWhenLabel: 'When',
+      reminderPreset15m: 'In 15 min',
+      reminderPreset1h: 'In 1 hour',
+      reminderPreset3h: 'In 3 hours',
+      reminderPresetTomorrow: 'Tomorrow 9:00',
+      reminderSchedule: 'Schedule',
+      reminderScheduled: 'Reminder scheduled.',
+      reminderInvalidTime: 'Check the title and date/time.',
+      reminderDismiss: 'Got it'
     },
     fr: {
       // Header
-      title: 'EasyAI Chat',
+      title: 'BrowseMate',
       dragToMove: 'Glisser pour déplacer',
       showHistory: 'Afficher l\'historique',
       newChat: 'Nouveau chat',
@@ -91,7 +147,7 @@ if (!window.__miniGptAgentInjected) {
       explainPage: 'Expliquer la page',
       
       // Messages
-      welcome: '👋 Bienvenue ! C\'est EasyAI Chat. Posez vos questions à tout moment.',
+      welcome: '👋 Bienvenue ! Voici BrowseMate. Posez vos questions à tout moment.',
       noTextFound: 'Aucun texte lisible trouvé sur cette page.',
       pleaseSetApiKey: 'Veuillez configurer votre clé API dans le popup de l\'extension.',
       thinking: 'Mini-GPT réfléchit',
@@ -116,14 +172,24 @@ if (!window.__miniGptAgentInjected) {
       explain: 'Expliquer cette page',
       
       // Tooltips and Labels
-      showHistoryTooltip: 'Afficher l\'historique (Ctrl+H)',
+      showHistoryTooltip: 'Afficher l\'historique (Ctrl+Shift+H)',
       showHistoryAria: 'Afficher l\'historique',
       newChatTooltip: 'Nouveau chat',
       newChatAria: 'Commencer un nouveau chat',
       closeChatTooltip: 'Fermer le chat',
       closeChatAria: 'Fermer le chat',
+      moreMenuTooltip: 'Plus d’actions',
+      moreMenuAria: 'Plus : historique, rappel, réglages, copier la conversation, thème',
+      menuSettings: 'API et réglages',
+      menuSettingsAria: 'Ouvrir les réglages et les clés API',
+      menuCopyConversation: 'Copier la conversation',
+      menuCopyConversationAria: 'Copier toute la conversation dans le presse-papiers',
+      chatCopied: 'Conversation copiée.',
+      nothingToCopyChat: 'Rien à copier pour l’instant.',
+      copyConvYou: 'Vous',
+      copyConvAssistant: 'Assistant',
       quickActionsTooltip: 'Actions rapides',
-      quickActionsDisabledTooltip: 'Les actions rapides ne sont pas disponibles sur cette page. Sélectionnez et copiez du texte, puis collez-le dans EasyAI Chat.',
+      quickActionsDisabledTooltip: 'Les actions rapides ne sont pas disponibles sur cette page. Sélectionnez et copiez du texte, puis collez-le dans BrowseMate.',
       
       // Provider
       currentProvider: 'Fournisseur actuel : ',
@@ -136,7 +202,51 @@ if (!window.__miniGptAgentInjected) {
       toolbarExplain: 'Expliquer',
       toolbarSummarize: 'Résumer',
       toolbarCorrect: 'Corriger',
-      toolbarTranslate: 'Traduire'
+      toolbarTranslate: 'Traduire',
+      replaceInField: 'Remplacer dans le champ',
+      replaceInFieldAria: 'Remplacer le texte sélectionné dans le champ par cette réponse',
+      replaceDone: 'Remplacé !',
+      
+      // Voice
+      voiceInput: 'Saisie vocale',
+      voiceListening: 'Écoute…',
+      voiceNotSupported: 'La saisie vocale n’est pas prise en charge dans ce navigateur.',
+      voiceMicDenied: 'Accès au microphone refusé.',
+      voiceNoSpeech: 'Aucune parole détectée. Réessayez.',
+      voiceAborted: 'Saisie vocale arrêtée.',
+      voiceNetwork: 'La dictée n’a pas fonctionné. Réessayez.',
+      readAloud: 'Lire à voix haute',
+      readAloudAria: 'Lire ce message à voix haute',
+      readAloudPlaying: 'Lecture en cours…',
+      readAloudPlayingAria: 'Lecture en cours',
+      voicePrivacyHint: 'La dictée peut utiliser le service vocal du navigateur (p. ex. Google dans Chrome).',
+      voiceDismiss: 'Fermer',
+
+      screenshotPage: 'Capture d’écran',
+      screenshotAria: 'Joindre une capture de l’onglet visible',
+      visionCapturing: 'Capture…',
+      visionCaptureFailed: 'Impossible de capturer l’onglet.',
+      visionPendingLabel: 'Capture jointe',
+      visionRemove: 'Retirer la capture',
+      visionDefaultAsk: 'Que voyez-vous ? Répondez brièvement.',
+      visionProviderOnly: 'La capture d’écran est disponible avec OpenAI ou Gemini. Changez de fournisseur ou utilisez le texte seul.',
+
+      reminderBtnTitle: 'Rappel',
+      reminderBtnAria: 'Programmer un rappel',
+      reminderModalTitle: 'Rappel',
+      reminderTitleLabel: 'Titre',
+      reminderTitlePlaceholder: 'À retenir',
+      reminderNoteLabel: 'Note (optionnel)',
+      reminderNotePlaceholder: 'Détails…',
+      reminderWhenLabel: 'Quand',
+      reminderPreset15m: 'Dans 15 min',
+      reminderPreset1h: 'Dans 1 h',
+      reminderPreset3h: 'Dans 3 h',
+      reminderPresetTomorrow: 'Demain 9:00',
+      reminderSchedule: 'Programmer',
+      reminderScheduled: 'Rappel programmé.',
+      reminderInvalidTime: 'Vérifiez le titre et la date/heure.',
+      reminderDismiss: 'Compris'
     }
   };
   
@@ -154,7 +264,7 @@ if (!window.__miniGptAgentInjected) {
   const API_KEY_FIELDS = providerHelpers.getApiKeyFields
     ? providerHelpers.getApiKeyFields()
     : (providerConfig.apiKeyFields || ['apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface']);
-  const DEFAULT_PROMPT_PREFIX = providerConfig.defaultPromptPrefix || 'Give a simple, direct, resume answer. ';
+  const DEFAULT_PROMPT_PREFIX = providerConfig.defaultPromptPrefix || 'Give a short, direct answer. Be concise. ';
 
   function isLoginOrAuthPage() {
     if (pageHelpers.isLoginOrAuthPage) {
@@ -177,8 +287,8 @@ if (!window.__miniGptAgentInjected) {
   const bubble = document.createElement('div');
   bubble.id = 'mini-gpt-bubble';
   bubble.innerHTML = `
-    <img src="${chrome.runtime.getURL('icons/easyChat.png')}" alt="EasyAI Chat" style="width:42px; height:42px; border-radius:0; pointer-events:none; object-fit:contain;">
-    <div class="tooltip">EasyAI Chat</div>
+    <img src="${chrome.runtime.getURL('icons/easyChat.png')}" alt="BrowseMate" style="width:58px; height:58px; border-radius:0; pointer-events:none; object-fit:contain;">
+    <div class="tooltip">BrowseMate</div>
   `;
   bubble.style.position = 'fixed';
   bubble.style.right = '32px';
@@ -189,8 +299,8 @@ if (!window.__miniGptAgentInjected) {
   bubble.style.pointerEvents = 'auto';
   
   const originalBubblePosition = { bottom: '32px', right: '32px' };
-  bubble.style.width = '48px';
-  bubble.style.height = '48px';
+  bubble.style.width = '64px';
+  bubble.style.height = '64px';
   bubble.style.background = 'none';
   bubble.style.borderRadius = '0';
   bubble.style.border = 'none';
@@ -213,7 +323,7 @@ if (!window.__miniGptAgentInjected) {
   chatContainer.style.display = 'none';
   chatContainer.style.position = 'fixed';
   chatContainer.style.right = '32px';
-  chatContainer.style.bottom = '92px';
+  chatContainer.style.bottom = '108px';
   chatContainer.style.left = '';
   chatContainer.style.top = '';
   chatContainer.style.zIndex = '999999';
@@ -239,8 +349,11 @@ if (!window.__miniGptAgentInjected) {
   let bubbleCurrentY = 0;
   let bubbleDragDistance = 0;
   let bubbleWasDragged = false;
-  
+  /** When true, user hid the assistant; do not auto-show bubble until they use the shortcut or popup. */
+  let easyaiUiSuppressed = false;
+
   function showBubble() {
+    if (easyaiUiSuppressed) return;
     // Don't show bubble on login/authorization pages
     if (isLoginOrAuthPage()) {
       return;
@@ -264,6 +377,7 @@ if (!window.__miniGptAgentInjected) {
   }
   
   function showBubbleInstant() {
+    if (easyaiUiSuppressed) return;
     // Don't show bubble on login/authorization pages
     if (isLoginOrAuthPage()) {
       return;
@@ -288,6 +402,10 @@ if (!window.__miniGptAgentInjected) {
   }
   
   function syncBubbleVisibility() {
+    if (easyaiUiSuppressed) {
+      hideBubble();
+      return;
+    }
     const isChatVisible = chatContainer.style.display === 'flex' || chatContainer.style.visibility === 'visible';
     if (isChatVisible) {
       hideBubble();
@@ -306,7 +424,7 @@ if (!window.__miniGptAgentInjected) {
     <div class="mini-gpt-header mini-gpt-header-modern">
       <div class="mini-gpt-header-title">
         <img src="${chrome.runtime.getURL('icons/easyChat.png')}" alt="${translate('title')}" class="mini-gpt-header-logo">
-        <span class="mini-gpt-header-text">EasyAI <span class="brand-accent">Chat</span></span>
+        <span class="mini-gpt-header-text"><span class="brand-browse">Browse</span><span class="brand-accent">Mate</span></span>
         <span class="mini-gpt-drag-indicator" title="${translate('dragToMove')}">⋮⋮</span>
       </div>
       <div class="mini-gpt-actions-bar">
@@ -326,12 +444,22 @@ if (!window.__miniGptAgentInjected) {
     </div>
     <div id="mini-gpt-provider-row" class="mini-gpt-provider-row-enhanced"></div>
     <div id="mini-gpt-messages" class="mini-gpt-messages-enhanced"></div>
-    <form id="mini-gpt-form" class="mini-gpt-form-enhanced" style="position:relative;display:flex;align-items:flex-end;">
-      <textarea id="mini-gpt-input" class="mini-gpt-input-enhanced" placeholder="${translate('placeholder')}" autocomplete="off" rows="1" style="flex:1;"></textarea>
-      <button type="submit" class="mini-gpt-send-btn" aria-label="${translate('send')}" style="background: #2563eb; border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; margin-left: 8px;">
+    <form id="mini-gpt-form" class="mini-gpt-form-enhanced" style="position:relative;display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px;">
+      <div id="mini-gpt-vision-pending" class="mini-gpt-vision-pending" style="display:none;width:100%;"></div>
+      <div id="mini-gpt-voice-status" class="mini-gpt-voice-status" role="status" aria-live="polite" style="display:none;"></div>
+      <div class="mini-gpt-input-wrap" style="flex:1;display:flex;align-items:flex-end;gap:6px;min-width:0;">
+      <textarea id="mini-gpt-input" class="mini-gpt-input-enhanced" placeholder="${translate('placeholder')}" autocomplete="off" rows="1" style="flex:1;min-width:0;"></textarea>
+      <button type="button" id="mini-gpt-screenshot-btn" class="mini-gpt-screenshot-btn" title="${translate('screenshotPage')}" aria-label="${translate('screenshotAria')}" style="display:flex;flex-shrink:0;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;width:40px;height:40px;align-items:center;justify-content:center;cursor:pointer;padding:0;color:var(--browsemate-browse);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      </button>
+      <button type="button" id="mini-gpt-voice-btn" class="mini-gpt-voice-btn" title="${translate('voiceInput')}" aria-label="${translate('voiceInput')}" style="display:none;flex-shrink:0;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;width:40px;height:40px;align-items:center;justify-content:center;cursor:pointer;padding:0;color:var(--browsemate-browse);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </button>
+      </div>
+      <button type="submit" class="mini-gpt-send-btn" aria-label="${translate('send')}" style="background: var(--browsemate-browse); border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; flex-shrink:0;">
         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       </button>
-      <button id="mini-gpt-quick-actions-btn" type="button" title="${translate('quickActions')}" aria-label="${translate('quickActions')}" style="background:none;border:none;padding:4px 8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:#2563eb;position:relative;margin-left:4px;">
+      <button id="mini-gpt-quick-actions-btn" type="button" title="${translate('quickActions')}" aria-label="${translate('quickActions')}" style="background:none;border:none;padding:4px 8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--browsemate-browse);position:relative;flex-shrink:0;">
         <span style="font-size:20px;">⚡</span>
       </button>
     </form>
@@ -384,6 +512,9 @@ if (!window.__miniGptAgentInjected) {
     // Highlight selected in list
     providerList.querySelectorAll('.mini-gpt-provider-option').forEach(opt => {
       opt.setAttribute('aria-selected', opt.dataset.provider === provider ? 'true' : 'false');
+    });
+    queueMicrotask(() => {
+      if (typeof syncVisionScreenshotAvailability === 'function') syncVisionScreenshotAvailability();
     });
   }
 
@@ -471,10 +602,538 @@ if (!window.__miniGptAgentInjected) {
     }
   });
 
+  function safeScrollIntoView(el, options) {
+    try {
+      if (!el || typeof el.scrollIntoView !== 'function') return;
+      if (!el.isConnected) return;
+      el.scrollIntoView(options);
+    } catch (_) { /* detached node, extension reload, etc. */ }
+  }
+
   // Handle chat
   const messagesDiv = chatContainer.querySelector('#mini-gpt-messages');
   const form = chatContainer.querySelector('#mini-gpt-form');
   const input = chatContainer.querySelector('#mini-gpt-input');
+  const voiceBtn = chatContainer.querySelector('#mini-gpt-voice-btn');
+  const voiceStatusEl = chatContainer.querySelector('#mini-gpt-voice-status');
+  const visionPendingEl = chatContainer.querySelector('#mini-gpt-vision-pending');
+  const screenshotBtn = chatContainer.querySelector('#mini-gpt-screenshot-btn');
+  let pendingVision = null;
+  const VISION_MAX_SIDE = providerConfig.visionMaxImageSide || 1280;
+  let voiceStatusTimer = null;
+
+  function downscaleDataUrl(dataUrl, maxSide, quality) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const w = img.naturalWidth || img.width;
+          const h = img.naturalHeight || img.height;
+          const scale = Math.min(1, maxSide / Math.max(w, h, 1));
+          const tw = Math.max(1, Math.round(w * scale));
+          const th = Math.max(1, Math.round(h * scale));
+          const c = document.createElement('canvas');
+          c.width = tw;
+          c.height = th;
+          c.getContext('2d').drawImage(img, 0, 0, tw, th);
+          const out = c.toDataURL('image/jpeg', quality);
+          const comma = out.indexOf(',');
+          resolve({ base64: comma >= 0 ? out.slice(comma + 1) : '', mime: 'image/jpeg' });
+        } catch (e) {
+          reject(e);
+        }
+      };
+      img.onerror = () => reject(new Error('image'));
+      img.src = dataUrl;
+    });
+  }
+
+  function renderVisionPending() {
+    if (!visionPendingEl) return;
+    if (!pendingVision || !pendingVision.base64) {
+      visionPendingEl.style.display = 'none';
+      visionPendingEl.replaceChildren();
+      return;
+    }
+    visionPendingEl.style.display = 'flex';
+    visionPendingEl.replaceChildren();
+    const thumb = document.createElement('img');
+    thumb.className = 'mini-gpt-vision-thumb';
+    thumb.src = 'data:' + pendingVision.mime + ';base64,' + pendingVision.base64;
+    thumb.alt = translate('visionPendingLabel');
+    const label = document.createElement('span');
+    label.className = 'mini-gpt-vision-label';
+    label.textContent = translate('visionPendingLabel');
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'mini-gpt-vision-remove';
+    removeBtn.innerHTML = '&times;';
+    removeBtn.title = translate('visionRemove');
+    removeBtn.setAttribute('aria-label', translate('visionRemove'));
+    removeBtn.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      pendingVision = null;
+      renderVisionPending();
+    });
+    visionPendingEl.appendChild(thumb);
+    visionPendingEl.appendChild(label);
+    visionPendingEl.appendChild(removeBtn);
+  }
+
+  function clearPendingVision() {
+    pendingVision = null;
+    renderVisionPending();
+  }
+
+  function syncVisionScreenshotAvailability() {
+    if (!screenshotBtn) return;
+    const allowed = currentProvider === 'openai' || currentProvider === 'gemini';
+    screenshotBtn.style.display = allowed ? 'flex' : 'none';
+    if (!allowed && pendingVision) clearPendingVision();
+  }
+
+  if (screenshotBtn) {
+    screenshotBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (requestInProgress) return;
+      screenshotBtn.disabled = true;
+      const prevTitle = screenshotBtn.title;
+      screenshotBtn.title = translate('visionCapturing');
+      chrome.runtime.sendMessage({ type: 'EASYAI_CAPTURE_TAB' }, async (cap) => {
+        screenshotBtn.disabled = false;
+        screenshotBtn.title = prevTitle;
+        if (chrome.runtime.lastError) {
+          showVoiceNotice(chrome.runtime.lastError.message || translate('visionCaptureFailed'), 'error');
+          return;
+        }
+        if (!cap || !cap.ok || !cap.dataUrl) {
+          showVoiceNotice((cap && cap.error) || translate('visionCaptureFailed'), 'error');
+          return;
+        }
+        try {
+          const scaled = await downscaleDataUrl(cap.dataUrl, VISION_MAX_SIDE, 0.82);
+          if (!scaled.base64 || scaled.base64.length < 100) {
+            showVoiceNotice(translate('visionCaptureFailed'), 'error');
+            return;
+          }
+          pendingVision = { base64: scaled.base64, mime: scaled.mime };
+          renderVisionPending();
+        } catch (_) {
+          showVoiceNotice(translate('visionCaptureFailed'), 'error');
+        }
+      });
+    });
+  }
+
+  syncVisionScreenshotAvailability();
+
+  function clearVoiceNotice() {
+    if (voiceStatusTimer) {
+      clearTimeout(voiceStatusTimer);
+      voiceStatusTimer = null;
+    }
+    if (voiceStatusEl) {
+      voiceStatusEl.style.display = 'none';
+      voiceStatusEl.replaceChildren();
+      voiceStatusEl.className = 'mini-gpt-voice-status';
+    }
+  }
+
+  function showVoiceNotice(text, variant) {
+    if (!voiceStatusEl || !text) return;
+    clearVoiceNotice();
+    voiceStatusEl.className = 'mini-gpt-voice-status mini-gpt-voice-status--' + (variant === 'error' ? 'error' : 'info');
+    const textSpan = document.createElement('span');
+    textSpan.className = 'mini-gpt-voice-status-text';
+    textSpan.textContent = text;
+    const dismissBtn = document.createElement('button');
+    dismissBtn.type = 'button';
+    dismissBtn.className = 'mini-gpt-voice-status-dismiss';
+    dismissBtn.title = translate('voiceDismiss');
+    dismissBtn.setAttribute('aria-label', translate('voiceDismiss'));
+    dismissBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    dismissBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      clearVoiceNotice();
+    });
+    voiceStatusEl.appendChild(textSpan);
+    voiceStatusEl.appendChild(dismissBtn);
+    voiceStatusEl.style.display = 'flex';
+    voiceStatusTimer = setTimeout(clearVoiceNotice, 14000);
+  }
+
+  const voicePrefs = {
+    voiceInputEnabled: false,
+    speechLang: ''
+  };
+  let speechRecognitionInstance = null;
+  let voiceListening = false;
+
+  function getSpeechRecognitionCtor() {
+    return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+  }
+
+  function stripMarkdownForSpeech(s) {
+    if (!s) return '';
+    return String(s)
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/`+/g, ' ')
+      .replace(/https?:\/\/\S+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function stopSpeechRecognition() {
+    if (speechRecognitionInstance) {
+      try {
+        speechRecognitionInstance.onresult = null;
+        speechRecognitionInstance.onerror = null;
+        speechRecognitionInstance.onend = null;
+        speechRecognitionInstance.stop();
+      } catch (_) { /* ignore */ }
+      speechRecognitionInstance = null;
+    }
+    voiceListening = false;
+    if (voiceBtn) {
+      voiceBtn.classList.remove('mini-gpt-voice-listening');
+      voiceBtn.title = translate('voiceInput');
+      voiceBtn.setAttribute('aria-label', translate('voiceInput'));
+    }
+  }
+
+  const READ_ALOUD_ICON_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+  const READ_ALOUD_CHECK_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+
+  let activeReadAloudBtn = null;
+  const readAloudUiTimers = { swap: null, doneFlash: null };
+
+  function clearReadAloudUiTimers() {
+    if (readAloudUiTimers.swap) {
+      clearTimeout(readAloudUiTimers.swap);
+      readAloudUiTimers.swap = null;
+    }
+    if (readAloudUiTimers.doneFlash) {
+      clearTimeout(readAloudUiTimers.doneFlash);
+      readAloudUiTimers.doneFlash = null;
+    }
+  }
+
+  function resetReadAloudButton(btn) {
+    if (!btn || !btn.parentNode) return;
+    btn.innerHTML = READ_ALOUD_ICON_SVG;
+    btn.style.background = 'rgba(255, 255, 255, 0.9)';
+    btn.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+    btn.style.color = '';
+    btn.title = translate('readAloud');
+    btn.setAttribute('aria-label', translate('readAloudAria'));
+    btn.removeAttribute('aria-busy');
+  }
+
+  function stopAllVoiceOutput() {
+    clearReadAloudUiTimers();
+    if (activeReadAloudBtn) {
+      resetReadAloudButton(activeReadAloudBtn);
+      activeReadAloudBtn = null;
+    }
+    try {
+      window.speechSynthesis.cancel();
+    } catch (_) { /* ignore */ }
+  }
+
+  function stopAllVoiceActivity() {
+    stopSpeechRecognition();
+    stopAllVoiceOutput();
+    clearVoiceNotice();
+  }
+
+  function speakAssistantText(text, readBtn) {
+    stopAllVoiceOutput();
+    const plain = stripMarkdownForSpeech(text);
+    if (!plain) {
+      if (readBtn) resetReadAloudButton(readBtn);
+      return;
+    }
+    const lang = (voicePrefs.speechLang && voicePrefs.speechLang.trim()) || navigator.language || 'en-US';
+    const u = new SpeechSynthesisUtterance(plain);
+    u.lang = lang;
+    u.rate = 1;
+
+    const finishReadAloud = () => {
+      clearReadAloudUiTimers();
+      if (!readBtn || activeReadAloudBtn !== readBtn) return;
+      readBtn.innerHTML = READ_ALOUD_CHECK_SVG;
+      readBtn.style.background = '#10b981';
+      readBtn.style.borderColor = '#10b981';
+      readBtn.style.color = '#fff';
+      readBtn.title = translate('readAloud');
+      readBtn.setAttribute('aria-label', translate('readAloudAria'));
+      readBtn.removeAttribute('aria-busy');
+      readAloudUiTimers.doneFlash = setTimeout(() => {
+        readAloudUiTimers.doneFlash = null;
+        resetReadAloudButton(readBtn);
+        if (activeReadAloudBtn === readBtn) activeReadAloudBtn = null;
+      }, 1200);
+    };
+
+    const failReadAloud = () => {
+      clearReadAloudUiTimers();
+      if (readBtn && activeReadAloudBtn === readBtn) {
+        resetReadAloudButton(readBtn);
+        activeReadAloudBtn = null;
+      }
+    };
+
+    if (readBtn) {
+      activeReadAloudBtn = readBtn;
+      readBtn.innerHTML = READ_ALOUD_CHECK_SVG;
+      readBtn.style.background = '#10b981';
+      readBtn.style.borderColor = '#10b981';
+      readBtn.style.color = '#fff';
+      readBtn.style.opacity = '1';
+      readBtn.title = translate('readAloudPlaying');
+      readBtn.setAttribute('aria-label', translate('readAloudPlayingAria'));
+      readBtn.setAttribute('aria-busy', 'true');
+
+      readAloudUiTimers.swap = setTimeout(() => {
+        readAloudUiTimers.swap = null;
+        if (activeReadAloudBtn !== readBtn || !readBtn.parentNode) return;
+        try {
+          if (window.speechSynthesis.speaking) {
+            readBtn.innerHTML = READ_ALOUD_ICON_SVG;
+            readBtn.style.color = '#fff';
+            readBtn.style.background = '#10b981';
+            readBtn.style.borderColor = '#10b981';
+          }
+        } catch (_) { /* ignore */ }
+      }, 650);
+    }
+
+    u.onend = finishReadAloud;
+    u.onerror = failReadAloud;
+
+    try {
+      window.speechSynthesis.speak(u);
+    } catch (_) {
+      failReadAloud();
+    }
+  }
+
+  function applyVoiceMicVisibility() {
+    if (!voiceBtn) return;
+    const supported = !!getSpeechRecognitionCtor();
+    const show = supported && voicePrefs.voiceInputEnabled;
+    voiceBtn.style.display = show ? 'flex' : 'none';
+    if (!show) stopSpeechRecognition();
+  }
+
+  function refreshVoicePrefsFromStorage() {
+    chrome.storage.local.get(['voiceInputEnabled', 'speechLang'], (data) => {
+      voicePrefs.voiceInputEnabled = data.voiceInputEnabled === true;
+      voicePrefs.speechLang = typeof data.speechLang === 'string' ? data.speechLang : '';
+      applyVoiceMicVisibility();
+    });
+  }
+
+  refreshVoicePrefsFromStorage();
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && (changes.voiceInputEnabled || changes.speechLang)) {
+      refreshVoicePrefsFromStorage();
+    }
+  });
+
+  function mapSpeechError(ev) {
+    const code = ev && ev.error;
+    if (code === 'not-allowed' || code === 'service-not-allowed') return translate('voiceMicDenied');
+    if (code === 'audio-capture') return translate('voiceMicDenied');
+    if (code === 'no-speech') return translate('voiceNoSpeech');
+    if (code === 'aborted') return translate('voiceAborted');
+    if (code === 'network') return translate('voiceNetwork');
+    if (code === 'language-not-supported') return translate('voiceNotSupported');
+    return translate('errorOccurred');
+  }
+
+  function attachReadAloudButton(bubbleRoot, actionsEl, plainText) {
+    const readBtn = document.createElement('button');
+    readBtn.type = 'button';
+    readBtn.className = 'mini-gpt-read-aloud-btn';
+    readBtn.title = translate('readAloud');
+    readBtn.setAttribute('aria-label', translate('readAloudAria'));
+    readBtn.innerHTML = READ_ALOUD_ICON_SVG;
+    readBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      speakAssistantText(plainText, readBtn);
+    });
+    const showRead = () => { readBtn.style.opacity = '1'; };
+    const hideRead = () => {
+      if (activeReadAloudBtn === readBtn) {
+        readBtn.style.opacity = '1';
+        return;
+      }
+      readBtn.style.opacity = '0';
+    };
+    bubbleRoot.addEventListener('mouseenter', showRead);
+    bubbleRoot.addEventListener('mouseleave', hideRead);
+    readBtn.addEventListener('mouseenter', showRead);
+    readBtn.addEventListener('mouseleave', hideRead);
+    actionsEl.appendChild(readBtn);
+  }
+
+  function stripMarkdownForReplace(s) {
+    if (!s) return '';
+    return String(s)
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/\*([^*\n]+)\*/g, '$1')
+      .replace(/`{1,3}([^`]*)`{1,3}/g, '$1')
+      .replace(/^#{1,6}\s+/gm, '')
+      .trim();
+  }
+
+  function buildContentEditableFragment(text) {
+    const frag = document.createDocumentFragment();
+    const lines = text.split('\n');
+    lines.forEach((line, i) => {
+      frag.appendChild(document.createTextNode(line));
+      if (i < lines.length - 1) frag.appendChild(document.createElement('br'));
+    });
+    return frag;
+  }
+
+  function replaceInEditableField(rawText) {
+    const target = window.__easyaiEditableTarget;
+    if (!target || !target.el) return false;
+    const cleanText = stripMarkdownForReplace(rawText);
+    try {
+      if (target.type === 'input') {
+        const el = target.el;
+        if (typeof el.setRangeText === 'function') {
+          el.setRangeText(cleanText, target.start, target.end, 'select');
+        } else {
+          const val = el.value;
+          el.value = val.slice(0, target.start) + cleanText + val.slice(target.end);
+          el.selectionStart = target.start;
+          el.selectionEnd = target.start + cleanText.length;
+        }
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        el.focus();
+      } else if (target.type === 'contenteditable' && target.range) {
+        const range = target.range;
+        range.deleteContents();
+        range.insertNode(buildContentEditableFragment(cleanText));
+        target.el.dispatchEvent(new Event('input', { bubbles: true }));
+        target.el.focus();
+      }
+      window.__easyaiEditableTarget = null;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function attachReplaceButton(msgEl, plainText) {
+    if (!window.__easyaiEditableTarget || !window.__easyaiEditableTarget.el) return;
+    const replaceBtn = document.createElement('button');
+    replaceBtn.type = 'button';
+    replaceBtn.className = 'mini-gpt-replace-btn';
+    replaceBtn.title = translate('replaceInField');
+    replaceBtn.setAttribute('aria-label', translate('replaceInFieldAria'));
+    replaceBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><span style="margin-left:4px;">${translate('replaceInField')}</span>`;
+    replaceBtn.style.cssText = `
+      position: absolute; bottom: 6px; right: 6px;
+      background: rgba(var(--browsemate-browse-rgb),0.08); border: 1px solid rgba(var(--browsemate-browse-rgb),0.22);
+      border-radius: 7px; height: 24px; padding: 0 8px;
+      font-size: 11px; font-weight: 600; color: var(--browsemate-browse);
+      display: flex; align-items: center; cursor: pointer;
+      opacity: 0; transition: opacity 0.2s, background 0.2s;
+      z-index: 11; white-space: nowrap;
+    `;
+    msgEl.addEventListener('mouseenter', () => { replaceBtn.style.opacity = '1'; });
+    msgEl.addEventListener('mouseleave', () => { replaceBtn.style.opacity = '0'; });
+    replaceBtn.addEventListener('mouseenter', () => { replaceBtn.style.opacity = '1'; });
+    replaceBtn.addEventListener('mouseleave', () => { replaceBtn.style.opacity = '0'; });
+    replaceBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const ok = replaceInEditableField(plainText);
+      if (ok) {
+        replaceBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span style="margin-left:4px;">${translate('replaceDone')}</span>`;
+        replaceBtn.style.background = 'rgba(16,185,129,0.1)';
+        replaceBtn.style.borderColor = '#10b981';
+        replaceBtn.style.color = '#059669';
+        setTimeout(() => {
+          if (replaceBtn.parentNode) replaceBtn.remove();
+          msgEl.classList.remove('mini-gpt-msg-has-replace');
+        }, 2000);
+      } else {
+        replaceBtn.style.color = '#ef4444';
+        replaceBtn.innerHTML = `<span style="margin-left:0">Field no longer available</span>`;
+        setTimeout(() => {
+          if (replaceBtn.parentNode) replaceBtn.remove();
+          msgEl.classList.remove('mini-gpt-msg-has-replace');
+        }, 2500);
+      }
+    });
+    msgEl.classList.add('mini-gpt-msg-has-replace');
+    msgEl.appendChild(replaceBtn);
+  }
+
+  if (voiceBtn) {
+    voiceBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const Ctor = getSpeechRecognitionCtor();
+      if (!Ctor || !voicePrefs.voiceInputEnabled) return;
+      if (voiceListening) {
+        stopSpeechRecognition();
+        return;
+      }
+      stopAllVoiceOutput();
+      const rec = new Ctor();
+      speechRecognitionInstance = rec;
+      rec.continuous = false;
+      rec.interimResults = true;
+      rec.lang = (voicePrefs.speechLang && voicePrefs.speechLang.trim()) || navigator.language || 'en-US';
+      const prefix = input.value.trim();
+      let accumulatedFinal = '';
+      voiceListening = true;
+      voiceBtn.classList.add('mini-gpt-voice-listening');
+      voiceBtn.title = translate('voiceListening');
+      voiceBtn.setAttribute('aria-label', translate('voiceListening'));
+      rec.onresult = (ev) => {
+        let interim = '';
+        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+          const piece = ev.results[i][0].transcript;
+          if (ev.results[i].isFinal) accumulatedFinal += piece;
+          else interim += piece;
+        }
+        const parts = [prefix, accumulatedFinal.trim(), interim].filter(Boolean);
+        input.value = parts.join(' ').trim();
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      };
+      rec.onerror = (ev) => {
+        stopSpeechRecognition();
+        showVoiceNotice(mapSpeechError(ev), 'error');
+      };
+      rec.onend = () => {
+        if (speechRecognitionInstance === rec) speechRecognitionInstance = null;
+        voiceListening = false;
+        if (voiceBtn) {
+          voiceBtn.classList.remove('mini-gpt-voice-listening');
+          voiceBtn.title = translate('voiceInput');
+          voiceBtn.setAttribute('aria-label', translate('voiceInput'));
+        }
+      };
+      try {
+        clearVoiceNotice();
+        rec.start();
+      } catch (_) {
+        stopSpeechRecognition();
+        showVoiceNotice(translate('voiceNotSupported'), 'error');
+      }
+    });
+  }
 
   // Add empty chat placeholder
   function showEmptyPlaceholder() {
@@ -500,7 +1159,7 @@ if (!window.__miniGptAgentInjected) {
     currentSession = { messages: [], date: '', preview: '' };
     conversationContext = []; // Reset conversation context
     currentHistoryIndex = -1;
-    // Session reset: conversation context cleared
+    clearPendingVision();
   }
   
   // Function to manage conversation context length (prevent it from getting too long)
@@ -605,6 +1264,7 @@ if (!window.__miniGptAgentInjected) {
       chatContainer.style.display = 'none';
       chatContainer.style.visibility = 'hidden';
       chatContainer.style.opacity = '0';
+      stopAllVoiceActivity();
       
       // Save session in background without blocking UI
       setTimeout(() => {
@@ -629,7 +1289,7 @@ if (!window.__miniGptAgentInjected) {
       // Reset to default position if not previously positioned
       if (!chatContainer.style.left && !chatContainer.style.top) {
         chatContainer.style.right = '32px';
-        chatContainer.style.bottom = '92px';
+        chatContainer.style.bottom = '108px';
         chatContainer.style.left = '';
         chatContainer.style.top = '';
       }
@@ -659,6 +1319,7 @@ if (!window.__miniGptAgentInjected) {
     chatContainer.style.display = 'none';
     chatContainer.style.visibility = 'hidden';
     chatContainer.style.opacity = '0';
+    stopAllVoiceActivity();
     
     // Save session in background without blocking UI
     setTimeout(() => {
@@ -908,74 +1569,40 @@ if (!window.__miniGptAgentInjected) {
 
   function appendMessage(text, from) {
     const msg = document.createElement('div');
-    msg.className = from === 'user' ? 'mini-gpt-msg-user' : 'mini-gpt-msg-bot';
-    
-    // Create message wrapper for copy button
+    msg.className = from === 'user' ? 'mini-gpt-msg-user mini-gpt-msg-with-copy' : 'mini-gpt-msg-bot';
     msg.style.position = 'relative';
-    
+
+    const built = from === 'user' ? buildUserMessageRow() : buildBotMessageRow();
+    const { row, body, actions } = built;
     if (from === 'bot') {
-      // Convert markdown to HTML for bot messages
-      const formattedText = convertMarkdownToHTML(text);
-      msg.innerHTML = formattedText;
+      body.innerHTML = convertMarkdownToHTML(text);
     } else {
-      msg.textContent = text;
+      body.textContent = text;
+      body.style.textAlign = 'right';
     }
-    msg.style.margin = '8px 0';
-    msg.style.maxWidth = '80%';
-    msg.style.padding = '8px 12px';
-    msg.style.borderRadius = '12px';
-    msg.style.display = 'inline-block';
-    msg.style.wordBreak = 'break-word';
-    msg.style.fontSize = '15px';
-    if (from === 'user') {
-      msg.style.background = '#e8f0fe';
-      msg.style.color = '#2563eb';
-      msg.style.alignSelf = 'flex-end';
-      msg.style.textAlign = 'right';
-      msg.style.padding = '8px 12px 8px 36px';
-    } else {
-      msg.style.background = '#f5f5f7';
-      msg.style.color = '#222';
-      msg.style.alignSelf = 'flex-start';
-      msg.style.textAlign = 'left';
-      msg.style.padding = '8px 36px 8px 12px';
-    }
-    
-    // Add copy button
+    msg.appendChild(row);
+
     const copyBtn = document.createElement('button');
     copyBtn.className = 'mini-gpt-copy-btn';
     copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
     copyBtn.title = translate('copyMessage') || 'Copy message';
     copyBtn.setAttribute('aria-label', translate('copyMessage') || 'Copy message');
-    copyBtn.style.cssText = `
-      position: absolute;
-      top: 6px;
-      ${from === 'user' ? 'left: 6px;' : 'right: 6px;'}
-      background: rgba(255, 255, 255, 0.9);
-      border: 1px solid rgba(0, 0, 0, 0.1);
-      border-radius: 6px;
-      width: 28px;
-      height: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      opacity: 0;
-      transition: opacity 0.2s, background 0.2s;
-      z-index: 10;
-      padding: 0;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    `;
-    
-    // Show on hover
+
     msg.addEventListener('mouseenter', () => {
       copyBtn.style.opacity = '1';
     });
     msg.addEventListener('mouseleave', () => {
       copyBtn.style.opacity = '0';
     });
-    
-    // Copy functionality
+
+    if (from === 'bot') {
+      attachReadAloudButton(msg, actions, text);
+      actions.appendChild(copyBtn);
+      attachReplaceButton(msg, text);
+    } else {
+      actions.appendChild(copyBtn);
+    }
+
     copyBtn.onclick = async (e) => {
       e.stopPropagation();
       const textToCopy = from === 'bot' ? text : text; // Get plain text
@@ -1008,20 +1635,18 @@ if (!window.__miniGptAgentInjected) {
         }, 1500);
       }
     };
-    
-    msg.appendChild(copyBtn);
+
     messagesDiv.appendChild(msg);
     
     // Scroll to the top of the new message instead of bottom
+    const scrollTarget = msg;
     if (from === 'bot') {
-      // For bot messages, scroll to the top so user can read from beginning
       setTimeout(() => {
-        msg.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        safeScrollIntoView(scrollTarget, { behavior: 'smooth', block: 'start' });
       }, 100);
     } else {
-      // For user messages, scroll to show the message
       setTimeout(() => {
-        msg.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        safeScrollIntoView(scrollTarget, { behavior: 'smooth', block: 'end' });
       }, 100);
     }
   }
@@ -1051,6 +1676,12 @@ if (!window.__miniGptAgentInjected) {
     'Qwen/Qwen2.5-7B-Instruct'
   ];
 
+  const HF_VISION_MODELS = providerConfig.hfVisionModels || [
+    'Qwen/Qwen2.5-VL-7B-Instruct:fastest',
+    'Qwen/Qwen2.5-VL-7B-Instruct',
+    'Qwen/Qwen2-VL-7B-Instruct'
+  ];
+
   async function updateProviderUI() {
     const settings = await getSettings();
     const provider = currentProvider;
@@ -1075,7 +1706,7 @@ if (!window.__miniGptAgentInjected) {
     sendButton.style.background = '#1d4ed8';
   });
   sendButton.addEventListener('mouseleave', () => {
-    sendButton.style.background = '#2563eb';
+    sendButton.style.background = 'var(--browsemate-browse)';
   });
   // Support Shift+Enter for new line, Enter to send
   input.addEventListener('keydown', function(e) {
@@ -1116,26 +1747,63 @@ if (!window.__miniGptAgentInjected) {
   // --- Streaming support ---
   let streamingBotMsg = null;
   let streamingBotText = '';
+  let streamingBotBodyEl = null;
+
+  function buildBotMessageRow() {
+    const row = document.createElement('div');
+    row.className = 'mini-gpt-msg-row';
+    const body = document.createElement('div');
+    body.className = 'mini-gpt-msg-body';
+    const actions = document.createElement('div');
+    actions.className = 'mini-gpt-msg-actions';
+    row.appendChild(body);
+    row.appendChild(actions);
+    return { row, body, actions };
+  }
+
+  function buildUserMessageRow() {
+    const row = document.createElement('div');
+    row.className = 'mini-gpt-msg-row mini-gpt-msg-row--user';
+    const body = document.createElement('div');
+    body.className = 'mini-gpt-msg-body';
+    const actions = document.createElement('div');
+    actions.className = 'mini-gpt-msg-actions';
+    row.appendChild(actions);
+    row.appendChild(body);
+    return { row, body, actions };
+  }
+
+  /** Bot bubble without row wrapper → wrap existing HTML in body + actions column */
+  function ensureBotMessageShell(msgEl) {
+    let actions = msgEl.querySelector('.mini-gpt-msg-actions');
+    if (actions) {
+      return {
+        body: msgEl.querySelector('.mini-gpt-msg-body'),
+        actions
+      };
+    }
+    const html = msgEl.innerHTML;
+    msgEl.replaceChildren();
+    const { row, body, actions: act } = buildBotMessageRow();
+    body.innerHTML = html || '';
+    msgEl.appendChild(row);
+    return { body, actions: act };
+  }
 
   // Helper: add a copy button to a bot message element
   function addCopyBtnToMsg(msgEl, plainText) {
     msgEl.style.position = 'relative';
-    msgEl.style.paddingRight = '36px';
+    if (msgEl.classList.contains('mini-gpt-msg-user')) msgEl.classList.add('mini-gpt-msg-with-copy');
+    const { actions } = ensureBotMessageShell(msgEl);
     const copyBtn = document.createElement('button');
     copyBtn.className = 'mini-gpt-copy-btn';
     copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
     copyBtn.title = translate('copyMessage') || 'Copy message';
     copyBtn.setAttribute('aria-label', translate('copyMessage') || 'Copy message');
-    copyBtn.style.cssText = `
-      position: absolute; top: 6px; right: 6px;
-      background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(0, 0, 0, 0.1);
-      border-radius: 6px; width: 28px; height: 28px;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer; opacity: 0; transition: opacity 0.2s, background 0.2s;
-      z-index: 10; padding: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    `;
     msgEl.addEventListener('mouseenter', () => { copyBtn.style.opacity = '1'; });
     msgEl.addEventListener('mouseleave', () => { copyBtn.style.opacity = '0'; });
+    attachReadAloudButton(msgEl, actions, plainText);
+    actions.appendChild(copyBtn);
     copyBtn.onclick = async (e) => {
       e.stopPropagation();
       try {
@@ -1158,7 +1826,7 @@ if (!window.__miniGptAgentInjected) {
         copyBtn.style.borderColor = 'rgba(0, 0, 0, 0.1)';
       }, 1500);
     };
-    msgEl.appendChild(copyBtn);
+    attachReplaceButton(msgEl, plainText);
   }
 
   // Listen for streaming answer parts from background
@@ -1180,13 +1848,16 @@ if (!window.__miniGptAgentInjected) {
           appendMessage(msg.answerPart, 'bot');
           streamingBotMsg = null;
           streamingBotText = '';
+          streamingBotBodyEl = null;
         } else if (streamingBotMsg) {
           currentSession.messages.push({ role: 'bot', text: streamingBotText });
           conversationContext.push({ role: 'assistant', content: streamingBotText });
           
           // Check if response seems incomplete
           const isIncomplete = checkIfResponseIncomplete(streamingBotText);
-          streamingBotMsg.innerHTML = convertMarkdownToHTML(streamingBotText);
+          const streamBody = streamingBotMsg.querySelector('.mini-gpt-msg-body');
+          if (streamBody) streamBody.innerHTML = convertMarkdownToHTML(streamingBotText);
+          else streamingBotMsg.innerHTML = convertMarkdownToHTML(streamingBotText);
           if (isIncomplete) {
             const incompleteIndicator = document.createElement('div');
             incompleteIndicator.className = 'mini-gpt-incomplete-indicator';
@@ -1226,12 +1897,15 @@ if (!window.__miniGptAgentInjected) {
             incompleteIndicator.appendChild(label);
             incompleteIndicator.appendChild(continueBtn);
             incompleteIndicator.appendChild(regenerateBtn);
-            streamingBotMsg.appendChild(incompleteIndicator);
+            const ibody = streamingBotMsg.querySelector('.mini-gpt-msg-body');
+            if (ibody) ibody.appendChild(incompleteIndicator);
+            else streamingBotMsg.appendChild(incompleteIndicator);
           }
           // Add copy button to streamed message
           addCopyBtnToMsg(streamingBotMsg, streamingBotText);
           streamingBotMsg = null;
           streamingBotText = '';
+          streamingBotBodyEl = null;
         }
         requestInProgress = false;
         input.disabled = false;
@@ -1242,19 +1916,22 @@ if (!window.__miniGptAgentInjected) {
         return;
       }
       if (!streamingBotMsg) {
-        streamingBotMsg = document.createElement('div');
-        streamingBotMsg.className = 'mini-gpt-msg-bot';
-        streamingBotMsg.innerHTML = '';
-        messagesDiv.appendChild(streamingBotMsg);
-        // Scroll to the top of the new response when it starts
+        const streamEl = document.createElement('div');
+        streamEl.className = 'mini-gpt-msg-bot';
+        const { row, body, actions } = buildBotMessageRow();
+        streamEl.appendChild(row);
+        streamingBotMsg = streamEl;
+        streamingBotBodyEl = body;
+        messagesDiv.appendChild(streamEl);
         setTimeout(() => {
-          streamingBotMsg.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          safeScrollIntoView(streamEl, { behavior: 'smooth', block: 'start' });
         }, 100);
       }
       if (msg.answerPart) {
         streamingBotText += msg.answerPart;
-        streamingBotMsg.innerHTML = convertMarkdownToHTML(streamingBotText);
-        // Don't scroll to bottom during streaming - let user read from top
+        const el = streamingBotBodyEl || streamingBotMsg.querySelector('.mini-gpt-msg-body');
+        if (el) el.innerHTML = convertMarkdownToHTML(streamingBotText);
+        else streamingBotMsg.innerHTML = convertMarkdownToHTML(streamingBotText);
       }
     }
   });
@@ -1274,6 +1951,8 @@ if (!window.__miniGptAgentInjected) {
   
   // Enhanced stop response function
   function stopResponse() {
+    stopSpeechRecognition();
+    stopAllVoiceOutput();
     chrome.runtime.sendMessage({ type: 'MINI_GPT_STOP' }, () => {
       removeLoader();
       
@@ -1287,12 +1966,17 @@ if (!window.__miniGptAgentInjected) {
             [Response stopped by user]
           </span>
         `;
-        streamingBotMsg.appendChild(incompleteIndicator);
-        
-        // Finalize the streaming message
-        streamingBotMsg.innerHTML = convertMarkdownToHTML(streamingBotText) + incompleteIndicator.outerHTML;
+        const stBody = streamingBotMsg.querySelector('.mini-gpt-msg-body');
+        if (stBody) {
+          stBody.innerHTML = convertMarkdownToHTML(streamingBotText);
+          stBody.appendChild(incompleteIndicator);
+        } else {
+          streamingBotMsg.innerHTML = convertMarkdownToHTML(streamingBotText);
+          streamingBotMsg.appendChild(incompleteIndicator);
+        }
         streamingBotMsg = null;
         streamingBotText = '';
+        streamingBotBodyEl = null;
       }
       
       requestInProgress = false;
@@ -1306,19 +1990,19 @@ if (!window.__miniGptAgentInjected) {
     if (!text || text.length < 50) return false;
     
     const trimmedText = text.trim();
-    
-    // Only flag as incomplete if it ends mid-sentence with a comma or ellipsis
-    if (/[,]$/.test(trimmedText)) return true;
+    const lastLine = trimmedText.split('\n').pop().trim();
+
+    // Trailing comma is a valid ending in many contexts (email sign-offs, lists, etc.)
+    // Only flag as incomplete if the comma is in the MIDDLE of a sentence (not as last token of last line)
     if (/\.{3}$|…$/.test(trimmedText)) return true;
     
-    // Flag if it ends with a colon followed by nothing (was about to list something)
-    if (/:$/.test(trimmedText)) return true;
+    // Flag if it ends with a colon followed by nothing and last line is long (was about to list something)
+    if (/:$/.test(trimmedText) && lastLine.length > 10) return true;
     
     // Flag if it clearly got cut off mid-word (ends with a letter after a very long response)
     // Only for long responses where max_tokens was likely hit
-    if (trimmedText.length > 1500 && /[a-zA-Z]$/.test(trimmedText) && !/[.!?:;)\]"']$/.test(trimmedText)) {
+    if (trimmedText.length > 1500 && /[a-zA-Z]$/.test(trimmedText) && !/[.!?:;)\]"',]$/.test(trimmedText)) {
       // Check the last line isn't a list item or heading (those can end without punctuation)
-      const lastLine = trimmedText.split('\n').pop().trim();
       if (lastLine.length > 40 && !/^[-*•\d#]/.test(lastLine)) {
         return true;
       }
@@ -1328,10 +2012,23 @@ if (!window.__miniGptAgentInjected) {
   }
 
   function sendPrompt() {
+    stopAllVoiceActivity();
     const question = input.value.trim();
+    const hasVision = !!(pendingVision && pendingVision.base64 && pendingVision.base64.length > 80);
+    if (!question && !hasVision) return;
+
     const provider = currentProvider;
-    // For Hugging Face, we'll use the first model (auto-switching happens in background)
-    const model = provider === 'huggingface' ? HF_MODELS[0] : DEFAULT_MODELS[provider];
+    if (hasVision && provider === 'huggingface') {
+      appendMessage(translate('visionProviderOnly'), 'bot');
+      return;
+    }
+    const visionModelDefault = providerHelpers.getDefaultVisionModelForProvider
+      ? providerHelpers.getDefaultVisionModelForProvider(provider)
+      : ((providerConfig.visionDefaultModels || {})[provider] || DEFAULT_MODELS[provider]);
+    const model = hasVision
+      ? visionModelDefault
+      : (provider === 'huggingface' ? HF_MODELS[0] : DEFAULT_MODELS[provider]);
+
     chrome.storage.local.get([`apiKey_${provider}`, 'promptPrefix'], (settings) => {
       const apiKey = settings[`apiKey_${provider}`] || '';
       if (!apiKey) {
@@ -1341,40 +2038,47 @@ if (!window.__miniGptAgentInjected) {
       
       // Get prompt prefix from settings (default: simple, direct, resume answer)
       const promptPrefix = settings.promptPrefix || DEFAULT_PROMPT_PREFIX;
+      const textPart = question || translate('visionDefaultAsk');
+      const enhancedQuestion = promptPrefix + textPart;
+      const displayUser = textPart + (hasVision ? ' · 📷' : '');
       
-      // Prepend the style keywords to the question automatically
-      const enhancedQuestion = promptPrefix + question;
-      
-      appendMessage(question, 'user'); // Show original question to user
+      appendMessage(displayUser, 'user');
       input.value = '';
       input.style.height = 'auto';
       // Add animated loader as bot message
       const loader = document.createElement('div');
-      loader.className = 'mini-gpt-msg-bot';
+      loader.className = 'mini-gpt-msg-bot mini-gpt-msg-loader-bubble';
       loader.setAttribute('aria-label', translate('thinking'));
       loader.innerHTML = `<span class='mini-gpt-loader'><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span></span>`;
       messagesDiv.appendChild(loader);
-      // Scroll to the top of the loader so user can see it
+      const loaderEl = loader;
       setTimeout(() => {
-        loader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        safeScrollIntoView(loaderEl, { behavior: 'smooth', block: 'start' });
       }, 100);
       requestInProgress = true;
       input.disabled = true;
       updateSendStopBtn();
       streamingBotMsg = null;
       streamingBotText = '';
-      // Send enhanced question with prefix to LLM
-      // For Hugging Face, include models list for auto-switching
-      const hfModels = provider === 'huggingface' ? HF_MODELS : undefined;
-      window.postMessage({ 
-        type: 'MINI_GPT_ASK', 
-        question: enhancedQuestion, // Send enhanced question with prefix
-        provider, 
-        model, 
+      streamingBotBodyEl = null;
+      const hfModels = !hasVision && provider === 'huggingface' ? HF_MODELS : undefined;
+      const hfVisionModels = hasVision && provider === 'huggingface' ? HF_VISION_MODELS : undefined;
+      const payload = {
+        type: 'MINI_GPT_ASK',
+        question: enhancedQuestion,
+        provider,
+        model,
         apiKey,
-        conversationContext: conversationContext, // Include full conversation history
-        hfModels: hfModels // Include HF models for auto-switching
-      }, '*');
+        conversationContext: conversationContext,
+        hfModels
+      };
+      if (hasVision) {
+        payload.imageBase64 = pendingVision.base64;
+        payload.imageMime = pendingVision.mime || 'image/jpeg';
+        if (hfVisionModels) payload.hfVisionModels = hfVisionModels;
+      }
+      clearPendingVision();
+      window.postMessage(payload, '*');
     });
   }
 
@@ -1389,10 +2093,9 @@ if (!window.__miniGptAgentInjected) {
     }
   });
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts (Ctrl+Shift+H avoids browser "History" on Ctrl+H)
   document.addEventListener('keydown', (e) => {
-    // Ctrl+H or Cmd+H to open history
-    if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'h') {
       e.preventDefault();
       if (chatContainer.style.display === 'flex') {
         showHistoryPanel();
@@ -1403,34 +2106,264 @@ if (!window.__miniGptAgentInjected) {
   // Relay MINI_GPT_ASK from window to background
   window.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'MINI_GPT_ASK') {
-      chrome.runtime.sendMessage({
+      const relay = {
         type: 'MINI_GPT_ASK',
         question: event.data.question,
         provider: event.data.provider,
         model: event.data.model,
         apiKey: event.data.apiKey,
-        conversationContext: event.data.conversationContext || [], // Pass conversation context
-        hfModels: event.data.hfModels // Pass Hugging Face models list
-      });
+        conversationContext: event.data.conversationContext || [],
+        hfModels: event.data.hfModels
+      };
+      if (event.data.imageBase64) {
+        relay.imageBase64 = event.data.imageBase64;
+        relay.imageMime = event.data.imageMime || 'image/jpeg';
+      }
+      if (event.data.hfVisionModels) relay.hfVisionModels = event.data.hfVisionModels;
+      chrome.runtime.sendMessage(relay);
     }
   });
+
+  function formatDatetimeLocal(d) {
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  /** Match popup dark mode (storage) with in-chat toggle (mini-gpt-dark). */
+  function getReminderThemeDark(callback) {
+    chrome.storage.local.get(['darkMode'], (data) => {
+      if (chrome.runtime.lastError) {
+        callback(chatContainer.classList.contains('mini-gpt-dark'));
+        return;
+      }
+      const fromStorage = data.darkMode === true || data.darkMode === 'true';
+      const fromChat = chatContainer.classList.contains('mini-gpt-dark');
+      callback(Boolean(fromStorage || fromChat));
+    });
+  }
+
+  function showEasyAiReminderCard(title, note) {
+    document.querySelectorAll('.easyai-reminder-layer').forEach((el) => el.remove());
+    bubble.classList.remove('easyai-reminder-bubble-pulse');
+
+    const wasSuppressed = easyaiUiSuppressed;
+    bubble.style.transition = 'none';
+    bubble.style.display = 'flex';
+    bubble.style.visibility = 'visible';
+    bubble.style.opacity = '1';
+    bubble.style.transform = 'scale(1) translateY(0)';
+    bubble.classList.add('easyai-reminder-bubble-pulse');
+
+    getReminderThemeDark((useDark) => {
+      const layer = document.createElement('div');
+      layer.className = 'easyai-reminder-layer';
+      if (useDark) layer.classList.add('easyai-reminder-layer--dark');
+      layer.setAttribute('role', 'dialog');
+      layer.setAttribute('aria-label', translate('reminderModalTitle'));
+
+      const h = document.createElement('div');
+      h.className = 'easyai-reminder-layer__title';
+      h.textContent = title || translate('reminderModalTitle');
+
+      const body = document.createElement('div');
+      body.className = 'easyai-reminder-layer__note';
+      body.textContent = (note || '').trim();
+
+      const actions = document.createElement('div');
+      actions.className = 'easyai-reminder-layer__actions';
+
+      const dismissBtn = document.createElement('button');
+      dismissBtn.type = 'button';
+      dismissBtn.className = 'easyai-reminder-layer__btn easyai-reminder-layer__btn--primary';
+      dismissBtn.textContent = translate('reminderDismiss');
+
+      actions.appendChild(dismissBtn);
+
+      layer.appendChild(h);
+      if ((note || '').trim()) layer.appendChild(body);
+      layer.appendChild(actions);
+      document.body.appendChild(layer);
+
+      function reposition() {
+        const r = bubble.getBoundingClientRect();
+        const cardW = 300;
+        const hgt = layer.offsetHeight || 120;
+        const left = Math.min(window.innerWidth - cardW - 8, Math.max(8, r.left + r.width / 2 - cardW / 2));
+        const top = Math.max(8, r.top - hgt - 12);
+        layer.style.left = left + 'px';
+        layer.style.top = top + 'px';
+      }
+
+      const resizeHandler = () => reposition();
+      requestAnimationFrame(() => {
+        reposition();
+        window.addEventListener('resize', resizeHandler);
+      });
+
+      function dismiss() {
+        bubble.classList.remove('easyai-reminder-bubble-pulse');
+        window.removeEventListener('resize', resizeHandler);
+        layer.remove();
+        if (wasSuppressed) {
+          bubble.style.display = 'none';
+          bubble.style.visibility = 'hidden';
+          bubble.style.opacity = '0';
+        } else {
+          syncBubbleVisibility();
+        }
+      }
+
+      dismissBtn.onclick = (e) => {
+        e.preventDefault();
+        dismiss();
+      };
+    });
+  }
+
+  function showReminderModal() {
+    const existing = document.getElementById('easyai-reminder-modal-root');
+    if (existing) existing.remove();
+
+    getReminderThemeDark((useDark) => {
+      const root = document.createElement('div');
+      root.id = 'easyai-reminder-modal-root';
+      root.className = 'easyai-reminder-modal-root';
+      if (useDark) root.classList.add('easyai-reminder-modal-root--dark');
+      const backdrop = document.createElement('div');
+      backdrop.className = 'easyai-reminder-modal-backdrop';
+      const panel = document.createElement('div');
+      panel.className = 'easyai-reminder-modal-panel';
+      if (useDark) panel.classList.add('easyai-reminder-modal-panel--dark');
+
+      const head = document.createElement('div');
+      head.className = 'easyai-reminder-modal-head';
+      head.textContent = translate('reminderModalTitle');
+
+      const titleIn = document.createElement('input');
+    titleIn.type = 'text';
+    titleIn.className = 'easyai-reminder-modal-input';
+    titleIn.placeholder = translate('reminderTitlePlaceholder');
+    titleIn.setAttribute('aria-label', translate('reminderTitleLabel'));
+
+    const noteTa = document.createElement('textarea');
+    noteTa.className = 'easyai-reminder-modal-textarea';
+    noteTa.rows = 3;
+    noteTa.placeholder = translate('reminderNotePlaceholder');
+    noteTa.setAttribute('aria-label', translate('reminderNoteLabel'));
+
+    const whenLbl = document.createElement('label');
+    whenLbl.className = 'easyai-reminder-modal-label';
+    whenLbl.textContent = translate('reminderWhenLabel');
+    const whenIn = document.createElement('input');
+    whenIn.type = 'datetime-local';
+    whenIn.className = 'easyai-reminder-modal-input';
+    const d0 = new Date(Date.now() + 60 * 60 * 1000);
+    d0.setSeconds(0, 0);
+    whenIn.value = formatDatetimeLocal(d0);
+
+    const presets = document.createElement('div');
+    presets.className = 'easyai-reminder-modal-presets';
+    function addPreset(label, ms) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'easyai-reminder-modal-preset';
+      b.textContent = label;
+      b.onclick = () => {
+        const t = new Date(Date.now() + ms);
+        t.setSeconds(0, 0);
+        whenIn.value = formatDatetimeLocal(t);
+      };
+      presets.appendChild(b);
+    }
+    addPreset(translate('reminderPreset15m'), 15 * 60 * 1000);
+    addPreset(translate('reminderPreset1h'), 60 * 60 * 1000);
+    addPreset(translate('reminderPreset3h'), 3 * 60 * 60 * 1000);
+    const tomorrowBtn = document.createElement('button');
+    tomorrowBtn.type = 'button';
+    tomorrowBtn.className = 'easyai-reminder-modal-preset';
+    tomorrowBtn.textContent = translate('reminderPresetTomorrow');
+    tomorrowBtn.onclick = () => {
+      const t = new Date();
+      t.setDate(t.getDate() + 1);
+      t.setHours(9, 0, 0, 0);
+      whenIn.value = formatDatetimeLocal(t);
+    };
+    presets.appendChild(tomorrowBtn);
+
+    const actions = document.createElement('div');
+    actions.className = 'easyai-reminder-modal-actions';
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'easyai-reminder-modal-btn';
+    cancelBtn.textContent = translate('cancel');
+    const goBtn = document.createElement('button');
+    goBtn.type = 'button';
+    goBtn.className = 'easyai-reminder-modal-btn easyai-reminder-modal-btn--primary';
+    goBtn.textContent = translate('reminderSchedule');
+    actions.appendChild(cancelBtn);
+    actions.appendChild(goBtn);
+
+    panel.appendChild(head);
+    panel.appendChild(titleIn);
+    panel.appendChild(noteTa);
+    panel.appendChild(whenLbl);
+    panel.appendChild(whenIn);
+    panel.appendChild(presets);
+    panel.appendChild(actions);
+    root.appendChild(backdrop);
+    root.appendChild(panel);
+    document.body.appendChild(root);
+
+    function close() {
+      root.remove();
+    }
+    backdrop.onclick = close;
+    cancelBtn.onclick = close;
+    goBtn.onclick = () => {
+      const title = titleIn.value.trim();
+      const note = noteTa.value.trim();
+      const whenMs = new Date(whenIn.value).getTime();
+      if (!title || !Number.isFinite(whenMs)) {
+        showVoiceNotice(translate('reminderInvalidTime'), 'error');
+        return;
+      }
+      chrome.runtime.sendMessage(
+        { type: 'EASYAI_REMINDER_SCHEDULE', title, note, when: whenMs },
+        (res) => {
+          if (chrome.runtime.lastError || !res || !res.ok) {
+            showVoiceNotice(translate('reminderInvalidTime'), 'error');
+            return;
+          }
+          showVoiceNotice(translate('reminderScheduled'), 'info');
+          close();
+        }
+      );
+    };
+    titleIn.focus();
+    });
+  }
 
   // Relay MINI_GPT_ANSWER from background to chat UI
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === 'MINI_GPT_ANSWER') {
       window.postMessage({ type: 'MINI_GPT_ANSWER', answer: msg.answer }, '*');
     }
+    if (msg.type === 'EASYAI_REMINDER_SHOW') {
+      showEasyAiReminderCard(msg.title || '', msg.note || '');
+    }
     // Sync dark mode from popup toggle
     if (msg.type === 'EASYAI_DARKMODE_UPDATED') {
       applyDarkMode(msg.darkMode === true);
     }
-    // Toggle everything via keyboard shortcut (hide/show bubble + chat)
+    // Toggle via keyboard shortcut: hide bubble + chat until user shows again (shortcut or popup)
     if (msg.type === 'EASYAI_TOGGLE_CHAT') {
       const isChatVisible = chatContainer.style.display === 'flex' && chatContainer.style.visibility === 'visible';
       const isBubbleVisible = bubble.style.display === 'flex' && bubble.style.visibility === 'visible';
 
       if (isChatVisible || isBubbleVisible) {
-        // Something is visible → hide everything
+        easyaiUiSuppressed = true;
+        chrome.storage.local.set({ easyaiUiSuppressed: true });
+        stopAllVoiceActivity();
         chatContainer.style.display = 'none';
         chatContainer.style.visibility = 'hidden';
         chatContainer.style.opacity = '0';
@@ -1439,8 +2372,26 @@ if (!window.__miniGptAgentInjected) {
         bubble.style.opacity = '0';
         if (isChatVisible) trySaveCurrentSession();
       } else {
-        // Everything hidden → restore bubble (or chat if it was open before)
+        easyaiUiSuppressed = false;
+        chrome.storage.local.set({ easyaiUiSuppressed: false });
         showBubbleInstant();
+      }
+    }
+    if (msg.type === 'EASYAI_SET_UI_SUPPRESSED') {
+      const suppressed = msg.suppressed === true;
+      easyaiUiSuppressed = suppressed;
+      if (suppressed) {
+        stopAllVoiceActivity();
+        const chatWasOpen = chatContainer.style.display === 'flex' && chatContainer.style.visibility === 'visible';
+        chatContainer.style.display = 'none';
+        chatContainer.style.visibility = 'hidden';
+        chatContainer.style.opacity = '0';
+        bubble.style.display = 'none';
+        bubble.style.visibility = 'hidden';
+        bubble.style.opacity = '0';
+        if (chatWasOpen) trySaveCurrentSession();
+      } else {
+        updateBubbleVisibility();
       }
     }
   });
@@ -1523,24 +2474,7 @@ if (!window.__miniGptAgentInjected) {
   actionsBar.style.gap = '8px';
   actionsBar.style.height = '100%';
 
-  // History button
-  const historyBtn = document.createElement('button');
-  historyBtn.className = 'mini-gpt-action-btn';
-  historyBtn.id = 'mini-gpt-history-btn';
-  historyBtn.title = translate('showHistoryTooltip');
-  historyBtn.setAttribute('aria-label', translate('showHistoryAria'));
-  historyBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 9 9"/><polyline points="3 12 3 16 7 16"/></svg>`;
-  historyBtn.style.background = 'none';
-  historyBtn.style.border = 'none';
-  historyBtn.style.padding = '6px';
-  historyBtn.style.borderRadius = '8px';
-  historyBtn.style.cursor = 'pointer';
-  historyBtn.style.transition = 'background 0.18s';
-  historyBtn.onmouseenter = () => historyBtn.style.background = '#e8f0fe';
-  historyBtn.onmouseleave = () => historyBtn.style.background = 'none';
-  actionsBar.appendChild(historyBtn);
-
-  // New Chat button
+  // New chat (always visible)
   const newChatBtn = document.createElement('button');
   newChatBtn.className = 'mini-gpt-action-btn';
   newChatBtn.id = 'mini-gpt-newchat-btn';
@@ -1557,15 +2491,111 @@ if (!window.__miniGptAgentInjected) {
   newChatBtn.onmouseleave = () => newChatBtn.style.background = 'none';
   actionsBar.appendChild(newChatBtn);
 
-  // Dark mode toggle button
+  // Overflow ⋯ : history, reminder, theme
+  const overflowWrap = document.createElement('div');
+  overflowWrap.className = 'mini-gpt-overflow-wrap';
+
+  const overflowBtn = document.createElement('button');
+  overflowBtn.type = 'button';
+  overflowBtn.className = 'mini-gpt-action-btn';
+  overflowBtn.id = 'mini-gpt-overflow-btn';
+  overflowBtn.title = translate('moreMenuTooltip');
+  overflowBtn.setAttribute('aria-label', translate('moreMenuAria'));
+  overflowBtn.setAttribute('aria-haspopup', 'true');
+  overflowBtn.setAttribute('aria-expanded', 'false');
+  overflowBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>`;
+  overflowBtn.style.background = 'none';
+  overflowBtn.style.border = 'none';
+  overflowBtn.style.padding = '6px';
+  overflowBtn.style.borderRadius = '8px';
+  overflowBtn.style.cursor = 'pointer';
+  overflowBtn.style.transition = 'background 0.18s';
+
+  const overflowMenu = document.createElement('div');
+  overflowMenu.className = 'mini-gpt-overflow-menu';
+  overflowMenu.setAttribute('role', 'menu');
+  overflowMenu.style.display = 'none';
+
+  const historyBtn = document.createElement('button');
+  historyBtn.className = 'mini-gpt-action-btn';
+  historyBtn.id = 'mini-gpt-history-btn';
+  historyBtn.type = 'button';
+  historyBtn.title = translate('showHistoryTooltip');
+  historyBtn.setAttribute('aria-label', translate('showHistoryAria'));
+  historyBtn.setAttribute('role', 'menuitem');
+  historyBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 9 9"/><polyline points="3 12 3 16 7 16"/></svg>`;
+  historyBtn.style.background = 'none';
+  historyBtn.style.border = 'none';
+  historyBtn.style.padding = '6px';
+  historyBtn.style.borderRadius = '8px';
+  historyBtn.style.cursor = 'pointer';
+  historyBtn.style.transition = 'background 0.18s';
+  historyBtn.onmouseenter = () => historyBtn.style.background = '#e8f0fe';
+  historyBtn.onmouseleave = () => historyBtn.style.background = 'none';
+  overflowMenu.appendChild(historyBtn);
+
+  const reminderBtn = document.createElement('button');
+  reminderBtn.className = 'mini-gpt-action-btn';
+  reminderBtn.id = 'mini-gpt-reminder-btn';
+  reminderBtn.type = 'button';
+  reminderBtn.title = translate('reminderBtnTitle');
+  reminderBtn.setAttribute('aria-label', translate('reminderBtnAria'));
+  reminderBtn.setAttribute('role', 'menuitem');
+  reminderBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
+  reminderBtn.style.background = 'none';
+  reminderBtn.style.border = 'none';
+  reminderBtn.style.padding = '6px';
+  reminderBtn.style.borderRadius = '8px';
+  reminderBtn.style.cursor = 'pointer';
+  reminderBtn.style.transition = 'background 0.18s';
+  reminderBtn.onmouseenter = () => reminderBtn.style.background = '#e8f0fe';
+  reminderBtn.onmouseleave = () => reminderBtn.style.background = 'none';
+  overflowMenu.appendChild(reminderBtn);
+
+  const settingsBtn = document.createElement('button');
+  settingsBtn.className = 'mini-gpt-action-btn';
+  settingsBtn.id = 'mini-gpt-settings-btn';
+  settingsBtn.type = 'button';
+  settingsBtn.title = translate('menuSettings');
+  settingsBtn.setAttribute('aria-label', translate('menuSettingsAria'));
+  settingsBtn.setAttribute('role', 'menuitem');
+  settingsBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>`;
+  settingsBtn.style.background = 'none';
+  settingsBtn.style.border = 'none';
+  settingsBtn.style.padding = '6px';
+  settingsBtn.style.borderRadius = '8px';
+  settingsBtn.style.cursor = 'pointer';
+  settingsBtn.style.transition = 'background 0.18s';
+  settingsBtn.onmouseenter = () => settingsBtn.style.background = '#e8f0fe';
+  settingsBtn.onmouseleave = () => settingsBtn.style.background = 'none';
+  overflowMenu.appendChild(settingsBtn);
+
+  const copyConversationBtn = document.createElement('button');
+  copyConversationBtn.className = 'mini-gpt-action-btn';
+  copyConversationBtn.id = 'mini-gpt-copy-conversation-btn';
+  copyConversationBtn.type = 'button';
+  copyConversationBtn.title = translate('menuCopyConversation');
+  copyConversationBtn.setAttribute('aria-label', translate('menuCopyConversationAria'));
+  copyConversationBtn.setAttribute('role', 'menuitem');
+  copyConversationBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/><path d="M8 12h.01M12 12h.01M16 12h.01M8 16h.01"/></svg>`;
+  copyConversationBtn.style.background = 'none';
+  copyConversationBtn.style.border = 'none';
+  copyConversationBtn.style.padding = '6px';
+  copyConversationBtn.style.borderRadius = '8px';
+  copyConversationBtn.style.cursor = 'pointer';
+  copyConversationBtn.style.transition = 'background 0.18s';
+  copyConversationBtn.onmouseenter = () => copyConversationBtn.style.background = '#e8f0fe';
+  copyConversationBtn.onmouseleave = () => copyConversationBtn.style.background = 'none';
+  overflowMenu.appendChild(copyConversationBtn);
+
   const darkModeBtn = document.createElement('button');
   darkModeBtn.className = 'mini-gpt-action-btn';
   darkModeBtn.id = 'mini-gpt-darkmode-btn';
+  darkModeBtn.type = 'button';
   darkModeBtn.title = 'Toggle dark mode';
   darkModeBtn.setAttribute('aria-label', 'Toggle dark mode');
-  // Sun icon (shown when in dark mode — click to go light)
+  darkModeBtn.setAttribute('role', 'menuitem');
   const sunIcon = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
-  // Moon icon (shown when in light mode — click to go dark)
   const moonIcon = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
   darkModeBtn.innerHTML = moonIcon;
   darkModeBtn.style.background = 'none';
@@ -1574,9 +2604,32 @@ if (!window.__miniGptAgentInjected) {
   darkModeBtn.style.borderRadius = '8px';
   darkModeBtn.style.cursor = 'pointer';
   darkModeBtn.style.transition = 'background 0.18s';
-  actionsBar.appendChild(darkModeBtn);
+  overflowMenu.appendChild(darkModeBtn);
 
-  // Close button
+  function closeOverflowMenu() {
+    overflowMenu.style.display = 'none';
+    overflowBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  overflowWrap.appendChild(overflowBtn);
+  overflowWrap.appendChild(overflowMenu);
+  actionsBar.appendChild(overflowWrap);
+
+  overflowBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = overflowMenu.style.display !== 'flex';
+    overflowMenu.style.display = open ? 'flex' : 'none';
+    overflowMenu.style.flexDirection = 'column';
+    overflowBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  document.addEventListener('mousedown', (ev) => {
+    if (!overflowWrap.contains(ev.target)) closeOverflowMenu();
+  });
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape') closeOverflowMenu();
+  });
+
   const closeBtn = document.createElement('button');
   closeBtn.className = 'mini-gpt-action-btn';
   closeBtn.id = 'mini-gpt-close';
@@ -1593,8 +2646,41 @@ if (!window.__miniGptAgentInjected) {
   closeBtn.onmouseleave = () => closeBtn.style.background = 'none';
   actionsBar.appendChild(closeBtn);
 
+  function copyCurrentConversationToClipboard() {
+    const msgs = currentSession.messages || [];
+    if (!msgs.length) {
+      showVoiceNotice(translate('nothingToCopyChat'), 'info');
+      return;
+    }
+    const lines = msgs.map((m) => {
+      const label = m.role === 'user' ? translate('copyConvYou') : translate('copyConvAssistant');
+      return `${label}: ${m.text}`;
+    });
+    const text = lines.join('\n\n');
+    const done = () => showVoiceNotice(translate('chatCopied'), 'info');
+    const fallback = () => {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.cssText = 'position:fixed;opacity:0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        done();
+      } catch (_) {
+        showVoiceNotice(translate('errorOccurred'), 'error');
+      }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(fallback);
+    } else {
+      fallback();
+    }
+  }
+
   // Keyboard accessibility
-  [historyBtn, newChatBtn, darkModeBtn, closeBtn].forEach(btn => {
+  [historyBtn, newChatBtn, reminderBtn, settingsBtn, copyConversationBtn, darkModeBtn, closeBtn, overflowBtn].forEach(btn => {
     btn.tabIndex = 0;
     btn.onkeydown = (e) => {
       if (e.key === 'Enter' || e.key === ' ') btn.click();
@@ -1602,7 +2688,7 @@ if (!window.__miniGptAgentInjected) {
   });
 
   // Update action bar button styles for compact, title-matching icons
-  [historyBtn, newChatBtn, darkModeBtn, closeBtn].forEach(btn => {
+  [historyBtn, newChatBtn, reminderBtn, settingsBtn, copyConversationBtn, darkModeBtn, closeBtn, overflowBtn].forEach(btn => {
     btn.style.width = '28px';
     btn.style.height = '28px';
     btn.style.padding = '2px';
@@ -1617,13 +2703,13 @@ if (!window.__miniGptAgentInjected) {
     btn.style.transition = 'background 0.18s';
     btn.onmouseenter = () => {
       if (chatContainer.classList.contains('mini-gpt-dark')) {
-        btn.style.background = '#2563eb22';
+        btn.style.background = 'rgba(var(--browsemate-browse-rgb), 0.13)';
       } else {
         btn.style.background = '#e8f0fe';
       }
       // Make SVG icon color high-contrast on hover
       const svg = btn.querySelector('svg');
-      if (svg) svg.style.stroke = chatContainer.classList.contains('mini-gpt-dark') ? '#fff' : '#2563eb';
+      if (svg) svg.style.stroke = chatContainer.classList.contains('mini-gpt-dark') ? '#fff' : 'var(--browsemate-browse)';
     };
     btn.onmouseleave = () => {
       btn.style.background = 'none';
@@ -1643,28 +2729,48 @@ if (!window.__miniGptAgentInjected) {
 
   // Manual dark mode toggle (must be after button creation)
   let isDarkMode = false;
+
+  function syncReminderUiTheme(dark) {
+    const root = document.getElementById('easyai-reminder-modal-root');
+    if (root) {
+      const panel = root.querySelector('.easyai-reminder-modal-panel');
+      root.classList.toggle('easyai-reminder-modal-root--dark', dark);
+      if (panel) panel.classList.toggle('easyai-reminder-modal-panel--dark', dark);
+    }
+    document.querySelectorAll('.easyai-reminder-layer').forEach((el) => {
+      el.classList.toggle('easyai-reminder-layer--dark', dark);
+    });
+  }
   
   function applyDarkMode(dark) {
     isDarkMode = dark;
     if (dark) {
       chatContainer.classList.add('mini-gpt-dark');
       bubble.classList.add('mini-gpt-dark');
-      selToolbar.classList.add('mini-gpt-dark');
+      if (typeof selToolbar !== 'undefined' && selToolbar) selToolbar.classList.add('mini-gpt-dark');
       darkModeBtn.innerHTML = sunIcon;
     } else {
       chatContainer.classList.remove('mini-gpt-dark');
       bubble.classList.remove('mini-gpt-dark');
-      selToolbar.classList.remove('mini-gpt-dark');
+      if (typeof selToolbar !== 'undefined' && selToolbar) selToolbar.classList.remove('mini-gpt-dark');
       darkModeBtn.innerHTML = moonIcon;
     }
     // Update button icon colors after mode change
-    [historyBtn, newChatBtn, darkModeBtn, closeBtn].forEach(btn => {
+    [historyBtn, newChatBtn, reminderBtn, settingsBtn, copyConversationBtn, darkModeBtn, closeBtn, overflowBtn].forEach(btn => {
       const svg = btn.querySelector('svg');
       if (svg) svg.style.stroke = dark ? '#e8f0fe' : '#23272f';
     });
     // Save preference
     chrome.storage.local.set({ darkMode: dark });
+    syncReminderUiTheme(dark);
   }
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || changes.darkMode === undefined) return;
+    const v = changes.darkMode.newValue;
+    const dark = v === true || v === 'true';
+    syncReminderUiTheme(dark);
+  });
   
   // Load saved preference, default to light
   chrome.storage.local.get(['darkMode'], (data) => {
@@ -1673,11 +2779,32 @@ if (!window.__miniGptAgentInjected) {
   
   darkModeBtn.onclick = () => {
     applyDarkMode(!isDarkMode);
+    closeOverflowMenu();
   };
 
   // Attach event listeners
-  historyBtn.onclick = showHistoryPanel;
+  historyBtn.onclick = () => {
+    closeOverflowMenu();
+    showHistoryPanel();
+  };
+  reminderBtn.onclick = () => {
+    closeOverflowMenu();
+    showReminderModal();
+  };
+  settingsBtn.onclick = () => {
+    closeOverflowMenu();
+    chrome.runtime.openOptionsPage(() => {
+      if (chrome.runtime.lastError) {
+        showVoiceNotice(chrome.runtime.lastError.message, 'error');
+      }
+    });
+  };
+  copyConversationBtn.onclick = () => {
+    closeOverflowMenu();
+    copyCurrentConversationToClipboard();
+  };
   newChatBtn.onclick = () => {
+    stopAllVoiceActivity();
     // Save current session if it has messages and no request is in progress
     if (currentSession.messages.length > 0 && !requestInProgress) {
       trySaveCurrentSession();
@@ -1701,6 +2828,7 @@ if (!window.__miniGptAgentInjected) {
     // New chat started: context cleared
   };
   closeBtn.onclick = () => {
+    stopAllVoiceActivity();
     trySaveCurrentSession();
     chatContainer.style.display = 'none';
     chatContainer.style.visibility = 'hidden';
@@ -1821,16 +2949,16 @@ if (!window.__miniGptAgentInjected) {
     }
     if (type === 'summarize') {
       userMsg = translate('summarize');
-      prompt = `Summarize the following page content:\n\n${pageText}`;
+      prompt = `Summarize the following page in 3 to 5 short sentences. Be brief:\n\n${pageText}`;
     } else if (type === 'explain') {
       userMsg = translate('explain');
-      prompt = `Explain the following page content in simple terms:\n\n${pageText}`;
+      prompt = `Explain the key idea of the following page in 3 to 5 short sentences. Be brief:\n\n${pageText}`;
     }
     // Show only the short user message in chat, but send the full prompt
     appendMessage(userMsg, 'user');
     // Add animated loader as bot message
     const loader = document.createElement('div');
-    loader.className = 'mini-gpt-msg-bot';
+    loader.className = 'mini-gpt-msg-bot mini-gpt-msg-loader-bubble';
     loader.setAttribute('aria-label', translate('thinking'));
     loader.innerHTML = `<span class='mini-gpt-loader'><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span></span>`;
     messagesDiv.appendChild(loader);
@@ -1840,19 +2968,17 @@ if (!window.__miniGptAgentInjected) {
     updateSendStopBtn();
     streamingBotMsg = null;
     streamingBotText = '';
-    // Send to backend directly
+    streamingBotBodyEl = null;
+    // Send to backend directly — quick actions have their own length instruction, no prefix needed
     const provider = currentProvider;
     const model = DEFAULT_MODELS[provider];
-    chrome.storage.local.get([`apiKey_${provider}`, 'promptPrefix'], (settings) => {
+    chrome.storage.local.get([`apiKey_${provider}`], (settings) => {
       const apiKey = settings[`apiKey_${provider}`] || '';
       if (!apiKey) {
         appendMessage(translate('pleaseSetApiKey'), 'bot');
         return;
       }
-      // Apply prompt prefix to quick actions too
-      const promptPrefix = settings.promptPrefix || DEFAULT_PROMPT_PREFIX;
-      const enhancedPrompt = promptPrefix + prompt;
-      window.postMessage({ type: 'MINI_GPT_ASK', question: enhancedPrompt, provider, model, apiKey }, '*');
+      window.postMessage({ type: 'MINI_GPT_ASK', question: prompt, provider, model, apiKey }, '*');
     });
   }
   function showQuickActionsDropdown() {
@@ -2324,172 +3450,7 @@ if (!window.__miniGptAgentInjected) {
   document.body.appendChild(bubble);
   document.body.appendChild(chatContainer);
 
-  // --- Floating Selection Toolbar ---
-  const selToolbar = document.createElement('div');
-  selToolbar.id = 'easyai-sel-toolbar';
-  selToolbar.style.display = 'none';
-  selToolbar.innerHTML = `
-    <button data-action="explain" title="${translate('toolbarExplain')}">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      <span>${translate('toolbarExplain')}</span>
-    </button>
-    <button data-action="summarize" title="${translate('toolbarSummarize')}">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="11" y2="18"/></svg>
-      <span>${translate('toolbarSummarize')}</span>
-    </button>
-    <button data-action="correct" title="${translate('toolbarCorrect')}">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-      <span>${translate('toolbarCorrect')}</span>
-    </button>
-    <button data-action="translate" title="${translate('toolbarTranslate')}">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/></svg>
-      <span>${translate('toolbarTranslate')}</span>
-    </button>
-  `;
-  document.body.appendChild(selToolbar);
-
-  let selToolbarVisible = false;
-
-  function hideSelToolbar() {
-    selToolbar.style.display = 'none';
-    selToolbar.style.opacity = '0';
-    selToolbarVisible = false;
-  }
-
-  function showSelToolbar(x, y) {
-    selToolbar.style.display = 'flex';
-    // Position: above the selection, centered
-    const rect = selToolbar.getBoundingClientRect();
-    const tw = rect.width || 240;
-    let left = x - tw / 2;
-    let top = y - 48;
-    // Keep within viewport
-    if (left < 8) left = 8;
-    if (left + tw > window.innerWidth - 8) left = window.innerWidth - tw - 8;
-    if (top < 8) top = y + 24; // flip below if too close to top
-    selToolbar.style.left = left + 'px';
-    selToolbar.style.top = top + 'px';
-    requestAnimationFrame(() => { selToolbar.style.opacity = '1'; });
-    selToolbarVisible = true;
-  }
-
-  function sendSelectionPrompt(action, selectedText) {
-    const prompts = {
-      explain: `Explain the following text in simple terms:\n\n"${selectedText}"`,
-      summarize: `Summarize the following text concisely:\n\n"${selectedText}"`,
-      correct: `Correct any grammar, spelling, or style issues in the following text. Show the corrected version and briefly note what you changed:\n\n"${selectedText}"`,
-      translate: isFrench
-        ? `Translate the following text to English:\n\n"${selectedText}"`
-        : `Translate the following text to French:\n\n"${selectedText}"`
-    };
-    const labels = {
-      explain: translate('toolbarExplain'),
-      summarize: translate('toolbarSummarize'),
-      correct: translate('toolbarCorrect'),
-      translate: translate('toolbarTranslate')
-    };
-
-    // Open chat if not visible
-    const isChatVisible = chatContainer.style.display === 'flex' && chatContainer.style.visibility === 'visible';
-    if (!isChatVisible) {
-      resetSession();
-      chatContainer.style.display = 'flex';
-      chatContainer.style.visibility = 'visible';
-      chatContainer.style.opacity = '1';
-      hideBubble();
-    }
-
-    // Show user-friendly label + snippet
-    const snippet = selectedText.length > 80 ? selectedText.slice(0, 80) + '…' : selectedText;
-    appendMessage(`${labels[action]}: "${snippet}"`, 'user');
-
-    // Send prompt
-    const provider = currentProvider;
-    const model = provider === 'huggingface' ? HF_MODELS[0] : DEFAULT_MODELS[provider];
-    chrome.storage.local.get([`apiKey_${provider}`, 'promptPrefix'], (settings) => {
-      const apiKey = settings[`apiKey_${provider}`] || '';
-      if (!apiKey) {
-        appendMessage(translate('pleaseSetApiKey'), 'bot');
-        return;
-      }
-      const promptPrefix = settings.promptPrefix || DEFAULT_PROMPT_PREFIX;
-      const fullPrompt = promptPrefix + prompts[action];
-
-      // Loader
-      const loader = document.createElement('div');
-      loader.className = 'mini-gpt-msg-bot';
-      loader.setAttribute('aria-label', translate('thinking'));
-      loader.innerHTML = `<span class='mini-gpt-loader'><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span></span>`;
-      messagesDiv.appendChild(loader);
-      setTimeout(() => loader.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-      requestInProgress = true;
-      input.disabled = true;
-      updateSendStopBtn();
-      streamingBotMsg = null;
-      streamingBotText = '';
-
-      const hfModels = provider === 'huggingface' ? HF_MODELS : undefined;
-      window.postMessage({
-        type: 'MINI_GPT_ASK',
-        question: fullPrompt,
-        provider,
-        model,
-        apiKey,
-        conversationContext: conversationContext,
-        hfModels
-      }, '*');
-    });
-  }
-
-  // Toolbar button clicks
-  selToolbar.addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-action]');
-    if (!btn) return;
-    const action = btn.dataset.action;
-    const sel = window.getSelection();
-    const text = sel ? sel.toString().trim() : '';
-    if (!text) return;
-    hideSelToolbar();
-    sel.removeAllRanges();
-    sendSelectionPrompt(action, text);
-  });
-
-  // Show toolbar on text selection (mouseup)
-  document.addEventListener('mouseup', (e) => {
-    // Don't show inside our own UI
-    if (e.target.closest('#mini-gpt-chat-container') ||
-        e.target.closest('#mini-gpt-bubble') ||
-        e.target.closest('#easyai-sel-toolbar')) return;
-
-    setTimeout(() => {
-      const sel = window.getSelection();
-      const text = sel ? sel.toString().trim() : '';
-      if (text.length < 3) {
-        hideSelToolbar();
-        return;
-      }
-      // Get selection position (viewport coords for position:fixed)
-      const range = sel.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top;
-      showSelToolbar(cx, cy);
-    }, 10);
-  });
-
-  // Hide toolbar when clicking elsewhere or pressing Escape
-  document.addEventListener('mousedown', (e) => {
-    if (selToolbarVisible && !e.target.closest('#easyai-sel-toolbar')) {
-      // Small delay to let the click on a toolbar button register first
-      setTimeout(() => {
-        const sel = window.getSelection();
-        if (!sel || !sel.toString().trim()) hideSelToolbar();
-      }, 150);
-    }
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && selToolbarVisible) hideSelToolbar();
-  });
+  // Selection toolbar removed by user request.
 
   // Hide bubble and chat in fullscreen mode
   function handleFullscreenChange() {
@@ -2501,7 +3462,7 @@ if (!window.__miniGptAgentInjected) {
     ) {
       bubble.style.display = 'none';
       chatContainer.style.display = 'none'; // Optionally hide chat too
-    } else {
+    } else if (!easyaiUiSuppressed) {
       // Use instant show when exiting fullscreen for better UX, but only if API key is available
       getProviderKeys((data) => {
         const hasKey = hasAnyApiKey(data);
@@ -2536,14 +3497,24 @@ if (!window.__miniGptAgentInjected) {
       const bubble = document.getElementById('mini-gpt-bubble');
       const chat = document.getElementById('mini-gpt-chat-container');
       if (hasKey) {
-        if (bubble) {
-          // Use instant show for better UX when API key is available
+        if (easyaiUiSuppressed) {
+          if (bubble) {
+            bubble.style.display = 'none';
+            bubble.style.visibility = 'hidden';
+            bubble.style.opacity = '0';
+          }
+          if (chat) {
+            chat.style.display = 'none';
+            chat.style.visibility = 'hidden';
+            chat.style.opacity = '0';
+          }
+        } else if (bubble) {
           showBubbleInstant();
-        }
-        if (chat) {
-          chat.style.display = 'none'; // Hide chat by default
-          chat.style.visibility = 'hidden';
-          chat.style.opacity = '0';
+          if (chat) {
+            chat.style.display = 'none';
+            chat.style.visibility = 'hidden';
+            chat.style.opacity = '0';
+          }
         }
       } else {
         if (bubble) bubble.style.display = 'none';
@@ -2555,11 +3526,30 @@ if (!window.__miniGptAgentInjected) {
       }
     });
   }
-  // Initial check
-  updateBubbleVisibility();
+  // Initial check: read suppression flag first so we do not flash the bubble
+  chrome.storage.local.get(['easyaiUiSuppressed'], (s) => {
+    easyaiUiSuppressed = s.easyaiUiSuppressed === true;
+    updateBubbleVisibility();
+  });
   // Listen for storage changes
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && (changes.apiKey_openai || changes.apiKey_gemini || changes.apiKey_huggingface)) {
+    if (area !== 'local') return;
+    if (changes.easyaiUiSuppressed) {
+      easyaiUiSuppressed = changes.easyaiUiSuppressed.newValue === true;
+      if (easyaiUiSuppressed) {
+        stopAllVoiceActivity();
+        const chatWasOpen = chatContainer.style.display === 'flex' && chatContainer.style.visibility === 'visible';
+        chatContainer.style.display = 'none';
+        chatContainer.style.visibility = 'hidden';
+        chatContainer.style.opacity = '0';
+        hideBubble();
+        bubble.style.opacity = '0';
+        if (chatWasOpen) trySaveCurrentSession();
+      } else {
+        updateBubbleVisibility();
+      }
+    }
+    if (changes.apiKey_openai || changes.apiKey_gemini || changes.apiKey_huggingface) {
       updateBubbleVisibility();
     }
   });

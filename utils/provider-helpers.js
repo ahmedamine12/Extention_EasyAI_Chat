@@ -17,6 +17,17 @@
     return defaultModels[provider] || defaultModels.openai || 'gpt-3.5-turbo';
   }
 
+  function getDefaultVisionModelForProvider(provider) {
+    const vision = config.visionDefaultModels || {};
+    return vision[provider] || getDefaultModelForProvider(provider);
+  }
+
+  function getHfVisionModels() {
+    return config.hfVisionModels && config.hfVisionModels.length
+      ? config.hfVisionModels
+      : ['Qwen/Qwen2.5-VL-7B-Instruct:fastest', 'Qwen/Qwen2-VL-7B-Instruct'];
+  }
+
   function resolveProviderFromSettings(settings) {
     let provider = settings.provider;
     if (!provider || !settings[`apiKey_${provider}`]) {
@@ -32,6 +43,8 @@
     getApiKeyFields,
     hasAnyApiKey,
     getDefaultModelForProvider,
+    getDefaultVisionModelForProvider,
+    getHfVisionModels,
     resolveProviderFromSettings
   };
 })(globalThis);

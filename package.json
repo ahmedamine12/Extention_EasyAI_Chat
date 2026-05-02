@@ -1,10 +1,10 @@
 {
-  "name": "easyaichat",
-  "version": "1.0.0",
-  "description": "Effortless AI chat assistant for any webpage. Access OpenAI, Gemini, and more with a beautiful floating chat interface.",
+  "name": "browsemate",
+  "version": "2.0.0",
+  "description": "BrowseMate — AI browsing companion with OpenAI, Gemini, and more.",
   "main": "content.js",
   "scripts": {
-    "package": "zip -r easyaichat-v1.0.0.zip manifest.json background.js content.js styles.css package.json README.md LICENSE icons/ popup/ settings/ utils/"
+    "package": "zip -r browsemate-v2.0.0.zip manifest.json background.js content.js styles.css package.json README.md CHANGELOG.md STORE_LISTING.md LICENSE icons/ popup/ settings/ utils/"
   },
   "keywords": [
     "chrome-extension",
@@ -15,6 +15,6 @@
     "assistant",
     "productivity"
   ],
-  "author": "EasyAI Chat Team",
+  "author": "BrowseMate Team",
   "license": "MIT"
 } 

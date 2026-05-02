@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EasyAI Chat Settings</title>
+  <title>BrowseMate Settings</title>
   <style>
     body {
       font-family: 'Inter','Segoe UI',system-ui,sans-serif;
@@ -15,27 +15,32 @@
       body { background: #0f1117; color: #f3f4f6; }
       .card { background: #1a1d25; border-color: #2d3039; }
     }
+    :root {
+      --browsemate-browse: #2563eb;
+      --browsemate-mate: #0d9488;
+    }
     .card {
       text-align: center; padding: 40px 32px;
       background: #fff; border: 1.5px solid #e5e7eb; border-radius: 16px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06); max-width: 360px;
     }
     img { width: 56px; height: 56px; border-radius: 12px; margin-bottom: 16px; }
-    h1 { font-size: 22px; font-weight: 800; color: #2563eb; margin-bottom: 8px; }
-    h1 span { color: #10a37f; }
+    h1 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+    h1 .brand-browse { color: var(--browsemate-browse); }
+    h1 .brand-mate { color: var(--browsemate-mate); }
     p { font-size: 14px; color: #6b7280; margin-bottom: 20px; line-height: 1.5; }
   </style>
 </head>
 <body>
   <div class="card">
     <img src="../icons/easyChat.png" alt="">
-    <h1>EasyAI <span>Chat</span></h1>
-    <p id="msg">Click the EasyAI Chat icon in your browser toolbar to configure your API keys and settings.</p>
+    <h1><span class="brand-browse">Browse</span><span class="brand-mate">Mate</span></h1>
+    <p id="msg">Click the BrowseMate icon in your browser toolbar to configure your API keys and settings.</p>
   </div>
   <script>
     const isFr = (navigator.language || '').startsWith('fr');
     if (isFr) {
-      document.getElementById('msg').textContent = 'Cliquez sur l\'icône EasyAI Chat dans la barre d\'outils pour configurer vos clés API et paramètres.';
+      document.getElementById('msg').textContent = 'Cliquez sur l\'icône BrowseMate dans la barre d\'outils pour configurer vos clés API et paramètres.';
     }
   </script>
 </body>

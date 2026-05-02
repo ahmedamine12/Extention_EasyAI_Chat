@@ -1,13 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "EasyAI Chat",
-  "version": "1.0.0",
-  "description": "Effortless AI chat assistant for any webpage. Access OpenAI, Gemini, and more with a beautiful floating chat interface.",
-  "author": "EasyAI Chat Team",
+  "name": "BrowseMate",
+  "version": "2.0.0",
+  "description": "BrowseMate V2 — floating AI chat with OpenAI, Gemini & Hugging Face, voice input, page screenshots, reminders, dark mode. Keys stay on your device.",
+  "author": "BrowseMate Team",
   "homepage_url": "https://ahmedamine12.github.io/Extention_EasyAI_Chat/homepage.html",
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "EasyAI Chat Settings",
+    "default_title": "BrowseMate Settings",
     "default_icon": {
       "16": "icons/easyChat.png",
       "32": "icons/easyChat.png",
@@ -30,8 +30,11 @@
   "permissions": [
     "storage",
     "activeTab",
+    "tabs",
     "scripting",
-    "contextMenus"
+    "contextMenus",
+    "alarms",
+    "notifications"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -45,10 +48,10 @@
   "commands": {
     "toggle-chat": {
       "suggested_key": {
-        "default": "Ctrl+Shift+E",
-        "mac": "Command+Shift+E"
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
       },
-      "description": "Toggle EasyAI Chat"
+      "description": "Show or hide BrowseMate on this page"
     }
   },
   "web_accessible_resources": [

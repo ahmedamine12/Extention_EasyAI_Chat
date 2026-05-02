@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>EasyAI Chat</title>
+  <title>BrowseMate</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -11,13 +11,13 @@
     <div class="view" id="viewDashboard">
       <div class="popup-header">
         <img src="../icons/easyChat.png" alt="" class="popup-logo">
-        <span class="popup-title">EasyAI <span class="accent">Chat</span></span>
+        <span class="popup-title"><span class="brand-browse">Browse</span><span class="accent">Mate</span></span>
       </div>
 
       <div class="provider-cards" id="providerCards">
         <button class="provider-card" data-provider="openai" title="OpenAI">
           <span class="provider-dot" id="dot-openai"></span>
-          <svg class="provider-icon" viewBox="0 0 28 28"><circle cx="14" cy="14" r="12" fill="#10a37f"/><text x="14" y="19" text-anchor="middle" font-size="13" fill="#fff" font-family="Arial" font-weight="bold">O</text></svg>
+          <svg class="provider-icon" viewBox="0 0 28 28"><circle cx="14" cy="14" r="12" fill="#0d9488"/><text x="14" y="19" text-anchor="middle" font-size="13" fill="#fff" font-family="Arial" font-weight="bold">O</text></svg>
           <span class="provider-name">OpenAI</span>
         </button>
         <button class="provider-card" data-provider="gemini" title="Gemini">
@@ -37,12 +37,36 @@
 
       <div class="popup-toggles">
         <div class="toggle-row">
+          <span class="toggle-label" id="floatingAssistantLabel">Show floating button</span>
+          <label class="switch">
+            <input type="checkbox" id="floatingAssistantToggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
           <span class="toggle-label">☾ <span id="darkModeLabel">Dark Mode</span></span>
           <label class="switch">
             <input type="checkbox" id="darkModeToggle">
             <span class="slider"></span>
           </label>
         </div>
+        <div class="toggle-row">
+          <span class="toggle-label" id="voiceInputLabel">Voice input (mic)</span>
+          <label class="switch">
+            <input type="checkbox" id="voiceInputToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row voice-lang-row">
+          <label class="toggle-label" for="speechLangSelect" id="speechLangLabel">Speech language</label>
+          <select id="speechLangSelect" class="speech-lang-select" aria-describedby="voiceHint">
+            <option value="" id="speechLangBrowser">Browser default</option>
+            <option value="en-US">English (US)</option>
+            <option value="en-GB">English (UK)</option>
+            <option value="fr-FR">Français (FR)</option>
+          </select>
+        </div>
+        <p class="voice-hint" id="voiceHint"></p>
       </div>
 
       <button class="settings-btn" id="showSettings" type="button">
@@ -51,7 +75,7 @@
       </button>
 
       <div class="popup-footer">
-        <span>v1.0.0</span>
+        <span id="extVersion">v2.0.0</span>
         <span class="footer-sep">·</span>
         <span>🔒 <span id="privacyLabel">Keys stored locally</span></span>
       </div>
@@ -70,7 +94,7 @@
         <div class="key-block">
           <div class="key-top">
             <div class="key-identity">
-              <svg viewBox="0 0 28 28" width="22" height="22"><circle cx="14" cy="14" r="12" fill="#10a37f"/><text x="14" y="19" text-anchor="middle" font-size="13" fill="#fff" font-family="Arial" font-weight="bold">O</text></svg>
+              <svg viewBox="0 0 28 28" width="22" height="22"><circle cx="14" cy="14" r="12" fill="#0d9488"/><text x="14" y="19" text-anchor="middle" font-size="13" fill="#fff" font-family="Arial" font-weight="bold">O</text></svg>
               <span class="key-provider">OpenAI</span>
             </div>
             <label class="radio-pill">

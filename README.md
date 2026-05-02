@@ -1,80 +1,79 @@
-# EasyAI Chat
+# BrowseMate
 
-A beautiful, privacy-focused AI chat assistant that works on any webpage. Access OpenAI GPT and Google Gemini directly from your browser with an elegant floating interface.
+A privacy-focused AI companion for browsing: chat on any page with **OpenAI**, **Google Gemini**, or **Hugging Face** through a floating panel. **Version 2** adds voice input, reminders, clearer errors, and tighter BrowseMate branding.
 
-## ✨ Features
+## Features
 
-- **🎯 Smart Floating Interface** - Elegant chat bubble that appears on any website
-- **🤖 Multiple AI Providers** - Support for OpenAI GPT and Google Gemini
-- **🎨 Beautiful Design** - Modern interface with dark/light mode support
-- **🔒 Privacy First** - Your API keys stay on your device only
-- **💬 Smart Context** - Right-click any text to ask AI about it
-- **📚 Chat History** - Save and search through your conversations
-- **⚙️ Customizable** - Comprehensive settings and shortcuts
+- **Floating chat** — Draggable, resizable panel on any site (hidden until you add at least one API key).
+- **Multiple providers** — OpenAI (GPT-4o family, o1, etc.), Gemini (Flash / Pro), Hugging Face Inference Router (several open models; vision when your token supports Inference Providers).
+- **Vision & screenshots** — Send a viewport capture to vision-capable models where the provider allows it.
+- **Voice input** — Optional mic dictation and speech language preference (browser-dependent).
+- **Reminders** — Schedule reminders from the chat UI; delivered via notifications (and in-page when possible).
+- **Quick actions** — Context-menu actions on selected text (explain, summarize, translate, and more).
+- **Chat history** — Persisted locally per session.
+- **Dark mode** — Matches system/extension preference from the toolbar popup.
+- **Keyboard shortcut** — Toggle the floating UI (`Ctrl+Shift+Y` / `Command+Shift+Y` by default; override under `chrome://extensions/shortcuts`).
+- **Privacy** — API keys and conversations stay on your device; requests go directly to the AI providers you configure.
 
-## 🚀 Quick Start
+## Quick start
 
-1. **Install** the extension from the Chrome Web Store
-2. **Add API Keys** - Get your OpenAI or Gemini API key
-3. **Start Chatting** - Click the floating bubble on any webpage
-4. **Ask Anything** - Get help with writing, research, coding, and more
+1. Install the extension from the Chrome Web Store (or load unpacked for development).
+2. Click the **BrowseMate** toolbar icon → **API Keys**, then add at least one key (OpenAI `sk-…`, Gemini from Google AI Studio, Hugging Face `hf_…` with Inference Providers if using HF router).
+3. On pages where you’re logged in normally, the floating bubble appears — open it and start chatting.
+4. Switch provider/model from the chat header as needed.
 
-## 🛡️ Privacy & Security
+On **first install or update**, if no keys are saved yet, the extension opens the toolbar UI **once** so you are not left with no visible bubble and no hint where to configure keys.
 
-- ✅ **Zero data collection** - We don't collect any user data
-- ✅ **Local storage only** - All conversations stored on your device
-- ✅ **Direct API communication** - No intermediate servers
-- ✅ **Secure key handling** - API keys encrypted and stored locally
-- ✅ **No tracking** - No analytics or user tracking
+## Privacy & security
 
-## 🎯 Perfect For
+- No BrowseMate backend — your keys talk straight to OpenAI, Google, or Hugging Face.
+- Keys and history use **local extension storage** only (no sync vault from BrowseMate).
+- See the privacy policy linked from the store listing / extension homepage.
 
-- **Students** - Research assistance and study help
-- **Writers** - Content creation and editing support  
-- **Developers** - Code review and debugging help
-- **Professionals** - Email drafting and document review
-- **Anyone** - Quick answers and intelligent assistance
+## Requirements
 
-## 🔧 Requirements
+- Chromium-based browser **88+** (Chrome, Edge, Brave, Vivaldi, etc.).
+- At least one provider API key you manage yourself.
+- Internet connectivity for AI requests.
 
-- Chrome 88+ (or compatible browser)
-- OpenAI API key and/or Google AI API key
-- Internet connection for AI queries
+## Documentation & links
 
-## 📱 Supported Browsers
+- **Help / homepage**: linked via `homepage_url` in `manifest.json` (GitHub Pages).
+- **Privacy policy**: same site — see manifest or store listing.
 
-- ✅ Google Chrome 88+
-- ✅ Microsoft Edge (Chromium)
-- ✅ Brave Browser
-- ✅ Vivaldi Browser
-- ✅ Other Chromium-based browsers
+> **Note:** GitHub Pages URLs may still contain the legacy folder name `Extention_EasyAI_Chat`. The product name is **BrowseMate**. Adding redirects on Pages to paths containing `BrowseMate` is recommended for store reviewers and users.
 
-## 🆕 Latest Updates
+## What’s new in V2
 
-- Enhanced bubble hover effects with smooth animations
-- Improved visibility on all website backgrounds
-- Streamlined settings and configuration
-- Better error handling and user feedback
-- Optimized performance and memory usage
+See **`CHANGELOG.md`** for detail. Summary:
 
-## 💡 Tips for Best Experience
+- Hugging Face router + vision path for compatible tokens  
+- Voice input and speech language option  
+- Reminders  
+- BrowseMate blue/teal branding and improved error text (network, quota, invalid key)  
+- One-time onboarding tab when no keys exist  
 
-1. **Position the bubble** - Drag it to your preferred location
-2. **Use context menu** - Right-click any text for quick AI assistance
-3. **Explore settings** - Customize your experience in the settings panel
-4. **Save conversations** - Important chats are automatically saved
-5. **Switch providers** - Use different AI models for different tasks
+For **store copy and release posts**, use **`STORE_LISTING.md`**.
 
-## 🆘 Support
+## Tips
 
-- **Documentation**: [EasyAI Chat Help](https://ahmedamine12.github.io/Extention_EasyAI_Chat/homepage.html)
-- **Contact**: support@easyaichat.com
-- **Privacy Policy**: [Privacy Policy](https://ahmedamine12.github.io/Extention_EasyAI_Chat/privacy-policy.html)
+1. Drag the bubble to a comfortable corner; resize the panel from the corner handle where available.
+2. Use the context menu on selected text for quick prompts without typing the selection.
+3. If a request fails, read the in-chat error — it usually points to **toolbar → BrowseMate → API Keys** or waiting out a rate limit.
+4. Hugging Face: create a fine-grained token with **Inference Providers** enabled for router models.
 
-## 📄 License
+## Development
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+```bash
+npm run package
+```
 
----
+Produces **`browsemate-v2.0.0.zip`** including manifest, scripts, styles, popup, settings, utils, `CHANGELOG.md`, and `STORE_LISTING.md`.
 
-**Ready to supercharge your browsing with AI? Install EasyAI Chat today! 🚀** 
+## Support
+
+- **Contact**: support@browsemate.com  
+- **License**: MIT — see `LICENSE`.
+
+Ready to supercharge browsing with AI — install **BrowseMate**.
+![1777684113607](image/README/1777684113607.png)![1777684116552](image/README/1777684116552.png)![1777684125367](image/README/1777684125367.png)![1777684132534](image/README/1777684132534.png)![1777684133018](image/README/1777684133018.png)![1777684133235](image/README/1777684133235.png)![1777684133767](image/README/1777684133767.png)![1777684133974](image/README/1777684133974.png)![1777684134132](image/README/1777684134132.png)![1777684134284](image/README/1777684134284.png)![1777684134414](image/README/1777684134414.png)![1777684134534](image/README/1777684134534.png)![1777684134666](image/README/1777684134666.png)![1777684134802](image/README/1777684134802.png)![1777684137285](image/README/1777684137285.png)
