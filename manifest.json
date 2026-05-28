@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "BrowseMate",
   "version": "2.0.0",
-  "description": "BrowseMate V2: floating AI chat — OpenAI, Gemini, Hugging Face. Voice, screenshots, reminders. Keys local only.",
+  "description": "BrowseMate V2: floating AI chat — OpenAI, Gemini, Hugging Face. Bring your own provider keys for full quality. Voice, screenshots, reminders.",
   "author": "BrowseMate Team",
   "homepage_url": "https://ahmedamine12.github.io/Extention_EasyAI_Chat/homepage.html",
   "action": {
@@ -23,6 +23,7 @@
       "matches": ["<all_urls>"],
       "js": ["utils/provider-config.js", "utils/provider-helpers.js", "utils/page-detection.js", "content.js"],
       "css": ["styles.css"],
+      "all_frames": true,
       "run_at": "document_idle"
     }
   ],

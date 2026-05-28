@@ -24,7 +24,6 @@ const getDefaultVisionModelForProvider = providerHelpers.getDefaultVisionModelFo
   return v[provider] || getDefaultModelForProvider(provider);
 });
 const getHfVisionModels = providerHelpers.getHfVisionModels || (() => providerConfig.hfVisionModels || []);
-const DEFAULT_PROMPT_PREFIX = providerConfig.defaultPromptPrefix || 'Give a short, direct answer. Be concise. ';
 
 // Map to store AbortController per tab
 const abortControllers = {};
@@ -97,6 +96,15 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     }
     const title = payload.title || 'Reminder';
     const note = typeof payload.note === 'string' ? payload.note : '';
+    // Mark as done in history
+    chrome.storage.local.get('easyaiReminderHistory', (hData) => {
+      const history = Array.isArray(hData.easyaiReminderHistory) ? hData.easyaiReminderHistory : [];
+      const entry = history.find(h => h.alarmName === alarm.name);
+      if (entry) {
+        entry.status = 'done';
+        chrome.storage.local.set({ easyaiReminderHistory: history });
+      }
+    });
     deliverEasyAiReminder(title, note);
   });
 });
@@ -117,14 +125,27 @@ function reconcileEasyAiReminderAlarms() {
           }
           continue;
         }
-        if (now - fireAt > 60000) {
+        if (fireAt <= now) {
+          // Past-due: deliver once immediately, then remove the key so it won't re-fire.
           chrome.storage.local.remove(key);
+          const title = val.title || 'Reminder';
+          const note = typeof val.note === 'string' ? val.note : '';
+          // Mark done in history
+          chrome.storage.local.get('easyaiReminderHistory', (hData) => {
+            const history = Array.isArray(hData.easyaiReminderHistory) ? hData.easyaiReminderHistory : [];
+            const entry = history.find(h => h.alarmName === key);
+            if (entry && entry.status !== 'done') {
+              entry.status = 'done';
+              chrome.storage.local.set({ easyaiReminderHistory: history });
+              deliverEasyAiReminder(title, note);
+            }
+            // If already done, skip delivery (already shown)
+          });
           continue;
         }
         if (!names.has(key)) {
           try {
-            const whenMs = fireAt < now ? now + 500 : fireAt;
-            chrome.alarms.create(key, { when: Math.floor(whenMs) });
+            chrome.alarms.create(key, { when: Math.floor(fireAt) });
           } catch (_) {
             chrome.storage.local.remove(key);
           }
@@ -143,17 +164,20 @@ function bmHasAnyApiKey(data) {
   return BM_API_KEY_FIELDS.some((k) => data[k] && String(data[k]).trim());
 }
 
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.local.get([...BM_API_KEY_FIELDS, BM_ONBOARDING_SETUP_KEY], (data) => {
-    if (chrome.runtime.lastError) return;
-    if (bmHasAnyApiKey(data)) return;
-    if (data[BM_ONBOARDING_SETUP_KEY]) return;
-    const url = chrome.runtime.getURL('popup/popup.html');
-    chrome.tabs.create({ url }, () => {
+chrome.runtime.onInstalled.addListener((details) => {
+  chrome.storage.local.get(
+    [...BM_API_KEY_FIELDS, BM_ONBOARDING_SETUP_KEY],
+    (data) => {
       if (chrome.runtime.lastError) return;
-      chrome.storage.local.set({ [BM_ONBOARDING_SETUP_KEY]: true });
-    });
-  });
+      if (bmHasAnyApiKey(data)) return;
+      if (data[BM_ONBOARDING_SETUP_KEY]) return;
+      const url = chrome.runtime.getURL('popup/popup.html');
+      chrome.tabs.create({ url }, () => {
+        if (chrome.runtime.lastError) return;
+        chrome.storage.local.set({ [BM_ONBOARDING_SETUP_KEY]: true });
+      });
+    }
+  );
 });
 
 // Helper function to safely access chrome APIs
@@ -275,8 +299,80 @@ function formatErrorMessage(errorMsg, provider = 'openai') {
   return userFriendlyError;
 }
 
+/**
+ * content.js appends the current user line to conversationContext before sending,
+ * then passes the same turn again as `question` (with prompt prefix). Small models
+ * mis-handle two user messages in a row; drop the duplicate trailing user entry.
+ */
+function dropDuplicateTrailingUserContext(conversationContext, prompt) {
+  if (!Array.isArray(conversationContext) || conversationContext.length === 0) {
+    return conversationContext || [];
+  }
+  const q = String(prompt || '').trim();
+  if (!q) return conversationContext;
+  const last = conversationContext[conversationContext.length - 1];
+  if (!last || last.role !== 'user') return conversationContext;
+  const lastContent = String(last.content || '').trim();
+  if (!lastContent) return conversationContext;
+  if (q === lastContent || (lastContent.length >= 2 && q.endsWith(lastContent))) {
+    return conversationContext.slice(0, -1);
+  }
+  return conversationContext;
+}
+
+
 // Provider API functions (inlined)
-async function askOpenAI({ apiKey, model, prompt, tabId, conversationContext = [] }) {
+function isOpenAiModelAccessError(errorData, status) {
+  const msg =
+    (errorData && errorData.error && typeof errorData.error.message === 'string' && errorData.error.message) ||
+    (typeof errorData === 'string' ? errorData : '');
+  const code = errorData && errorData.error && errorData.error.code;
+  const raw = String(msg || '').toLowerCase();
+  if (code === 'model_not_found') return true;
+  if (status === 404) return true;
+  return (
+    raw.includes('model') &&
+    (raw.includes('not found') ||
+      raw.includes('does not exist') ||
+      raw.includes('does not exist') ||
+      raw.includes('not available') ||
+      raw.includes('not supported') ||
+      raw.includes('not permitted') ||
+      raw.includes('does not have access') ||
+      raw.includes('you must be a member') ||
+      raw.includes('permission') ||
+      raw.includes('restricted'))
+  );
+}
+
+function isGeminiModelAccessError(errorData, status) {
+  const msg =
+    (errorData && errorData.error && typeof errorData.error.message === 'string' && errorData.error.message) ||
+    (typeof errorData === 'string' ? errorData : '');
+  const raw = String(msg || '').toLowerCase();
+  if (status === 404) return true;
+  return (
+    raw.includes('model') &&
+    (raw.includes('not found') ||
+      raw.includes('not supported') ||
+      raw.includes('not available') ||
+      raw.includes('permission') ||
+      raw.includes('does not have access'))
+  );
+}
+
+function safeUniqueModels(arr) {
+  const out = [];
+  (Array.isArray(arr) ? arr : []).forEach((m) => {
+    const mm = String(m || '').trim();
+    if (!mm) return;
+    if (out.includes(mm)) return;
+    out.push(mm);
+  });
+  return out;
+}
+
+async function askOpenAI({ apiKey, model, modelCandidates, prompt, tabId, conversationContext = [] }) {
   const url = 'https://api.openai.com/v1/chat/completions';
   const controller = new AbortController();
   if (tabId) abortControllers[tabId] = controller;
@@ -285,47 +381,68 @@ async function askOpenAI({ apiKey, model, prompt, tabId, conversationContext = [
   const messages = [];
   
   // Add conversation context (previous messages)
-  if (conversationContext && conversationContext.length > 0) {
-    messages.push(...conversationContext);
+  const ctxOpen = dropDuplicateTrailingUserContext(conversationContext, prompt);
+  if (ctxOpen && ctxOpen.length > 0) {
+    messages.push(...ctxOpen);
   }
   
   // Add current user message
   messages.push({ role: 'user', content: prompt });
   
-    try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model,
-        messages: messages, // Use full conversation context
-        max_tokens: 4096,
-        stream: true
-      }),
-      signal: controller.signal
-    });
-    
-    // Check for HTTP errors
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({ error: { message: `HTTP ${res.status}: ${res.statusText}` } }));
-      const errorMsg = errorData.error?.message || `HTTP ${res.status}: ${res.statusText}`;
-      const userFriendlyError = formatErrorMessage(errorMsg, 'openai');
-      
-      if (isExtensionContextValid() && tabId) {
-        try {
-          chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: userFriendlyError, done: true });
-        } catch (e) {
-          // console.log('Tab message failed:', e);
+  try {
+    const candidates = safeUniqueModels(modelCandidates && modelCandidates.length ? modelCandidates : [model]);
+    for (let i = 0; i < candidates.length; i++) {
+      const currentModel = candidates[i];
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: currentModel,
+          messages: messages, // Use full conversation context
+          max_tokens: 4096,
+          stream: true
+        }),
+        signal: controller.signal
+      });
+
+      // Check for HTTP errors (before streaming)
+      if (!res.ok) {
+        const errorData = await res
+          .json()
+          .catch(() => ({ error: { message: `HTTP ${res.status}: ${res.statusText}` } }));
+        const errorMsg = errorData.error?.message || `HTTP ${res.status}: ${res.statusText}`;
+
+        // If it's a model access error, try next candidate (without spamming the user)
+        if (i < candidates.length - 1 && isOpenAiModelAccessError(errorData, res.status)) {
+          continue;
         }
+
+        const userFriendlyError = formatErrorMessage(errorMsg, 'openai');
+        if (isExtensionContextValid() && tabId) {
+          try {
+            chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: userFriendlyError, done: true });
+          } catch (e) {}
+        }
+        if (tabId) delete abortControllers[tabId];
+        return { ok: false, answer: userFriendlyError };
       }
-      if (tabId) delete abortControllers[tabId];
-      return { ok: false, answer: userFriendlyError };
-    }
-    
-    if (!res.body) throw new Error('No response body');
+
+      if (!res.body) throw new Error('No response body');
+
+      // Inform about fallback once, right before streaming begins.
+      if (i > 0 && isExtensionContextValid() && tabId) {
+        try {
+          chrome.tabs.sendMessage(tabId, {
+            type: 'MINI_GPT_ANSWER_PART',
+            answerPart: `\n[Model unavailable — using ${currentModel}]\n\n`,
+            done: false
+          });
+        } catch (e) {}
+      }
+
     const reader = res.body.getReader();
     let buffer = '';
     let done = false;
@@ -343,13 +460,13 @@ async function askOpenAI({ apiKey, model, prompt, tabId, conversationContext = [
             if (data === '[DONE]') {
               if (isExtensionContextValid() && tabId) {
                 try {
-              chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '', done: true });
+              chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: answer, done: true });
                 } catch (e) {
                   // console.log('Tab message failed:', e); // Replaced with silent handling
                 }
               }
               if (tabId) delete abortControllers[tabId];
-              return { ok: true, answer };
+                return { ok: true, answer, modelUsed: currentModel };
             }
             try {
               const parsed = JSON.parse(data);
@@ -357,7 +474,15 @@ async function askOpenAI({ apiKey, model, prompt, tabId, conversationContext = [
               // Check for errors in streaming response
               if (parsed.error) {
                 const errorMsg = parsed.error.message || 'Unknown error';
-                const userFriendlyError = formatErrorMessage(errorMsg, 'openai');
+                  // If we haven't finished streaming and this is a model access error, retry next model.
+                  if (i < candidates.length - 1 && isOpenAiModelAccessError(parsed, 400)) {
+                    try {
+                      reader.cancel();
+                    } catch (_) {}
+                    done = true;
+                    break;
+                  }
+                  const userFriendlyError = formatErrorMessage(errorMsg, 'openai');
                 
                 if (isExtensionContextValid() && tabId) {
                   try {
@@ -395,12 +520,20 @@ async function askOpenAI({ apiKey, model, prompt, tabId, conversationContext = [
     if (tabId) delete abortControllers[tabId];
     if (isExtensionContextValid() && tabId) {
       try {
-    chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '', done: true });
+    chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: answer, done: true });
       } catch (e) {
         // console.log('Tab message failed:', e); // Replaced with silent handling
       }
     }
-    return { ok: true, answer };
+      return { ok: true, answer, modelUsed: currentModel };
+    }
+    const err = formatErrorMessage('No compatible model found for this API key.', 'openai');
+    if (isExtensionContextValid() && tabId) {
+      try {
+        chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: err, done: true });
+      } catch (e) {}
+    }
+    return { ok: false, answer: err };
   } catch (e) {
     if (tabId) delete abortControllers[tabId];
     if (e.name === 'AbortError') {
@@ -428,8 +561,7 @@ async function askOpenAI({ apiKey, model, prompt, tabId, conversationContext = [
   }
 }
 
-async function askGemini({ apiKey, model, prompt, tabId, conversationContext = [] }) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+async function askGemini({ apiKey, model, modelCandidates, prompt, tabId, conversationContext = [] }) {
   const controller = new AbortController();
   if (tabId) abortControllers[tabId] = controller;
   
@@ -445,44 +577,68 @@ async function askGemini({ apiKey, model, prompt, tabId, conversationContext = [
   }
   
   try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] }), // Include conversation context
-      signal: controller.signal
-    });
-    if (tabId) delete abortControllers[tabId];
-    const data = await res.json();
-    let answer = '';
-    
-    // Check for errors in response
-    if (data.error) {
-      const errorMsg = data.error.message || '';
-      const userFriendlyError = formatErrorMessage(errorMsg, 'gemini');
-      
+    const candidates = safeUniqueModels(modelCandidates && modelCandidates.length ? modelCandidates : [model]);
+    for (let i = 0; i < candidates.length; i++) {
+      const currentModel = candidates[i];
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] }), // Include conversation context
+        signal: controller.signal
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || data.error) {
+        const errorMsg =
+          (data && data.error && data.error.message) ||
+          (!res.ok ? `HTTP ${res.status}: ${res.statusText}` : 'Unknown error');
+
+        if (i < candidates.length - 1 && isGeminiModelAccessError(data, res.status)) {
+          continue;
+        }
+
+        if (tabId) delete abortControllers[tabId];
+        const userFriendlyError = formatErrorMessage(errorMsg, 'gemini');
+        if (isExtensionContextValid() && tabId) {
+          try {
+            chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: userFriendlyError, done: true });
+          } catch (e) {}
+        }
+        return { ok: false, answer: userFriendlyError };
+      }
+
+      let answer = '';
+      if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+        answer = data.candidates[0].content.parts[0].text;
+      } else {
+        answer = 'No answer from Gemini.';
+      }
+
+      if (tabId) delete abortControllers[tabId];
       if (isExtensionContextValid() && tabId) {
         try {
-          chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: userFriendlyError, done: true });
-        } catch (e) {
-          // console.log('Tab message failed:', e);
-        }
+          if (i > 0) {
+            chrome.tabs.sendMessage(tabId, {
+              type: 'MINI_GPT_ANSWER_PART',
+              answerPart: `\n[Model unavailable — using ${currentModel}]\n\n`,
+              done: false
+            });
+          }
+          chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: answer, done: true });
+        } catch (e) {}
       }
-      return { ok: false, answer: userFriendlyError };
+      return { ok: true, answer, modelUsed: currentModel };
     }
-    
-    if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-      answer = data.candidates[0].content.parts[0].text;
-    } else {
-      answer = 'No answer from Gemini.';
-    }
+    if (tabId) delete abortControllers[tabId];
+    const err = formatErrorMessage('No compatible model found for this API key.', 'gemini');
     if (isExtensionContextValid() && tabId) {
       try {
-    chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: answer, done: true });
-      } catch (e) {
-        // console.log('Tab message failed:', e); // Replaced with silent handling
-      }
+        chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: err, done: true });
+      } catch (e) {}
     }
-    return { ok: true, answer };
+    return { ok: false, answer: err };
   } catch (e) {
     if (tabId) delete abortControllers[tabId];
     if (e.name === 'AbortError') {
@@ -576,7 +732,7 @@ async function askOpenAIVision({ apiKey, model, prompt, imageBase64, imageMime, 
             if (data === '[DONE]') {
               if (isExtensionContextValid() && tabId) {
                 try {
-                  chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '', done: true });
+                  chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: answer, done: true });
                 } catch (e) {}
               }
               if (tabId) delete abortControllers[tabId];
@@ -613,7 +769,7 @@ async function askOpenAIVision({ apiKey, model, prompt, imageBase64, imageMime, 
     if (tabId) delete abortControllers[tabId];
     if (isExtensionContextValid() && tabId) {
       try {
-        chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '', done: true });
+        chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: answer, done: true });
       } catch (e) {}
     }
     return { ok: true, answer };
@@ -846,7 +1002,12 @@ async function askHuggingFaceVision({ apiKey, model, prompt, imageBase64, imageM
       if (fullAnswer) {
         if (isExtensionContextValid() && tabId) {
           try {
-            chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: '', done: true, modelUsed: currentModel });
+            chrome.tabs.sendMessage(tabId, {
+              type: 'MINI_GPT_ANSWER_PART',
+              answerPart: fullAnswer,
+              done: true,
+              modelUsed: currentModel
+            });
           } catch (e) {}
         }
         if (tabId) delete abortControllers[tabId];
@@ -890,6 +1051,50 @@ const HF_MODELS = providerConfig.hfModels || [
   'microsoft/Phi-3-mini-4k-instruct'
 ];
 
+function normalizeTier(v) {
+  const t = String(v || '').toLowerCase();
+  return t === 'fast' || t === 'best' ? t : 'balanced';
+}
+
+function getHfTierModels(tier, fallbackList) {
+  const base = Array.isArray(fallbackList) && fallbackList.length ? fallbackList : HF_MODELS;
+  const t = normalizeTier(tier);
+  // Prefer an order that roughly matches speed/quality tradeoffs.
+  const fast = [
+    'microsoft/Phi-3-mini-4k-instruct',
+    'google/gemma-7b-it',
+    'mistralai/Mistral-7B-Instruct-v0.2',
+    'mistralai/Mistral-7B-Instruct-v0.3',
+    'Qwen/Qwen2.5-7B-Instruct',
+    'meta-llama/Llama-3.1-8B-Instruct'
+  ];
+  const best = [
+    'meta-llama/Llama-3.1-8B-Instruct',
+    'Qwen/Qwen2.5-7B-Instruct',
+    'mistralai/Mistral-7B-Instruct-v0.3',
+    'mistralai/Mistral-7B-Instruct-v0.2',
+    'google/gemma-7b-it',
+    'microsoft/Phi-3-mini-4k-instruct'
+  ];
+  const desired = t === 'fast' ? fast : t === 'best' ? best : base;
+  const ordered = [];
+  desired.forEach((m) => {
+    const mm = String(m || '').trim();
+    if (!mm) return;
+    if (!base.includes(mm)) return;
+    if (ordered.includes(mm)) return;
+    ordered.push(mm);
+  });
+  // Ensure every base model is still attempted eventually.
+  base.forEach((m) => {
+    const mm = String(m || '').trim();
+    if (!mm) return;
+    if (ordered.includes(mm)) return;
+    ordered.push(mm);
+  });
+  return ordered;
+}
+
 async function askHuggingFace({ apiKey, model, prompt, tabId, conversationContext = [], hfModels = HF_MODELS }) {
   const controller = new AbortController();
   if (tabId) abortControllers[tabId] = controller;
@@ -899,8 +1104,9 @@ async function askHuggingFace({ apiKey, model, prompt, tabId, conversationContex
     { role: 'system', content: 'You are a helpful assistant. Give simple, direct, concise answers.' }
   ];
 
-  if (conversationContext && conversationContext.length > 0) {
-    for (const msg of conversationContext) {
+  const ctx = dropDuplicateTrailingUserContext(conversationContext, prompt);
+  if (ctx && ctx.length > 0) {
+    for (const msg of ctx) {
       messages.push({
         role: msg.role === 'user' ? 'user' : 'assistant',
         content: msg.content
@@ -1036,9 +1242,10 @@ async function askHuggingFace({ apiKey, model, prompt, tabId, conversationContex
       if (fullAnswer) {
         if (isExtensionContextValid() && tabId) {
           try {
+            // Include full text on done so the tab always gets the reply even if stream deltas were dropped.
             chrome.tabs.sendMessage(tabId, {
               type: 'MINI_GPT_ANSWER_PART',
-              answerPart: '',
+              answerPart: fullAnswer,
               done: true,
               modelUsed: currentModel
             });
@@ -1098,6 +1305,30 @@ async function askHuggingFace({ apiKey, model, prompt, tabId, conversationContex
 // Language detection for context menus
 const browserLanguage = navigator.language || navigator.userLanguage || 'en';
 const isFrench = browserLanguage.startsWith('fr');
+
+/**
+ * Right-click actions only. Keeps the user’s “style” prefix separate from the real task
+ * so words like “resume” (meaning brief) are not read as “CV/résumé”.
+ */
+function buildBrowseMateContextMenuPrompt(promptPrefix, actionPrefix, selectionText, french) {
+  const task = actionPrefix + selectionText;
+  const p = String(promptPrefix || '').trim();
+  if (!p) return task;
+  if (french) {
+    return (
+      'Consignes de style pour ta réponse (ton et longueur — ce n’est pas le sujet de la tâche) :\n' +
+      p +
+      '\n\n---\n\nTâche :\n' +
+      task
+    );
+  }
+  return (
+    'Reply style only (tone and length — not the topic). Apply to the task below:\n' +
+    p +
+    '\n\n---\n\nTask:\n' +
+    task
+  );
+}
 
 const MINI_GPT_ACTIONS = [
   { 
@@ -1214,27 +1445,82 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   const action = MINI_GPT_ACTIONS.find(a => info.menuItemId === `mini-gpt-${a.id}`);
   if (action && info.selectionText) {
     // Fetch provider and API keys from storage
-    safeStorageGet(['provider', 'apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface'], (data) => {
-      // Right-click actions have their own concise instructions — no extra prefix needed
-      const question = action.prefix + info.selectionText;
+    safeStorageGet(
+      [
+        'provider',
+        'apiKey_openai',
+        'apiKey_gemini',
+        'apiKey_huggingface',
+        'systemInstruction',
+        'promptPrefix',
+        'modelTier',
+        'lastWorkingModel_openai',
+        'lastWorkingModel_gemini',
+        'lastWorkingModel_huggingface',
+        'browseMateDevMode'
+      ],
+      (data) => {
+      const systemInstruction = String(data.systemInstruction || '').trim();
+      const promptPrefix = String(data.promptPrefix || '').trim();
+
+      const question = buildBrowseMateContextMenuPrompt(
+        promptPrefix,
+        action.prefix,
+        info.selectionText,
+        isFrench
+      );
       // Determine provider: use last-used, or fallback to one with a key
       const provider = resolveProviderFromSettings(data);
       const apiKey = data[`apiKey_${provider}`] || '';
       const model = getDefaultModelForProvider(provider);
-      
+      const tier = String(data.modelTier || 'balanced').toLowerCase();
+      const lastWorking = data[`lastWorkingModel_${provider}`];
+
+      const tierCandidates = (() => {
+        const t = tier === 'fast' || tier === 'best' ? tier : 'balanced';
+        if (provider === 'openai') {
+          if (t === 'fast') return ['gpt-4o-mini', 'gpt-3.5-turbo'];
+          if (t === 'best') return ['gpt-4o', 'o1-mini', 'gpt-4-turbo', 'gpt-4o-mini'];
+          return ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'];
+        }
+        if (provider === 'gemini') {
+          if (t === 'fast') return ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+          if (t === 'best') return ['gemini-1.5-pro', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+          return ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+        }
+        return [];
+      })();
+      const modelCandidates =
+        provider === 'huggingface'
+          ? null
+          : safeUniqueModels([lastWorking, ...tierCandidates, model]);
+      const hfModels =
+        provider === 'huggingface' ? getHfTierModels(tier, HF_MODELS) : (provider === 'huggingface' ? HF_MODELS : null);
+
       try {
       chrome.storage.local.set({ easyaiUiSuppressed: false }, () => {
       chrome.scripting.executeScript({
         target: { tabId: tab.id },
-          func: (q, provider, model, apiKey, actionId, selectionText, isFrench, hfModels) => {
-          // Open chat bubble and add user message + Thinking...
+          func: (q, provider, model, modelCandidates, apiKey, actionId, selectionText, isFrench, hfModels, systemInstruction) => {
+          let displayText = selectionText;
+          if (actionId === 'summarize') displayText = (isFrench ? 'Résumer : ' : 'Summarize: ') + selectionText;
+          else if (actionId === 'correct') displayText = (isFrench ? 'Corriger : ' : 'Correct: ') + selectionText;
+          else if (actionId === 'explain') displayText = (isFrench ? 'Expliquer : ' : 'Explain: ') + selectionText;
+          else if (actionId === 'rephrase') displayText = (isFrench ? 'Reformuler : ' : 'Rephrase: ') + selectionText;
+          else if (actionId === 'translate') displayText = (isFrench ? 'Traduire : ' : 'Translate: ') + selectionText;
+          else if (actionId === 'formal') displayText = (isFrench ? 'Rendre formel : ' : 'Make formal: ') + selectionText;
+          else if (actionId === 'shorten') displayText = (isFrench ? 'Raccourcir : ' : 'Shorten: ') + selectionText;
+          else if (actionId === 'reply') displayText = (isFrench ? 'Suggérer une réponse : ' : 'Suggest reply: ') + selectionText;
+
           const bubble = document.getElementById('mini-gpt-bubble');
           const chat = document.getElementById('mini-gpt-chat-container');
           if (bubble && chat) {
-              // Ensure chat is visible
-            chat.style.display = 'flex';
+              // Must clear [hidden]: styles.css uses #mini-gpt-chat-container[hidden] { display:none !important }
+              chat.hidden = false;
+              chat.style.display = 'flex';
               chat.style.visibility = 'visible';
               chat.style.opacity = '1';
+              chat.style.pointerEvents = 'auto';
               
               // Hide bubble when chat opens
               if (bubble.style.display !== 'none') {
@@ -1251,11 +1537,6 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
             if (messagesDiv) {
               const userMsg = document.createElement('div');
               userMsg.className = 'mini-gpt-msg-user';
-              // Show a clean label for the action, or just the selection text
-              let displayText = selectionText;
-                if (actionId === 'summarize') displayText = (isFrench ? 'Résumer : ' : 'Summarize: ') + selectionText;
-                else if (actionId === 'correct') displayText = (isFrench ? 'Corriger : ' : 'Correct: ') + selectionText;
-                else if (actionId === 'explain') displayText = (isFrench ? 'Expliquer : ' : 'Explain: ') + selectionText;
               userMsg.textContent = displayText;
               userMsg.style.margin = '8px 0';
               userMsg.style.maxWidth = '80%';
@@ -1292,6 +1573,9 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
               }
               messagesDiv.scrollTop = messagesDiv.scrollHeight;
             }
+            try {
+              window.dispatchEvent(new CustomEvent('browse-mate-panel-shown'));
+            } catch (_) {}
           }
           // Detect if the selection came from an editable field (input, textarea, contenteditable)
           // so content.js can offer a Replace button on the response
@@ -1321,9 +1605,38 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
           // Send provider/model/apiKey with the message
           // For Hugging Face, include models list for auto-switching
-          window.postMessage({ type: 'MINI_GPT_ASK', question: q, provider, model, apiKey, hfModels: hfModels || undefined }, '*');
+          const ctx = (typeof systemInstruction === 'string' && systemInstruction.trim())
+            ? [{ role: 'system', content: systemInstruction.trim() }]
+            : [];
+          const mc = Array.isArray(modelCandidates) && modelCandidates.length ? modelCandidates : null;
+          window.postMessage(
+            {
+              type: 'MINI_GPT_ASK',
+              question: q,
+              provider,
+              model,
+              modelCandidates: mc || undefined,
+              apiKey,
+              conversationContext: ctx,
+              hfModels: hfModels || undefined,
+              __browseMateContextMenu: true,
+              __browseMateUserDisplay: displayText
+            },
+            '*'
+          );
         },
-          args: [question, provider, model, apiKey, action.id, info.selectionText, isFrench, provider === 'huggingface' ? HF_MODELS : null]
+          args: [
+            question,
+            provider,
+            model,
+            modelCandidates,
+            apiKey,
+            action.id,
+            info.selectionText,
+            isFrench,
+            provider === 'huggingface' ? hfModels : null,
+            systemInstruction
+          ]
       });
       });
       } catch (e) {
@@ -1344,6 +1657,29 @@ chrome.commands.onCommand.addListener((command) => {
   }
 });
 
+function syncBubbleSizeToTab(tabId) {
+  if (tabId == null) return;
+  chrome.storage.local.get(['bubbleSize'], (data) => {
+    const size = Number(data && data.bubbleSize);
+    if (!Number.isFinite(size)) return;
+    chrome.tabs.sendMessage(tabId, { type: 'EASYAI_SET_BUBBLE_SIZE', size }, () => {
+      // Ignore tabs without a receiver (restricted pages or not yet injected).
+      void chrome.runtime.lastError;
+    });
+  });
+}
+
+// Keep bubble size consistent when users switch tabs/pages.
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  syncBubbleSizeToTab(activeInfo && activeInfo.tabId);
+});
+
+// Re-apply saved bubble size when a tab finishes loading.
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (!changeInfo || changeInfo.status !== 'complete') return;
+  syncBubbleSizeToTab(tabId);
+});
+
 // Listen for messages from content script
 // In the message handler, call the streaming functions and do not send a final MINI_GPT_ANSWER (handled by streaming)
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -1352,6 +1688,37 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
   
+  /** Opens the extension toolbar popup (Chrome 127+). Content scripts cannot call chrome.action.openPopup. */
+  if (msg.type === 'EASYAI_OPEN_EXTENSION_POPUP') {
+    const windowId = sender.tab && sender.tab.windowId;
+    if (!chrome.action || typeof chrome.action.openPopup !== 'function') {
+      sendResponse({ ok: false, error: 'UNSUPPORTED' });
+      return true;
+    }
+    const opts = windowId != null ? { windowId } : {};
+    chrome.action
+      .openPopup(opts)
+      .then(() => sendResponse({ ok: true }))
+      .catch(() => sendResponse({ ok: false, error: 'OPEN_POPUP_FAILED' }));
+    return true;
+  }
+
+  if (msg.type === 'EASYAI_OPEN_EXTERNAL_URL') {
+    const url = typeof msg.url === 'string' ? msg.url.trim() : '';
+    if (!/^https:\/\//i.test(url)) {
+      sendResponse({ ok: false, error: 'INVALID_URL' });
+      return true;
+    }
+    chrome.tabs.create({ url }, (tab) => {
+      if (chrome.runtime.lastError || !tab) {
+        sendResponse({ ok: false, error: chrome.runtime.lastError?.message || 'OPEN_TAB_FAILED' });
+        return;
+      }
+      sendResponse({ ok: true });
+    });
+    return true;
+  }
+
   if (msg.type === 'EASYAI_CAPTURE_TAB') {
     const winId = sender.tab && sender.tab.windowId;
     try {
@@ -1381,13 +1748,16 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
     const visionModel = msg.model || getDefaultVisionModelForProvider(provider);
     const hfVisionList = msg.hfVisionModels && msg.hfVisionModels.length ? msg.hfVisionModels : getHfVisionModels();
+    const modelCandidates = Array.isArray(msg.modelCandidates) ? msg.modelCandidates : null;
+    const visionModelCandidates = Array.isArray(msg.visionModelCandidates) ? msg.visionModelCandidates : null;
 
     const providerHandlers = hasImage
       ? {
           openai: () =>
             askOpenAIVision({
               apiKey,
-              model: visionModel,
+              model: (visionModelCandidates && visionModelCandidates[0]) || visionModel,
+              modelCandidates: visionModelCandidates || [visionModel],
               prompt: msg.question,
               imageBase64: msg.imageBase64,
               imageMime: msg.imageMime || 'image/jpeg',
@@ -1397,7 +1767,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           gemini: () =>
             askGeminiVision({
               apiKey,
-              model: visionModel,
+              model: (visionModelCandidates && visionModelCandidates[0]) || visionModel,
+              modelCandidates: visionModelCandidates || [visionModel],
               prompt: msg.question,
               imageBase64: msg.imageBase64,
               imageMime: msg.imageMime || 'image/jpeg',
@@ -1421,6 +1792,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             askOpenAI({
               apiKey,
               model: msg.model || getDefaultModelForProvider(provider),
+              modelCandidates: modelCandidates || undefined,
               prompt: msg.question,
               tabId,
               conversationContext
@@ -1429,6 +1801,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             askGemini({
               apiKey,
               model: msg.model || getDefaultModelForProvider(provider),
+              modelCandidates: modelCandidates || undefined,
               prompt: msg.question,
               tabId,
               conversationContext
@@ -1508,7 +1881,47 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         sendResponse({ ok: false, error: e.message || 'alarm' });
         return;
       }
+      // Append to reminder history (max 5, FIFO)
+      chrome.storage.local.get('easyaiReminderHistory', (hData) => {
+        const history = Array.isArray(hData.easyaiReminderHistory) ? hData.easyaiReminderHistory : [];
+        history.push({ alarmName, title, note, created: now, fireAt, status: 'pending' });
+        // If over limit, remove oldest and clear its alarm
+        while (history.length > 5) {
+          const oldest = history.shift();
+          if (oldest && oldest.status === 'pending') {
+            chrome.alarms.clear(oldest.alarmName);
+            chrome.storage.local.remove(oldest.alarmName);
+          }
+        }
+        chrome.storage.local.set({ easyaiReminderHistory: history });
+      });
       sendResponse({ ok: true, alarmName });
+    });
+    return true;
+  }
+
+  if (msg.type === 'EASYAI_REMINDER_LIST') {
+    chrome.storage.local.get('easyaiReminderHistory', (hData) => {
+      const history = Array.isArray(hData.easyaiReminderHistory) ? hData.easyaiReminderHistory : [];
+      sendResponse({ ok: true, history });
+    });
+    return true;
+  }
+
+  if (msg.type === 'EASYAI_REMINDER_DELETE') {
+    const target = String(msg.alarmName || '');
+    if (!target) { sendResponse({ ok: false }); return true; }
+    chrome.storage.local.get('easyaiReminderHistory', (hData) => {
+      let history = Array.isArray(hData.easyaiReminderHistory) ? hData.easyaiReminderHistory : [];
+      const entry = history.find(h => h.alarmName === target);
+      if (entry && entry.status === 'pending') {
+        chrome.alarms.clear(target);
+        chrome.storage.local.remove(target);
+      }
+      history = history.filter(h => h.alarmName !== target);
+      chrome.storage.local.set({ easyaiReminderHistory: history }, () => {
+        sendResponse({ ok: true });
+      });
     });
     return true;
   }

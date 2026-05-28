@@ -1,10 +1,10 @@
 // Prevent multiple injections
 if (!window.__miniGptAgentInjected) {
   window.__miniGptAgentInjected = true;
+  (function() {
 
   // Language detection and localization
   const browserLanguage = navigator.language || navigator.userLanguage || 'en';
-  const isFrench = browserLanguage.startsWith('fr');
   
   // Localization strings
   const translations = {
@@ -58,11 +58,15 @@ if (!window.__miniGptAgentInjected) {
       closeChatTooltip: 'Close chat',
       closeChatAria: 'Close chat',
       moreMenuTooltip: 'More actions',
-      moreMenuAria: 'More: history, reminder, settings, copy conversation, theme',
+      moreMenuAria: 'More: history, reminder, settings, copy conversation, theme, support',
       menuSettings: 'API & settings',
       menuSettingsAria: 'Open extension settings and API keys',
+      menuSupport: 'Support BrowseMate',
+      menuSupportAria: 'Open the BrowseMate support page',
       menuCopyConversation: 'Copy conversation',
       menuCopyConversationAria: 'Copy entire conversation to clipboard',
+      menuTheme: 'Dark mode',
+      menuThemeAria: 'Toggle dark mode',
       chatCopied: 'Conversation copied.',
       nothingToCopyChat: 'Nothing to copy yet.',
       copyConvYou: 'You',
@@ -100,6 +104,16 @@ if (!window.__miniGptAgentInjected) {
       readAloudPlayingAria: 'Reading aloud',
       voicePrivacyHint: 'Dictation may use your browser’s speech service (e.g. Google in Chrome).',
       voiceDismiss: 'Dismiss',
+      stop: 'Stop',
+      stopAria: 'Stop generation',
+      continue: 'Continue',
+      regenerate: 'Regenerate',
+      retry: 'Retry',
+      retryAria: 'Retry last message',
+      dragResize: 'Drag to resize',
+      selectProvider: 'Select provider',
+      toggleDarkMode: 'Dark mode',
+      toggleLightMode: 'Light mode',
 
       // Screenshot / vision
       screenshotPage: 'Screenshot tab',
@@ -127,7 +141,12 @@ if (!window.__miniGptAgentInjected) {
       reminderSchedule: 'Schedule',
       reminderScheduled: 'Reminder scheduled.',
       reminderInvalidTime: 'Check the title and date/time.',
-      reminderDismiss: 'Got it'
+      reminderDismiss: 'Got it',
+      reminderListTitle: 'Recent reminders',
+      reminderStatusPending: 'Scheduled',
+      reminderStatusDone: 'Done',
+      reminderNoHistory: 'No reminders yet.',
+      reminderDelete: 'Delete'
     },
     fr: {
       // Header
@@ -147,18 +166,18 @@ if (!window.__miniGptAgentInjected) {
       explainPage: 'Expliquer la page',
       
       // Messages
-      welcome: '👋 Bienvenue ! Voici BrowseMate. Posez vos questions à tout moment.',
+      welcome: '👋 Bienvenue sur BrowseMate. Posez vos questions à tout moment.',
       noTextFound: 'Aucun texte lisible trouvé sur cette page.',
-      pleaseSetApiKey: 'Veuillez configurer votre clé API dans le popup de l\'extension.',
-      thinking: 'Mini-GPT réfléchit',
+      pleaseSetApiKey: 'Ajoutez votre clé API dans la fenêtre de l\'extension.',
+      thinking: 'BrowseMate réfléchit',
       
       // History
-      chatHistory: 'Historique des chats',
+      chatHistory: 'Historique des conversations',
       searchConversations: 'Rechercher des conversations...',
       noHistoryYet: 'Aucun historique pour le moment.',
       noConversationsFound: 'Aucune conversation trouvée.',
       messages: 'messages',
-      current: 'Actuel',
+      current: 'En cours',
       deleteConversation: 'Supprimer cette conversation',
       clearAll: 'Tout effacer',
       
@@ -179,11 +198,15 @@ if (!window.__miniGptAgentInjected) {
       closeChatTooltip: 'Fermer le chat',
       closeChatAria: 'Fermer le chat',
       moreMenuTooltip: 'Plus d’actions',
-      moreMenuAria: 'Plus : historique, rappel, réglages, copier la conversation, thème',
-      menuSettings: 'API et réglages',
-      menuSettingsAria: 'Ouvrir les réglages et les clés API',
+      moreMenuAria: 'Plus : historique, rappel, API et paramètres, copier la conversation, thème, soutien',
+      menuSettings: 'API et paramètres',
+      menuSettingsAria: 'Ouvrir les paramètres et les clés API',
+      menuSupport: 'Soutenir BrowseMate',
+      menuSupportAria: 'Ouvrir la page de soutien de BrowseMate',
       menuCopyConversation: 'Copier la conversation',
       menuCopyConversationAria: 'Copier toute la conversation dans le presse-papiers',
+      menuTheme: 'Mode sombre',
+      menuThemeAria: 'Basculer le mode sombre',
       chatCopied: 'Conversation copiée.',
       nothingToCopyChat: 'Rien à copier pour l’instant.',
       copyConvYou: 'Vous',
@@ -193,7 +216,7 @@ if (!window.__miniGptAgentInjected) {
       
       // Provider
       currentProvider: 'Fournisseur actuel : ',
-      setApiKeyTooltip: 'Configurez votre clé API dans les paramètres pour activer ce fournisseur.',
+      setApiKeyTooltip: 'Ajoutez votre clé API dans les paramètres pour activer ce service.',
       
       // Copy
       copyMessage: 'Copier le message',
@@ -203,7 +226,7 @@ if (!window.__miniGptAgentInjected) {
       toolbarSummarize: 'Résumer',
       toolbarCorrect: 'Corriger',
       toolbarTranslate: 'Traduire',
-      replaceInField: 'Remplacer dans le champ',
+      replaceInField: 'Remplacer dans le texte',
       replaceInFieldAria: 'Remplacer le texte sélectionné dans le champ par cette réponse',
       replaceDone: 'Remplacé !',
       
@@ -221,6 +244,16 @@ if (!window.__miniGptAgentInjected) {
       readAloudPlayingAria: 'Lecture en cours',
       voicePrivacyHint: 'La dictée peut utiliser le service vocal du navigateur (p. ex. Google dans Chrome).',
       voiceDismiss: 'Fermer',
+      stop: 'Arrêter',
+      stopAria: 'Arrêter la génération',
+      continue: 'Continuer',
+      regenerate: 'Régénérer',
+      retry: 'Réessayer',
+      retryAria: 'Réessayer le dernier message',
+      dragResize: 'Glisser pour redimensionner',
+      selectProvider: 'Choisir un service',
+      toggleDarkMode: 'Mode sombre',
+      toggleLightMode: 'Mode clair',
 
       screenshotPage: 'Capture d’écran',
       screenshotAria: 'Joindre une capture de l’onglet visible',
@@ -229,9 +262,9 @@ if (!window.__miniGptAgentInjected) {
       visionPendingLabel: 'Capture jointe',
       visionRemove: 'Retirer la capture',
       visionDefaultAsk: 'Que voyez-vous ? Répondez brièvement.',
-      visionProviderOnly: 'La capture d’écran est disponible avec OpenAI ou Gemini. Changez de fournisseur ou utilisez le texte seul.',
+      visionProviderOnly: 'La capture d’écran est disponible avec OpenAI ou Gemini. Changez de service ou utilisez uniquement le texte.',
 
-      reminderBtnTitle: 'Rappel',
+      reminderBtnTitle: 'Créer un rappel',
       reminderBtnAria: 'Programmer un rappel',
       reminderModalTitle: 'Rappel',
       reminderTitleLabel: 'Titre',
@@ -246,17 +279,302 @@ if (!window.__miniGptAgentInjected) {
       reminderSchedule: 'Programmer',
       reminderScheduled: 'Rappel programmé.',
       reminderInvalidTime: 'Vérifiez le titre et la date/heure.',
-      reminderDismiss: 'Compris'
+      reminderDismiss: 'OK',
+      reminderListTitle: 'Rappels récents',
+      reminderStatusPending: 'Programmé',
+      reminderStatusDone: 'Terminé',
+      reminderNoHistory: 'Aucun rappel pour le moment.',
+      reminderDelete: 'Supprimer'
     }
   };
   
-  // Get current language strings
-  const t = translations[isFrench ? 'fr' : 'en'];
-  
+  function normalizeUiLocale(v) {
+    return v === 'en' || v === 'fr' ? v : '';
+  }
+
+  function resolveFrenchFromLocalePref(pref) {
+    if (pref === 'fr') return true;
+    if (pref === 'en') return false;
+    return browserLanguage.startsWith('fr');
+  }
+
+  let uiLocalePref = '';
+  let t = translations[resolveFrenchFromLocalePref('') ? 'fr' : 'en'];
+
   // Helper function to translate text
   function translate(key) {
     return t[key] || translations.en[key] || key;
   }
+
+  // In iframe contexts (e.g., Gmail compose), we only capture editable selections and
+  // execute Replace requests. UI should only render in the top frame.
+  const __easyaiIsTopFrame = (() => {
+    try { return window.top === window.self; } catch (_) { return true; }
+  })();
+
+  if (!__easyaiIsTopFrame) {
+    function stripMarkdownForReplaceInFrame(s) {
+      if (!s) return '';
+      return String(s)
+        .replace(/\*\*([^*]+)\*\*/g, '$1')
+        .replace(/\*([^*\n]+)\*/g, '$1')
+        .replace(/`{1,3}([^`]*)`{1,3}/g, '$1')
+        .replace(/^#{1,6}\s+/gm, '')
+        .trim();
+    }
+
+    function buildContentEditableFragmentInFrame(text) {
+      const frag = document.createDocumentFragment();
+      const lines = String(text || '').split('\n');
+      lines.forEach((line, i) => {
+        frag.appendChild(document.createTextNode(line));
+        if (i < lines.length - 1) frag.appendChild(document.createElement('br'));
+      });
+      return frag;
+    }
+
+    function setEditableTargetFromElementInFrame(el) {
+      if (!el) return false;
+      const tag = el.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') {
+        const start = typeof el.selectionStart === 'number' ? el.selectionStart : null;
+        const end = typeof el.selectionEnd === 'number' ? el.selectionEnd : null;
+        if (start == null || end == null) return false;
+        if (start === end) return false;
+        window.__easyaiEditableTarget = { el, start, end, type: 'input' };
+        return true;
+      }
+      if (el.isContentEditable) {
+        const sel = window.getSelection();
+        const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0).cloneRange() : null;
+        if (!range || range.collapsed) return false;
+        window.__easyaiEditableTarget = { el, range, type: 'contenteditable' };
+        return true;
+      }
+      return false;
+    }
+
+    function captureEditableTargetInFrame(ev) {
+      try {
+        const activeEl = document.activeElement;
+        if (activeEl && setEditableTargetFromElementInFrame(activeEl)) return;
+        const tEl = ev && ev.target && ev.target.nodeType === 1 ? ev.target : null;
+        if (tEl) {
+          const host = tEl.closest ? tEl.closest('input, textarea, [contenteditable="true"]') : null;
+          if (host && setEditableTargetFromElementInFrame(host)) return;
+        }
+        const sel = window.getSelection();
+        const node = sel && sel.anchorNode ? (sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement) : null;
+        if (node) {
+          const editableHost = node.closest ? node.closest('[contenteditable="true"]') : null;
+          if (editableHost) setEditableTargetFromElementInFrame(editableHost);
+        }
+      } catch (_) {}
+    }
+
+    document.addEventListener('contextmenu', captureEditableTargetInFrame, true);
+    document.addEventListener('mouseup', captureEditableTargetInFrame, true);
+    document.addEventListener('keyup', captureEditableTargetInFrame, true);
+    document.addEventListener('selectionchange', captureEditableTargetInFrame, true);
+
+    // Notify top frame that an editable target exists in this frame.
+    function notifyTopEditableAvailable() {
+      try {
+        const ok = !!(window.__easyaiEditableTarget && window.__easyaiEditableTarget.el);
+        if (!ok) return;
+        window.top.postMessage({ type: 'EASYAI_EDITABLE_TARGET_AVAILABLE' }, '*');
+      } catch (_) {}
+    }
+    document.addEventListener('contextmenu', notifyTopEditableAvailable, true);
+    document.addEventListener('mouseup', notifyTopEditableAvailable, true);
+
+    // Handle replace requests from top frame.
+    window.addEventListener('message', (event) => {
+      const d = event && event.data;
+      if (!d || d.type !== 'EASYAI_REPLACE_IN_FRAME') return;
+      const reqId = d.reqId;
+      const target = window.__easyaiEditableTarget;
+      if (!target || !target.el) {
+        try { window.top.postMessage({ type: 'EASYAI_REPLACE_RESULT', reqId, ok: false }, '*'); } catch (_) {}
+        return;
+      }
+      const cleanText = stripMarkdownForReplaceInFrame(d.text || '');
+      let ok = false;
+      try {
+        if (target.type === 'input') {
+          const el = target.el;
+          if (typeof el.setRangeText === 'function') el.setRangeText(cleanText, target.start, target.end, 'select');
+          else {
+            const val = el.value;
+            el.value = val.slice(0, target.start) + cleanText + val.slice(target.end);
+          }
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+          el.focus();
+          ok = true;
+        } else if (target.type === 'contenteditable' && target.range) {
+          const range = target.range;
+          range.deleteContents();
+          range.insertNode(buildContentEditableFragmentInFrame(cleanText));
+          target.el.dispatchEvent(new Event('input', { bubbles: true }));
+          target.el.focus();
+          ok = true;
+        }
+      } catch (_) {
+        ok = false;
+      }
+      if (ok) window.__easyaiEditableTarget = null;
+      try { window.top.postMessage({ type: 'EASYAI_REPLACE_RESULT', reqId, ok }, '*'); } catch (_) {}
+    });
+
+    // Important: do not render chat UI inside iframes.
+    return;
+  }
+
+  function applyLocaleToExistingUi() {
+    try {
+      // Chat main
+      const inputEl = document.getElementById('mini-gpt-input');
+      if (inputEl) inputEl.placeholder = translate('placeholder');
+
+      const empty = document.querySelector('#mini-gpt-messages .mini-gpt-empty-placeholder');
+      if (empty) empty.textContent = translate('welcome');
+
+      const quickBtn = document.getElementById('mini-gpt-quick-actions-btn');
+      if (quickBtn) {
+        quickBtn.setAttribute('aria-label', translate('quickActions'));
+        // title is managed by updateQuickActionsBtnState; force refresh after locale change
+      }
+
+      const darkBtn = document.getElementById('mini-gpt-darkmode-btn');
+      if (darkBtn) {
+        darkBtn.title = translate('toggleDarkMode');
+        darkBtn.setAttribute('aria-label', translate('toggleDarkMode'));
+      }
+
+      const providerBtn = document.getElementById('miniGptProviderBtn');
+      if (providerBtn) providerBtn.setAttribute('aria-label', translate('selectProvider'));
+
+      const newChatHeaderBtn = document.getElementById('mini-gpt-newchat-btn');
+      if (newChatHeaderBtn) {
+        // This id is used for the modern + button in the header.
+        newChatHeaderBtn.title = translate('newChatTooltip');
+        newChatHeaderBtn.setAttribute('aria-label', translate('newChatAria'));
+      }
+
+      const overflowHeaderBtn = document.getElementById('mini-gpt-overflow-btn');
+      if (overflowHeaderBtn) {
+        overflowHeaderBtn.title = translate('moreMenuTooltip');
+        overflowHeaderBtn.setAttribute('aria-label', translate('moreMenuAria'));
+      }
+
+      const overflowHistoryBtn = document.getElementById('mini-gpt-history-btn');
+      if (overflowHistoryBtn) {
+        overflowHistoryBtn.title = translate('showHistoryTooltip');
+        overflowHistoryBtn.setAttribute('aria-label', translate('showHistoryAria'));
+        const lbl = overflowHistoryBtn.querySelector('.mini-gpt-overflow-menu-label');
+        if (lbl) lbl.textContent = translate('showHistory');
+      }
+      const overflowReminderBtn = document.getElementById('mini-gpt-reminder-btn');
+      if (overflowReminderBtn) {
+        overflowReminderBtn.title = translate('reminderBtnTitle');
+        overflowReminderBtn.setAttribute('aria-label', translate('reminderBtnAria'));
+        const lbl = overflowReminderBtn.querySelector('.mini-gpt-overflow-menu-label');
+        if (lbl) lbl.textContent = translate('reminderBtnTitle');
+      }
+      const overflowSettingsBtn = document.getElementById('mini-gpt-settings-btn');
+      if (overflowSettingsBtn) {
+        overflowSettingsBtn.title = translate('menuSettings');
+        overflowSettingsBtn.setAttribute('aria-label', translate('menuSettingsAria'));
+        const lbl = overflowSettingsBtn.querySelector('.mini-gpt-overflow-menu-label');
+        if (lbl) lbl.textContent = translate('menuSettings');
+      }
+      const overflowSupportBtn = document.getElementById('mini-gpt-support-btn');
+      if (overflowSupportBtn) {
+        overflowSupportBtn.title = translate('menuSupport');
+        overflowSupportBtn.setAttribute('aria-label', translate('menuSupportAria'));
+        const lbl = overflowSupportBtn.querySelector('.mini-gpt-overflow-menu-label');
+        if (lbl) lbl.textContent = translate('menuSupport');
+      }
+      const overflowCopyBtn = document.getElementById('mini-gpt-copy-conversation-btn');
+      if (overflowCopyBtn) {
+        overflowCopyBtn.title = translate('menuCopyConversation');
+        overflowCopyBtn.setAttribute('aria-label', translate('menuCopyConversationAria'));
+        const lbl = overflowCopyBtn.querySelector('.mini-gpt-overflow-menu-label');
+        if (lbl) lbl.textContent = translate('menuCopyConversation');
+      }
+      const overflowDarkBtn = document.getElementById('mini-gpt-darkmode-btn');
+      if (overflowDarkBtn) {
+        overflowDarkBtn.title = translate('menuTheme');
+        overflowDarkBtn.setAttribute('aria-label', translate('menuThemeAria'));
+        const lbl = overflowDarkBtn.querySelector('.mini-gpt-overflow-menu-label');
+        if (lbl) lbl.textContent = translate('menuTheme');
+      }
+
+      const historyPanelTitle = document.getElementById('mini-gpt-history-panel-header-title');
+      if (historyPanelTitle) historyPanelTitle.textContent = translate('chatHistory');
+      const historySearch = document.getElementById('mini-gpt-history-search-input');
+      if (historySearch) historySearch.placeholder = translate('searchConversations');
+      const historyClear = document.getElementById('mini-gpt-history-panel-clear');
+      if (historyClear) historyClear.textContent = translate('clearAll');
+
+      // Reminder schedule modal (if open)
+      const modalRoot = document.getElementById('easyai-reminder-modal-root');
+      if (modalRoot) {
+        const head = modalRoot.querySelector('.easyai-reminder-modal-head');
+        if (head) head.textContent = translate('reminderModalTitle');
+        const titleIn = modalRoot.querySelector('.easyai-reminder-modal-input[aria-label]');
+        if (titleIn) titleIn.placeholder = translate('reminderTitlePlaceholder');
+        const noteTa = modalRoot.querySelector('.easyai-reminder-modal-textarea');
+        if (noteTa) noteTa.placeholder = translate('reminderNotePlaceholder');
+        const labels = modalRoot.querySelectorAll('.easyai-reminder-modal-label');
+        if (labels && labels.length) {
+          // First label is "When" in current markup
+          labels.forEach((lbl) => {
+            if (lbl.textContent && lbl.textContent.trim()) {
+              // Best-effort: set only the "When" label by position.
+            }
+          });
+          if (labels[0]) labels[0].textContent = translate('reminderWhenLabel');
+        }
+        const presetBtns = modalRoot.querySelectorAll('.easyai-reminder-modal-preset');
+        if (presetBtns && presetBtns.length >= 4) {
+          presetBtns[0].textContent = translate('reminderPreset15m');
+          presetBtns[1].textContent = translate('reminderPreset1h');
+          presetBtns[2].textContent = translate('reminderPreset3h');
+          presetBtns[3].textContent = translate('reminderPresetTomorrow');
+        }
+        const actionBtns = modalRoot.querySelectorAll('.easyai-reminder-modal-btn');
+        if (actionBtns && actionBtns.length >= 2) {
+          actionBtns[0].textContent = translate('cancel');
+          actionBtns[1].textContent = translate('reminderSchedule');
+        }
+      }
+
+      // Send/stop button titles
+      if (typeof updateSendStopBtn === 'function') {
+        try { updateSendStopBtn(); } catch (_) {}
+      }
+      if (typeof updateQuickActionsBtnState === 'function') {
+        try { updateQuickActionsBtnState(); } catch (_) {}
+      }
+    } catch (_) {}
+  }
+
+  function setUiLocalePref(pref) {
+    uiLocalePref = normalizeUiLocale(pref);
+    t = translations[resolveFrenchFromLocalePref(uiLocalePref) ? 'fr' : 'en'];
+    applyLocaleToExistingUi();
+  }
+
+  // Init locale from storage and keep synced with popup.
+  chrome.storage.local.get(['browseMateUiLocale'], (data) => {
+    setUiLocalePref(typeof data.browseMateUiLocale === 'string' ? data.browseMateUiLocale : '');
+  });
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !changes.browseMateUiLocale) return;
+    setUiLocalePref(changes.browseMateUiLocale.newValue);
+  });
 
   const providerConfig = globalThis.EASYAI_PROVIDER_CONFIG || {};
   const providerHelpers = globalThis.EASYAI_PROVIDER_HELPERS || {};
@@ -264,7 +582,6 @@ if (!window.__miniGptAgentInjected) {
   const API_KEY_FIELDS = providerHelpers.getApiKeyFields
     ? providerHelpers.getApiKeyFields()
     : (providerConfig.apiKeyFields || ['apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface']);
-  const DEFAULT_PROMPT_PREFIX = providerConfig.defaultPromptPrefix || 'Give a short, direct answer. Be concise. ';
 
   function isLoginOrAuthPage() {
     if (pageHelpers.isLoginOrAuthPage) {
@@ -284,6 +601,21 @@ if (!window.__miniGptAgentInjected) {
     chrome.storage.local.get(API_KEY_FIELDS, callback);
   }
 
+  const DEFAULT_BUBBLE_SIZE = 64;
+  const MIN_BUBBLE_SIZE = 48;
+  const MAX_BUBBLE_SIZE = 96;
+  const BUBBLE_RESIZE_ANIM_MS = 190;
+
+  function normalizeBubbleSize(v) {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return DEFAULT_BUBBLE_SIZE;
+    return Math.max(MIN_BUBBLE_SIZE, Math.min(MAX_BUBBLE_SIZE, Math.round(n)));
+  }
+
+  function getDefaultChatBottomPx(size) {
+    return `${32 + normalizeBubbleSize(size) + 12}px`;
+  }
+
   const bubble = document.createElement('div');
   bubble.id = 'mini-gpt-bubble';
   bubble.innerHTML = `
@@ -299,8 +631,45 @@ if (!window.__miniGptAgentInjected) {
   bubble.style.pointerEvents = 'auto';
   
   const originalBubblePosition = { bottom: '32px', right: '32px' };
-  bubble.style.width = '64px';
-  bubble.style.height = '64px';
+  let currentBubbleSize = DEFAULT_BUBBLE_SIZE;
+  let bubbleResizeAnimTimer = null;
+
+  function applyBubbleSize(sizeRaw) {
+    const size = normalizeBubbleSize(sizeRaw);
+    const sizeChanged = size !== currentBubbleSize;
+    currentBubbleSize = size;
+
+    bubble.style.setProperty('width', `${size}px`, 'important');
+    bubble.style.setProperty('height', `${size}px`, 'important');
+
+    const bubbleImg = bubble.querySelector('img');
+    if (bubbleImg) {
+      const imgSize = Math.max(40, Math.round(size * 0.9));
+      bubbleImg.style.transition = 'width 0.14s ease-out, height 0.14s ease-out, filter 0.2s ease';
+      bubbleImg.style.width = `${imgSize}px`;
+      bubbleImg.style.height = `${imgSize}px`;
+    }
+
+    if (sizeChanged) {
+      bubble.classList.remove('easyai-resize-live');
+      // Restart class-based animation on each step while slider moves.
+      void bubble.offsetWidth;
+      bubble.classList.add('easyai-resize-live');
+      if (bubbleResizeAnimTimer) clearTimeout(bubbleResizeAnimTimer);
+      bubbleResizeAnimTimer = setTimeout(() => {
+        bubble.classList.remove('easyai-resize-live');
+      }, BUBBLE_RESIZE_ANIM_MS);
+    }
+
+    // Keep chat anchored above bubble only when chat is still at the default anchor.
+    const isDefaultAnchor = !chatContainer.style.left && !chatContainer.style.top;
+    if (isDefaultAnchor) {
+      chatContainer.style.bottom = getDefaultChatBottomPx(size);
+    }
+  }
+
+  bubble.style.width = `${DEFAULT_BUBBLE_SIZE}px`;
+  bubble.style.height = `${DEFAULT_BUBBLE_SIZE}px`;
   bubble.style.background = 'none';
   bubble.style.borderRadius = '0';
   bubble.style.border = 'none';
@@ -311,7 +680,7 @@ if (!window.__miniGptAgentInjected) {
   bubble.style.justifyContent = 'center';
   bubble.style.cursor = 'pointer';
   bubble.style.userSelect = 'none';
-  bubble.style.transition = 'box-shadow 0.2s, transform 0.3s ease-out, opacity 0.2s';
+  bubble.style.transition = 'box-shadow 0.2s, transform 0.3s ease-out, opacity 0.2s, width 0.14s ease-out, height 0.14s ease-out';
   bubble.style.opacity = '0';
   bubble.style.transform = 'scale(0.8) translateY(20px)';
   bubble.style.display = 'none';
@@ -320,15 +689,18 @@ if (!window.__miniGptAgentInjected) {
   // Chat UI
   const chatContainer = document.createElement('div');
   chatContainer.id = 'mini-gpt-chat-container';
+  // Prevent any initial “flash” of the chat UI on refresh.
+  chatContainer.hidden = true;
   chatContainer.style.display = 'none';
   chatContainer.style.position = 'fixed';
   chatContainer.style.right = '32px';
-  chatContainer.style.bottom = '108px';
+  chatContainer.style.bottom = getDefaultChatBottomPx(DEFAULT_BUBBLE_SIZE);
   chatContainer.style.left = '';
   chatContainer.style.top = '';
   chatContainer.style.zIndex = '999999';
   chatContainer.style.visibility = 'hidden';
   chatContainer.style.opacity = '0';
+  chatContainer.style.pointerEvents = 'none';
   
   // Draggable functionality variables
   let isDragging = false;
@@ -358,21 +730,16 @@ if (!window.__miniGptAgentInjected) {
     if (isLoginOrAuthPage()) {
       return;
     }
-    
-    getProviderKeys((data) => {
-      const hasKey = hasAnyApiKey(data);
-      if (!hasKey) return; // Don't show bubble if no API key
-      
-      bubble.style.transition = 'none';
-      bubble.style.display = 'flex';
-      bubble.style.visibility = 'visible';
-      bubble.style.opacity = '1';
-      bubble.style.transform = 'scale(1) translateY(0)';
-      
-      // Re-enable transitions after a brief moment for future interactions
-      requestAnimationFrame(() => {
-        bubble.style.transition = 'box-shadow 0.2s, background 0.3s, color 0.3s, transform 0.3s ease-out, opacity 0.2s';
-      });
+
+    bubble.style.transition = 'none';
+    bubble.style.display = 'flex';
+    bubble.style.visibility = 'visible';
+    bubble.style.opacity = '1';
+    bubble.style.transform = 'scale(1) translateY(0)';
+
+    // Re-enable transitions after a brief moment for future interactions
+    requestAnimationFrame(() => {
+      bubble.style.transition = 'box-shadow 0.2s, background 0.3s, color 0.3s, transform 0.3s ease-out, opacity 0.2s, width 0.14s ease-out, height 0.14s ease-out';
     });
   }
   
@@ -382,18 +749,13 @@ if (!window.__miniGptAgentInjected) {
     if (isLoginOrAuthPage()) {
       return;
     }
-    
-    getProviderKeys((data) => {
-      const hasKey = hasAnyApiKey(data);
-      if (!hasKey) return; // Don't show bubble if no API key
-      
-      // For immediate visibility without any transitions
-      bubble.style.transition = 'none';
-      bubble.style.display = 'flex';
-      bubble.style.visibility = 'visible';
-      bubble.style.opacity = '1';
-      bubble.style.transform = 'scale(1) translateY(0)';
-    });
+
+    // For immediate visibility without any transitions
+    bubble.style.transition = 'none';
+    bubble.style.display = 'flex';
+    bubble.style.visibility = 'visible';
+    bubble.style.opacity = '1';
+    bubble.style.transform = 'scale(1) translateY(0)';
   }
   
   function hideBubble() {
@@ -410,13 +772,7 @@ if (!window.__miniGptAgentInjected) {
     if (isChatVisible) {
       hideBubble();
     } else {
-      // Only show bubble if API key is available
-      getProviderKeys((data) => {
-        const hasKey = hasAnyApiKey(data);
-        if (hasKey) {
-          showBubble();
-        }
-      });
+      showBubble();
     }
   }
 
@@ -434,7 +790,7 @@ if (!window.__miniGptAgentInjected) {
         <button class="mini-gpt-action-btn" id="mini-gpt-newchat-btn" title="${translate('newChat')}" aria-label="${translate('newChat')}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
         </button>
-        <button class="mini-gpt-action-btn" id="mini-gpt-darkmode-btn" title="Toggle dark mode" aria-label="Toggle dark mode">
+        <button class="mini-gpt-action-btn" id="mini-gpt-darkmode-btn" title="${translate('toggleDarkMode')}" aria-label="${translate('toggleDarkMode')}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </button>
         <button class="mini-gpt-action-btn" id="mini-gpt-close" title="${translate('closeChat')}" aria-label="${translate('closeChat')}">
@@ -447,21 +803,21 @@ if (!window.__miniGptAgentInjected) {
     <form id="mini-gpt-form" class="mini-gpt-form-enhanced" style="position:relative;display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px;">
       <div id="mini-gpt-vision-pending" class="mini-gpt-vision-pending" style="display:none;width:100%;"></div>
       <div id="mini-gpt-voice-status" class="mini-gpt-voice-status" role="status" aria-live="polite" style="display:none;"></div>
-      <div class="mini-gpt-input-wrap" style="flex:1;display:flex;align-items:flex-end;gap:6px;min-width:0;">
+      <div class="mini-gpt-input-wrap" style="flex:1;display:flex;align-items:flex-end;gap:6px;min-width:0;flex-wrap:wrap;">
       <textarea id="mini-gpt-input" class="mini-gpt-input-enhanced" placeholder="${translate('placeholder')}" autocomplete="off" rows="1" style="flex:1;min-width:0;"></textarea>
+      <button type="submit" id="mini-gpt-send-btn" class="mini-gpt-send-btn" aria-label="${translate('send')}" style="background: var(--browsemate-browse); border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; flex-shrink:0;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
       <button type="button" id="mini-gpt-screenshot-btn" class="mini-gpt-screenshot-btn" title="${translate('screenshotPage')}" aria-label="${translate('screenshotAria')}" style="display:flex;flex-shrink:0;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;width:40px;height:40px;align-items:center;justify-content:center;cursor:pointer;padding:0;color:var(--browsemate-browse);">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
       </button>
       <button type="button" id="mini-gpt-voice-btn" class="mini-gpt-voice-btn" title="${translate('voiceInput')}" aria-label="${translate('voiceInput')}" style="display:none;flex-shrink:0;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;width:40px;height:40px;align-items:center;justify-content:center;cursor:pointer;padding:0;color:var(--browsemate-browse);">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
       </button>
-      </div>
-      <button type="submit" class="mini-gpt-send-btn" aria-label="${translate('send')}" style="background: var(--browsemate-browse); border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; flex-shrink:0;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      </button>
       <button id="mini-gpt-quick-actions-btn" type="button" title="${translate('quickActions')}" aria-label="${translate('quickActions')}" style="background:none;border:none;padding:4px 8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--browsemate-browse);position:relative;flex-shrink:0;">
         <span style="font-size:20px;">⚡</span>
       </button>
+      </div>
     </form>
   `;
 
@@ -469,7 +825,7 @@ if (!window.__miniGptAgentInjected) {
   const providerRow = chatContainer.querySelector('#mini-gpt-provider-row');
   providerRow.innerHTML = `
     <div class="mini-gpt-provider-dropdown" tabindex="0" aria-haspopup="listbox" aria-expanded="false">
-      <button class="mini-gpt-provider-selected" id="miniGptProviderBtn" aria-label="Select provider">
+      <button class="mini-gpt-provider-selected" id="miniGptProviderBtn" aria-label="${translate('selectProvider')}">
         <span class="mini-gpt-provider-icon" id="miniGptProviderIcon"></span>
         <span id="miniGptProviderLabel"></span>
         <svg class="mini-gpt-provider-arrow" width="18" height="18" viewBox="0 0 20 20"><path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
@@ -621,6 +977,20 @@ if (!window.__miniGptAgentInjected) {
   let pendingVision = null;
   const VISION_MAX_SIDE = providerConfig.visionMaxImageSide || 1280;
   let voiceStatusTimer = null;
+  let quickActionsDropdown = null;
+
+  function destroyQuickActionsDropdown() {
+    if (!quickActionsDropdown) return;
+    const reposition = quickActionsDropdown._easyaiReposition;
+    if (reposition) {
+      window.removeEventListener('scroll', reposition, true);
+      window.removeEventListener('resize', reposition);
+    }
+    const esc = quickActionsDropdown._easyaiEscape;
+    if (esc) document.removeEventListener('keydown', esc, true);
+    quickActionsDropdown.remove();
+    quickActionsDropdown = null;
+  }
 
   function downscaleDataUrl(dataUrl, maxSide, quality) {
     return new Promise((resolve, reject) => {
@@ -661,6 +1031,20 @@ if (!window.__miniGptAgentInjected) {
     thumb.className = 'mini-gpt-vision-thumb';
     thumb.src = 'data:' + pendingVision.mime + ';base64,' + pendingVision.base64;
     thumb.alt = translate('visionPendingLabel');
+    thumb.style.cursor = 'zoom-in';
+    thumb.tabIndex = 0;
+    thumb.setAttribute('role', 'button');
+    thumb.setAttribute('aria-label', translate('visionPreviewZoom'));
+    thumb.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      showVisionPreviewModal();
+    });
+    thumb.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.key === ' ') {
+        ev.preventDefault();
+        showVisionPreviewModal();
+      }
+    });
     const label = document.createElement('span');
     label.className = 'mini-gpt-vision-label';
     label.textContent = translate('visionPendingLabel');
@@ -681,16 +1065,61 @@ if (!window.__miniGptAgentInjected) {
     visionPendingEl.appendChild(removeBtn);
   }
 
+  // Modal for image preview zoom
+  function showVisionPreviewModal() {
+    // Remove any existing modal
+    const old = document.getElementById('mini-gpt-vision-modal');
+    if (old) old.remove();
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'mini-gpt-vision-modal';
+    overlay.className = 'mini-gpt-vision-modal';
+    overlay.tabIndex = 0;
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', translate('visionPreviewZoom'));
+    // Modal image
+    const img = document.createElement('img');
+    img.className = 'mini-gpt-vision-modal-img';
+    img.src = 'data:' + pendingVision.mime + ';base64,' + pendingVision.base64;
+    img.alt = translate('visionPendingLabel');
+    overlay.appendChild(img);
+    // Close on click outside image
+    overlay.addEventListener('click', (ev) => {
+      if (ev.target === overlay) {
+        overlay.remove();
+      }
+    });
+    // Close on Escape
+    overlay.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape') {
+        overlay.remove();
+      }
+    });
+    document.body.appendChild(overlay);
+    overlay.focus();
+  }
+
   function clearPendingVision() {
     pendingVision = null;
     renderVisionPending();
   }
 
+  function isChatUiClosed() {
+    return (
+      chatContainer.hidden === true ||
+      chatContainer.style.display === 'none' ||
+      chatContainer.style.visibility === 'hidden' ||
+      chatContainer.style.opacity === '0'
+    );
+  }
+
   function syncVisionScreenshotAvailability() {
     if (!screenshotBtn) return;
-    const allowed = currentProvider === 'openai' || currentProvider === 'gemini';
-    screenshotBtn.style.display = allowed ? 'flex' : 'none';
-    if (!allowed && pendingVision) clearPendingVision();
+    const providerOk = currentProvider === 'openai' || currentProvider === 'gemini';
+    const show = providerOk && !isChatUiClosed();
+    screenshotBtn.style.display = show ? 'flex' : 'none';
+    if (!show && pendingVision) clearPendingVision();
   }
 
   if (screenshotBtn) {
@@ -720,6 +1149,12 @@ if (!window.__miniGptAgentInjected) {
           }
           pendingVision = { base64: scaled.base64, mime: scaled.mime };
           renderVisionPending();
+          // After capture, ensure send button is enabled if there is a prompt or vision
+          if (sendBtn) {
+            const hasPrompt = input && input.value.trim().length > 0;
+            const hasVision = pendingVision && pendingVision.base64 && pendingVision.base64.length > 80;
+            sendBtn.disabled = !(hasPrompt || hasVision);
+          }
         } catch (_) {
           showVoiceNotice(translate('visionCaptureFailed'), 'error');
         }
@@ -792,7 +1227,13 @@ if (!window.__miniGptAgentInjected) {
         speechRecognitionInstance.onresult = null;
         speechRecognitionInstance.onerror = null;
         speechRecognitionInstance.onend = null;
-        speechRecognitionInstance.stop();
+        // abort() is more reliable than stop() for immediately releasing the browser mic overlay.
+        if (typeof speechRecognitionInstance.abort === 'function') {
+          speechRecognitionInstance.abort();
+        }
+        if (typeof speechRecognitionInstance.stop === 'function') {
+          speechRecognitionInstance.stop();
+        }
       } catch (_) { /* ignore */ }
       speechRecognitionInstance = null;
     }
@@ -827,6 +1268,10 @@ if (!window.__miniGptAgentInjected) {
     btn.style.background = 'rgba(255, 255, 255, 0.9)';
     btn.style.borderColor = 'rgba(0, 0, 0, 0.1)';
     btn.style.color = '';
+    try {
+      const root = btn.closest('.mini-gpt-msg-bot');
+      if (root) root.classList.remove('mini-gpt-msg--speaking');
+    } catch (_) {}
     btn.title = translate('readAloud');
     btn.setAttribute('aria-label', translate('readAloudAria'));
     btn.removeAttribute('aria-busy');
@@ -888,6 +1333,10 @@ if (!window.__miniGptAgentInjected) {
 
     if (readBtn) {
       activeReadAloudBtn = readBtn;
+      try {
+        const root = readBtn.closest('.mini-gpt-msg-bot');
+        if (root) root.classList.add('mini-gpt-msg--speaking');
+      } catch (_) {}
       readBtn.innerHTML = READ_ALOUD_CHECK_SVG;
       readBtn.style.background = '#10b981';
       readBtn.style.borderColor = '#10b981';
@@ -925,8 +1374,10 @@ if (!window.__miniGptAgentInjected) {
     if (!voiceBtn) return;
     const supported = !!getSpeechRecognitionCtor();
     const show = supported && voicePrefs.voiceInputEnabled;
-    voiceBtn.style.display = show ? 'flex' : 'none';
-    if (!show) stopSpeechRecognition();
+    const chatClosed = isChatUiClosed();
+    voiceBtn.style.display = show && !chatClosed ? 'flex' : 'none';
+    if (!show || chatClosed) stopSpeechRecognition();
+    syncVisionScreenshotAvailability();
   }
 
   function refreshVoicePrefsFromStorage() {
@@ -938,6 +1389,20 @@ if (!window.__miniGptAgentInjected) {
   }
 
   refreshVoicePrefsFromStorage();
+
+  // On bfcache restore, ensure SR is not left running while chat is closed.
+  window.addEventListener('pageshow', () => {
+    try {
+      if (isChatUiClosed()) stopAllVoiceActivity();
+      applyVoiceMicVisibility();
+    } catch (_) {}
+  });
+
+  window.addEventListener('browse-mate-panel-shown', () => {
+    try {
+      applyVoiceMicVisibility();
+    } catch (_) {}
+  });
 
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local' && (changes.voiceInputEnabled || changes.speechLang)) {
@@ -967,19 +1432,112 @@ if (!window.__miniGptAgentInjected) {
       e.stopPropagation();
       speakAssistantText(plainText, readBtn);
     });
-    const showRead = () => { readBtn.style.opacity = '1'; };
-    const hideRead = () => {
-      if (activeReadAloudBtn === readBtn) {
-        readBtn.style.opacity = '1';
+    actionsEl.appendChild(readBtn);
+  }
+
+  function getLastBotBubbleEl() {
+    const nodes = messagesDiv ? Array.from(messagesDiv.querySelectorAll('.mini-gpt-msg-bot')) : [];
+    // Skip loader bubbles
+    const filtered = nodes.filter((n) => n && !n.classList.contains('mini-gpt-msg-loader-bubble'));
+    return filtered.length ? filtered[filtered.length - 1] : null;
+  }
+
+  function removeTrailingAssistantFromContextAndSession() {
+    try {
+      const lastCtx = conversationContext && conversationContext.length ? conversationContext[conversationContext.length - 1] : null;
+      if (lastCtx && lastCtx.role === 'assistant') conversationContext.pop();
+    } catch (_) {}
+    try {
+      const lastIdx = currentSession && Array.isArray(currentSession.messages)
+        ? currentSession.messages.map((m) => m && m.role).lastIndexOf('bot')
+        : -1;
+      if (lastIdx !== -1) currentSession.messages.splice(lastIdx, 1);
+    } catch (_) {}
+  }
+
+  function attachRetryButton(bubbleRoot, actionsEl) {
+    if (!actionsEl) return;
+    const lastBot = getLastBotBubbleEl();
+    if (bubbleRoot !== lastBot) return; // Only show on latest assistant message
+
+    const retryBtn = document.createElement('button');
+    retryBtn.type = 'button';
+    retryBtn.className = 'mini-gpt-retry-btn';
+    retryBtn.title = translate('retry');
+    retryBtn.setAttribute('aria-label', translate('retryAria'));
+    retryBtn.innerHTML =
+      `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"` +
+      ` stroke-linecap="round" stroke-linejoin="round">` +
+      `<polyline points="1 4 1 10 7 10"></polyline>` +
+      `<path d="M3.51 15a9 9 0 1 0 .49-5H1"></path>` +
+      `</svg>`;
+
+    const syncDisabled = () => {
+      const hasPayload = !!(
+        lastRetryRelayPayload ||
+        lastUserRetryText ||
+        (lastUserRetryVision && lastUserRetryVision.base64)
+      );
+      const disabled = requestInProgress || !hasPayload;
+      retryBtn.disabled = disabled;
+      retryBtn.style.opacity = disabled ? '0.55' : '1';
+    };
+    syncDisabled();
+
+    retryBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (requestInProgress) return;
+      const hasVisionPayload = !!(lastUserRetryVision && lastUserRetryVision.base64 && lastUserRetryVision.base64.length > 80);
+      const hasRelay = !!lastRetryRelayPayload;
+      if (!hasRelay && !lastUserRetryText && !hasVisionPayload) return;
+
+      // Remove the assistant reply we’re retrying (UI + context), then resend last user prompt.
+      removeTrailingAssistantFromContextAndSession();
+      try {
+        const maybeLast = getLastBotBubbleEl();
+        if (maybeLast && maybeLast === bubbleRoot) maybeLast.remove();
+      } catch (_) {}
+
+      if (hasRelay) {
+        const base = lastRetryRelayPayload;
+        const systemMsgs = Array.isArray(base.conversationContext)
+          ? base.conversationContext.filter((m) => m && m.role === 'system')
+          : [];
+        const priorTurns = conversationContext.filter((m) => m && (m.role === 'user' || m.role === 'assistant'));
+        const relay = {
+          ...base,
+          conversationContext: [...systemMsgs, ...priorTurns]
+        };
+
+        const loader = document.createElement('div');
+        loader.className = 'mini-gpt-msg-bot mini-gpt-msg-loader-bubble';
+        loader.setAttribute('aria-label', translate('thinking'));
+        loader.innerHTML = `<span class='mini-gpt-loader'><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span><span class='mini-gpt-loader-dot'></span></span>`;
+        messagesDiv.appendChild(loader);
+        const loaderEl = loader;
+        setTimeout(() => {
+          safeScrollIntoView(loaderEl, { behavior: 'smooth', block: 'start' });
+        }, 100);
+
+        requestInProgress = true;
+        input.disabled = true;
+        updateSendStopBtn();
+        streamingBotMsg = null;
+        streamingBotText = '';
+        streamingBotBodyEl = null;
+
+        chrome.runtime.sendMessage(relay);
         return;
       }
-      readBtn.style.opacity = '0';
-    };
-    bubbleRoot.addEventListener('mouseenter', showRead);
-    bubbleRoot.addEventListener('mouseleave', hideRead);
-    readBtn.addEventListener('mouseenter', showRead);
-    readBtn.addEventListener('mouseleave', hideRead);
-    actionsEl.appendChild(readBtn);
+
+      const visionPayload = hasVisionPayload
+        ? { base64: lastUserRetryVision.base64, mime: lastUserRetryVision.mime || 'image/jpeg' }
+        : null;
+      sendPrompt({ retry: true, question: lastUserRetryText, vision: visionPayload });
+    });
+
+    actionsEl.appendChild(retryBtn);
   }
 
   function stripMarkdownForReplace(s) {
@@ -1002,9 +1560,96 @@ if (!window.__miniGptAgentInjected) {
     return frag;
   }
 
+  function setEditableTargetFromElement(el) {
+    if (!el) return false;
+    const tag = el.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') {
+      const start = typeof el.selectionStart === 'number' ? el.selectionStart : null;
+      const end = typeof el.selectionEnd === 'number' ? el.selectionEnd : null;
+      if (start == null || end == null) return false;
+      if (start === end) return false; // nothing selected
+      window.__easyaiEditableTarget = { el, start, end, type: 'input' };
+      return true;
+    }
+    if (el.isContentEditable) {
+      const sel = window.getSelection();
+      const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0).cloneRange() : null;
+      if (!range || range.collapsed) return false;
+      window.__easyaiEditableTarget = { el, range, type: 'contenteditable' };
+      return true;
+    }
+    return false;
+  }
+
+  function captureEditableTarget(ev) {
+    try {
+      const activeEl = document.activeElement;
+      if (activeEl && setEditableTargetFromElement(activeEl)) return;
+
+      // Use the element under right-click if available (some apps keep selection but blur focus).
+      const t = ev && ev.target && ev.target.nodeType === 1 ? ev.target : null;
+      if (t) {
+        const host = t.closest ? (t.closest('input, textarea, [contenteditable="true"]')) : null;
+        if (host && setEditableTargetFromElement(host)) return;
+      }
+
+      // Some sites move focus away on right-click; fall back to selection anchor.
+      const sel = window.getSelection();
+      const node = sel && sel.anchorNode ? (sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement) : null;
+      if (node) {
+        const editableHost = node.closest ? node.closest('[contenteditable="true"]') : null;
+        if (editableHost) setEditableTargetFromElement(editableHost);
+      }
+    } catch (_) {}
+  }
+
+  // Keep the last editable selection so Replace stays reliable across sites.
+  // - INPUT/TEXTAREA selections do NOT trigger selectionchange reliably.
+  // - Many apps blur the field on contextmenu; capture before focus changes.
+  document.addEventListener('contextmenu', captureEditableTarget, true);
+  document.addEventListener('mouseup', captureEditableTarget, true);
+  document.addEventListener('keyup', captureEditableTarget, true);
+  document.addEventListener('selectionchange', captureEditableTarget, true);
+
+  // If an editable selection exists inside an iframe (e.g., Gmail compose),
+  // allow Replace by delegating the write back to that frame.
+  window.addEventListener('message', (event) => {
+    const d = event && event.data;
+    if (!d || d.type !== 'EASYAI_EDITABLE_TARGET_AVAILABLE') return;
+    try {
+      window.__easyaiEditableTarget = { el: window, type: 'iframe' };
+    } catch (_) {}
+  });
+
   function replaceInEditableField(rawText) {
     const target = window.__easyaiEditableTarget;
     if (!target || !target.el) return false;
+    if (target.type === 'iframe') {
+      const textToSend = stripMarkdownForReplace(rawText);
+      const reqId = 'rpl_' + Math.random().toString(16).slice(2) + '_' + Date.now();
+      return new Promise((resolve) => {
+        let settled = false;
+        const finish = (ok) => {
+          if (settled) return;
+          settled = true;
+          try { window.removeEventListener('message', onMsg); } catch (_) {}
+          resolve(Boolean(ok));
+        };
+        const onMsg = (event) => {
+          const d = event && event.data;
+          if (!d || d.type !== 'EASYAI_REPLACE_RESULT' || d.reqId !== reqId) return;
+          finish(d.ok === true);
+        };
+        window.addEventListener('message', onMsg);
+        try {
+          // Broadcast to child frames; only the one with a target will respond ok:true.
+          for (let i = 0; i < window.frames.length; i++) {
+            try { window.frames[i].postMessage({ type: 'EASYAI_REPLACE_IN_FRAME', reqId, text: textToSend }, '*'); } catch (_) {}
+          }
+        } catch (_) {}
+        setTimeout(() => finish(false), 900);
+      });
+    }
     const cleanText = stripMarkdownForReplace(rawText);
     try {
       if (target.type === 'input') {
@@ -1057,8 +1702,8 @@ if (!window.__miniGptAgentInjected) {
     replaceBtn.addEventListener('mouseleave', () => { replaceBtn.style.opacity = '0'; });
     replaceBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const ok = replaceInEditableField(plainText);
-      if (ok) {
+      Promise.resolve(replaceInEditableField(plainText)).then((ok) => {
+        if (ok) {
         replaceBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span style="margin-left:4px;">${translate('replaceDone')}</span>`;
         replaceBtn.style.background = 'rgba(16,185,129,0.1)';
         replaceBtn.style.borderColor = '#10b981';
@@ -1067,14 +1712,15 @@ if (!window.__miniGptAgentInjected) {
           if (replaceBtn.parentNode) replaceBtn.remove();
           msgEl.classList.remove('mini-gpt-msg-has-replace');
         }, 2000);
-      } else {
+        } else {
         replaceBtn.style.color = '#ef4444';
         replaceBtn.innerHTML = `<span style="margin-left:0">Field no longer available</span>`;
         setTimeout(() => {
           if (replaceBtn.parentNode) replaceBtn.remove();
           msgEl.classList.remove('mini-gpt-msg-has-replace');
         }, 2500);
-      }
+        }
+      });
     });
     msgEl.classList.add('mini-gpt-msg-has-replace');
     msgEl.appendChild(replaceBtn);
@@ -1083,6 +1729,10 @@ if (!window.__miniGptAgentInjected) {
   if (voiceBtn) {
     voiceBtn.addEventListener('click', (e) => {
       e.preventDefault();
+      if (isChatUiClosed()) {
+        try { stopAllVoiceActivity(); } catch (_) {}
+        return;
+      }
       const Ctor = getSpeechRecognitionCtor();
       if (!Ctor || !voicePrefs.voiceInputEnabled) return;
       if (voiceListening) {
@@ -1264,7 +1914,11 @@ if (!window.__miniGptAgentInjected) {
       chatContainer.style.display = 'none';
       chatContainer.style.visibility = 'hidden';
       chatContainer.style.opacity = '0';
+      chatContainer.style.pointerEvents = 'none';
+      chatContainer.hidden = true;
       stopAllVoiceActivity();
+      destroyQuickActionsDropdown();
+      applyVoiceMicVisibility();
       
       // Save session in background without blocking UI
       setTimeout(() => {
@@ -1278,10 +1932,13 @@ if (!window.__miniGptAgentInjected) {
     } else {
       // Chat is closed, so open it
       resetSession();
+      chatContainer.hidden = false;
       chatContainer.style.display = 'flex';
       chatContainer.style.visibility = 'visible';
       chatContainer.style.opacity = '1';
+      chatContainer.style.pointerEvents = 'auto';
       chatContainer.style.animation = 'mini-gpt-fadein 0.22s';
+      applyVoiceMicVisibility();
       
       // Hide bubble when chat is opened
       hideBubble();
@@ -1289,7 +1946,7 @@ if (!window.__miniGptAgentInjected) {
       // Reset to default position if not previously positioned
       if (!chatContainer.style.left && !chatContainer.style.top) {
         chatContainer.style.right = '32px';
-        chatContainer.style.bottom = '108px';
+        chatContainer.style.bottom = getDefaultChatBottomPx(currentBubbleSize);
         chatContainer.style.left = '';
         chatContainer.style.top = '';
       }
@@ -1319,7 +1976,11 @@ if (!window.__miniGptAgentInjected) {
     chatContainer.style.display = 'none';
     chatContainer.style.visibility = 'hidden';
     chatContainer.style.opacity = '0';
+    chatContainer.style.pointerEvents = 'none';
+    chatContainer.hidden = true;
     stopAllVoiceActivity();
+    destroyQuickActionsDropdown();
+    applyVoiceMicVisibility();
     
     // Save session in background without blocking UI
     setTimeout(() => {
@@ -1514,13 +2175,7 @@ if (!window.__miniGptAgentInjected) {
                         document.mozFullScreenElement || document.msFullscreenElement;
     
     if (!isChatVisible && !isFullscreen) {
-      // Only show bubble if API key is available
-      getProviderKeys((data) => {
-        const hasKey = hasAnyApiKey(data);
-        if (hasKey) {
-          showBubbleInstant();
-        }
-      });
+      showBubbleInstant();
     }
   }
 
@@ -1569,7 +2224,7 @@ if (!window.__miniGptAgentInjected) {
 
   function appendMessage(text, from) {
     const msg = document.createElement('div');
-    msg.className = from === 'user' ? 'mini-gpt-msg-user mini-gpt-msg-with-copy' : 'mini-gpt-msg-bot';
+    msg.className = from === 'user' ? 'mini-gpt-msg-user' : 'mini-gpt-msg-bot';
     msg.style.position = 'relative';
 
     const built = from === 'user' ? buildUserMessageRow() : buildBotMessageRow();
@@ -1582,33 +2237,32 @@ if (!window.__miniGptAgentInjected) {
     }
     msg.appendChild(row);
 
-    const copyBtn = document.createElement('button');
-    copyBtn.className = 'mini-gpt-copy-btn';
-    copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
-    copyBtn.title = translate('copyMessage') || 'Copy message';
-    copyBtn.setAttribute('aria-label', translate('copyMessage') || 'Copy message');
-
-    msg.addEventListener('mouseenter', () => {
-      copyBtn.style.opacity = '1';
-    });
-    msg.addEventListener('mouseleave', () => {
-      copyBtn.style.opacity = '0';
-    });
-
     if (from === 'bot') {
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'mini-gpt-copy-btn';
+      copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+      copyBtn.title = translate('copyMessage') || 'Copy message';
+      copyBtn.setAttribute('aria-label', translate('copyMessage') || 'Copy message');
+
       attachReadAloudButton(msg, actions, text);
       actions.appendChild(copyBtn);
       attachReplaceButton(msg, text);
-    } else {
-      actions.appendChild(copyBtn);
-    }
 
-    copyBtn.onclick = async (e) => {
-      e.stopPropagation();
-      const textToCopy = from === 'bot' ? text : text; // Get plain text
-      try {
-        await navigator.clipboard.writeText(textToCopy);
-        // Show feedback
+      copyBtn.onclick = async (e) => {
+        e.stopPropagation();
+        const textToCopy = text;
+        try {
+          await navigator.clipboard.writeText(textToCopy);
+        } catch {
+          const textArea = document.createElement('textarea');
+          textArea.value = textToCopy;
+          textArea.style.position = 'fixed';
+          textArea.style.opacity = '0';
+          document.body.appendChild(textArea);
+          textArea.select();
+          try { document.execCommand('copy'); } catch (_) {}
+          document.body.removeChild(textArea);
+        }
         copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
         copyBtn.style.background = '#10b981';
         copyBtn.style.borderColor = '#10b981';
@@ -1617,24 +2271,8 @@ if (!window.__miniGptAgentInjected) {
           copyBtn.style.background = 'rgba(255, 255, 255, 0.9)';
           copyBtn.style.borderColor = 'rgba(0, 0, 0, 0.1)';
         }, 1500);
-      } catch (err) {
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = textToCopy;
-        textArea.style.position = 'fixed';
-        textArea.style.opacity = '0';
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-        copyBtn.style.background = '#10b981';
-        setTimeout(() => {
-          copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
-          copyBtn.style.background = 'rgba(255, 255, 255, 0.9)';
-        }, 1500);
-      }
-    };
+      };
+    }
 
     messagesDiv.appendChild(msg);
     
@@ -1721,6 +2359,29 @@ if (!window.__miniGptAgentInjected) {
   // Instead, use the form's submit button for both send and stop
 
   let requestInProgress = false;
+  let lastUserRetryText = '';
+  let lastUserRetryWasVision = false;
+  let lastUserRetryVision = null; // { base64, mime } snapshot for retry
+  let lastRetryRelayPayload = null; // right-click / injected flows
+
+  function updateLatestRetryButtonState() {
+    try {
+      const lastBot = getLastBotBubbleEl();
+      if (!lastBot) return;
+      const btn = lastBot.querySelector('.mini-gpt-retry-btn');
+      if (!btn) return;
+      const hasPayload = !!(
+        lastRetryRelayPayload ||
+        lastUserRetryText ||
+        (lastUserRetryVision && lastUserRetryVision.base64)
+      );
+      const disabled = requestInProgress || !hasPayload;
+      btn.disabled = disabled;
+      btn.style.opacity = disabled ? '0.55' : '1';
+      btn.title = translate('retry');
+      btn.setAttribute('aria-label', translate('retryAria'));
+    } catch (_) {}
+  }
 
   // Reference to the send/stop button
   const sendBtn = form.querySelector('button[type="submit"]');
@@ -1731,11 +2392,14 @@ if (!window.__miniGptAgentInjected) {
   function updateSendStopBtn() {
     if (requestInProgress) {
       sendBtn.innerHTML = stopSVG;
-      sendBtn.title = 'Stop generation';
+      sendBtn.title = translate('stopAria');
+      sendBtn.setAttribute('aria-label', translate('stopAria'));
     } else {
       sendBtn.innerHTML = sendSVG;
-      sendBtn.title = 'Send';
+      sendBtn.title = translate('send');
+      sendBtn.setAttribute('aria-label', translate('send'));
     }
+    updateLatestRetryButtonState();
   }
 
   // Helper to remove loader
@@ -1766,11 +2430,8 @@ if (!window.__miniGptAgentInjected) {
     row.className = 'mini-gpt-msg-row mini-gpt-msg-row--user';
     const body = document.createElement('div');
     body.className = 'mini-gpt-msg-body';
-    const actions = document.createElement('div');
-    actions.className = 'mini-gpt-msg-actions';
-    row.appendChild(actions);
     row.appendChild(body);
-    return { row, body, actions };
+    return { row, body, actions: null };
   }
 
   /** Bot bubble without row wrapper → wrap existing HTML in body + actions column */
@@ -1800,9 +2461,8 @@ if (!window.__miniGptAgentInjected) {
     copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
     copyBtn.title = translate('copyMessage') || 'Copy message';
     copyBtn.setAttribute('aria-label', translate('copyMessage') || 'Copy message');
-    msgEl.addEventListener('mouseenter', () => { copyBtn.style.opacity = '1'; });
-    msgEl.addEventListener('mouseleave', () => { copyBtn.style.opacity = '0'; });
     attachReadAloudButton(msgEl, actions, plainText);
+    attachRetryButton(msgEl, actions);
     actions.appendChild(copyBtn);
     copyBtn.onclick = async (e) => {
       e.stopPropagation();
@@ -1834,9 +2494,12 @@ if (!window.__miniGptAgentInjected) {
     if (msg.type === 'MINI_GPT_ANSWER_PART') {
       // Ensure chat is visible when receiving messages
       if (chatContainer.style.display === 'none' || chatContainer.style.visibility === 'hidden') {
+        chatContainer.hidden = false;
         chatContainer.style.display = 'flex';
         chatContainer.style.visibility = 'visible';
         chatContainer.style.opacity = '1';
+        chatContainer.style.pointerEvents = 'auto';
+        applyVoiceMicVisibility();
         // Hide bubble when chat becomes visible
         hideBubble();
       }
@@ -1850,8 +2513,18 @@ if (!window.__miniGptAgentInjected) {
           streamingBotText = '';
           streamingBotBodyEl = null;
         } else if (streamingBotMsg) {
+          if (msg.answerPart && typeof msg.answerPart === 'string') {
+            const full = msg.answerPart;
+            if (!String(streamingBotText || '').trim() || full.length > streamingBotText.length) {
+              streamingBotText = full;
+              const el = streamingBotBodyEl || streamingBotMsg.querySelector('.mini-gpt-msg-body');
+              if (el) el.innerHTML = convertMarkdownToHTML(streamingBotText);
+              else streamingBotMsg.innerHTML = convertMarkdownToHTML(streamingBotText);
+            }
+          }
           currentSession.messages.push({ role: 'bot', text: streamingBotText });
           conversationContext.push({ role: 'assistant', content: streamingBotText });
+          manageConversationContext();
           
           // Check if response seems incomplete
           const isIncomplete = checkIfResponseIncomplete(streamingBotText);
@@ -1868,7 +2541,7 @@ if (!window.__miniGptAgentInjected) {
             label.textContent = '[Response may be incomplete]';
             
             const continueBtn = document.createElement('button');
-            continueBtn.textContent = 'Continue';
+            continueBtn.textContent = translate('continue');
             continueBtn.style.cssText = 'background: #f59e0b; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; cursor: pointer; margin-right: 8px;';
             continueBtn.addEventListener('click', () => {
               incompleteIndicator.remove();
@@ -1877,7 +2550,7 @@ if (!window.__miniGptAgentInjected) {
             });
             
             const regenerateBtn = document.createElement('button');
-            regenerateBtn.textContent = 'Regenerate';
+            regenerateBtn.textContent = translate('regenerate');
             regenerateBtn.style.cssText = 'background: #6b7280; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; cursor: pointer;';
             regenerateBtn.addEventListener('click', () => {
               const botMsg = incompleteIndicator.closest('.mini-gpt-msg-bot');
@@ -1910,6 +2583,10 @@ if (!window.__miniGptAgentInjected) {
         requestInProgress = false;
         input.disabled = false;
         updateSendStopBtn();
+        // Automatically focus input after response is complete
+        if (input && typeof input.focus === 'function') {
+          setTimeout(() => { input.focus(); }, 60);
+        }
         if (chatContainer.style.display === 'none' || chatContainer.style.visibility === 'hidden') {
           trySaveCurrentSession();
         }
@@ -1945,7 +2622,9 @@ if (!window.__miniGptAgentInjected) {
       stopResponse();
       return;
     }
-    if (!question) return;
+    // Allow sending if there is a prompt or a capture
+    const hasVision = pendingVision && pendingVision.base64 && pendingVision.base64.length > 80;
+    if (!question && !hasVision) return;
     sendPrompt();
   };
   
@@ -2011,10 +2690,13 @@ if (!window.__miniGptAgentInjected) {
     return false;
   }
 
-  function sendPrompt() {
+  function sendPrompt(opts = null) {
     stopAllVoiceActivity();
-    const question = input.value.trim();
-    const hasVision = !!(pendingVision && pendingVision.base64 && pendingVision.base64.length > 80);
+    const retryMode = !!(opts && opts.retry === true);
+    const question = String((opts && typeof opts.question === 'string' ? opts.question : input.value) || '').trim();
+    const vision = (opts && opts.vision && typeof opts.vision === 'object') ? opts.vision : pendingVision;
+    const hasVision = !!(vision && vision.base64 && vision.base64.length > 80);
+    // If there is neither a prompt nor a capture, do nothing
     if (!question && !hasVision) return;
 
     const provider = currentProvider;
@@ -2029,22 +2711,29 @@ if (!window.__miniGptAgentInjected) {
       ? visionModelDefault
       : (provider === 'huggingface' ? HF_MODELS[0] : DEFAULT_MODELS[provider]);
 
-    chrome.storage.local.get([`apiKey_${provider}`, 'promptPrefix'], (settings) => {
+    chrome.storage.local.get([`apiKey_${provider}`], (settings) => {
       const apiKey = settings[`apiKey_${provider}`] || '';
       if (!apiKey) {
         appendMessage(translate('pleaseSetApiKey'), 'bot');
         return;
       }
-      
-      // Get prompt prefix from settings (default: simple, direct, resume answer)
-      const promptPrefix = settings.promptPrefix || DEFAULT_PROMPT_PREFIX;
-      const textPart = question || translate('visionDefaultAsk');
-      const enhancedQuestion = promptPrefix + textPart;
-      const displayUser = textPart + (hasVision ? ' · 📷' : '');
-      
-      appendMessage(displayUser, 'user');
-      input.value = '';
-      input.style.height = 'auto';
+
+      // If user did not provide a prompt but there is a capture, use the default prompt in the current language
+      const textPart = question || (hasVision ? translate('visionDefaultAsk') : '');
+      lastUserRetryText = textPart;
+      lastUserRetryWasVision = hasVision;
+      lastUserRetryVision = hasVision ? { base64: vision.base64, mime: vision.mime || 'image/jpeg' } : null;
+      updateLatestRetryButtonState();
+      // Show only the capture indicator if the prompt is empty and there is a capture
+      let displayUser = textPart + (hasVision ? ' · 📷' : '');
+      if (!question && hasVision) {
+        displayUser = '📷';
+      }
+      if (!retryMode) {
+        appendMessage(displayUser, 'user');
+        input.value = '';
+        input.style.height = 'auto';
+      }
       // Add animated loader as bot message
       const loader = document.createElement('div');
       loader.className = 'mini-gpt-msg-bot mini-gpt-msg-loader-bubble';
@@ -2065,7 +2754,7 @@ if (!window.__miniGptAgentInjected) {
       const hfVisionModels = hasVision && provider === 'huggingface' ? HF_VISION_MODELS : undefined;
       const payload = {
         type: 'MINI_GPT_ASK',
-        question: enhancedQuestion,
+        question: textPart,
         provider,
         model,
         apiKey,
@@ -2073,11 +2762,11 @@ if (!window.__miniGptAgentInjected) {
         hfModels
       };
       if (hasVision) {
-        payload.imageBase64 = pendingVision.base64;
-        payload.imageMime = pendingVision.mime || 'image/jpeg';
+        payload.imageBase64 = vision.base64;
+        payload.imageMime = vision.mime || 'image/jpeg';
         if (hfVisionModels) payload.hfVisionModels = hfVisionModels;
       }
-      clearPendingVision();
+      if (!retryMode) clearPendingVision();
       window.postMessage(payload, '*');
     });
   }
@@ -2106,20 +2795,52 @@ if (!window.__miniGptAgentInjected) {
   // Relay MINI_GPT_ASK from window to background
   window.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'MINI_GPT_ASK') {
+      const d = event.data;
+      let ctxForApi = Array.isArray(d.conversationContext) ? d.conversationContext.slice() : [];
+
+      if (d.__browseMateContextMenu === true) {
+        const systemMsgs = ctxForApi.filter((m) => m && m.role === 'system');
+        const priorTurns = conversationContext.filter(
+          (m) => m && (m.role === 'user' || m.role === 'assistant')
+        );
+        ctxForApi = [...systemMsgs, ...priorTurns];
+        const display = String(d.__browseMateUserDisplay || d.question || '');
+        // Cleanest option: do NOT persist the context-menu instruction prompt ("Translate... Return ONLY...").
+        // Persist only the selected text (derived from display) so follow-ups don't get stuck in "action mode".
+        let persistUser = String(display || '').trim();
+        const colonIdx = persistUser.indexOf(':');
+        if (colonIdx !== -1) persistUser = persistUser.slice(colonIdx + 1).trim();
+        if (persistUser) conversationContext.push({ role: 'user', content: persistUser });
+        currentSession.messages.push({ role: 'user', text: display });
+        manageConversationContext();
+        hideEmptyPlaceholder();
+      }
+
       const relay = {
         type: 'MINI_GPT_ASK',
-        question: event.data.question,
-        provider: event.data.provider,
-        model: event.data.model,
-        apiKey: event.data.apiKey,
-        conversationContext: event.data.conversationContext || [],
-        hfModels: event.data.hfModels
+        question: d.question,
+        provider: d.provider,
+        model: d.model,
+        apiKey: d.apiKey,
+        conversationContext: ctxForApi,
+        hfModels: d.hfModels
       };
-      if (event.data.imageBase64) {
-        relay.imageBase64 = event.data.imageBase64;
-        relay.imageMime = event.data.imageMime || 'image/jpeg';
+      if (d.modelCandidates && Array.isArray(d.modelCandidates)) {
+        relay.modelCandidates = d.modelCandidates;
       }
-      if (event.data.hfVisionModels) relay.hfVisionModels = event.data.hfVisionModels;
+      if (d.imageBase64) {
+        relay.imageBase64 = d.imageBase64;
+        relay.imageMime = d.imageMime || 'image/jpeg';
+      }
+      if (d.hfVisionModels) relay.hfVisionModels = d.hfVisionModels;
+      // Enable Retry for right-click actions by remembering the last relay payload.
+      // Retry will resend this payload without duplicating the user bubble.
+      lastRetryRelayPayload = { ...relay };
+      // Also keep a simple fallback label so Retry can enable even if relay is later cleared.
+      lastUserRetryText = String(d.__browseMateUserDisplay || d.question || '').trim();
+      lastUserRetryWasVision = false;
+      lastUserRetryVision = null;
+      updateLatestRetryButtonState();
       chrome.runtime.sendMessage(relay);
     }
   });
@@ -2310,6 +3031,68 @@ if (!window.__miniGptAgentInjected) {
     panel.appendChild(whenIn);
     panel.appendChild(presets);
     panel.appendChild(actions);
+
+    // --- Reminder history list ---
+    const historySection = document.createElement('div');
+    historySection.className = 'easyai-reminder-history-section';
+    const historyTitle = document.createElement('div');
+    historyTitle.className = 'easyai-reminder-history-title';
+    historyTitle.textContent = translate('reminderListTitle');
+    historySection.appendChild(historyTitle);
+    const historyList = document.createElement('div');
+    historyList.className = 'easyai-reminder-history-list';
+    historyList.textContent = '…';
+    historySection.appendChild(historyList);
+    panel.appendChild(historySection);
+
+    function renderHistory(items) {
+      historyList.innerHTML = '';
+      if (!items || items.length === 0) {
+        historyList.textContent = translate('reminderNoHistory');
+        return;
+      }
+      items.slice().reverse().forEach((item) => {
+        const row = document.createElement('div');
+        row.className = 'easyai-reminder-history-item';
+        const info = document.createElement('div');
+        info.className = 'easyai-reminder-history-info';
+        const titleEl = document.createElement('span');
+        titleEl.className = 'easyai-reminder-history-item-title';
+        titleEl.textContent = item.title;
+        const timeEl = document.createElement('span');
+        timeEl.className = 'easyai-reminder-history-item-time';
+        const fireDate = new Date(item.fireAt);
+        timeEl.textContent = fireDate.toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
+        info.appendChild(titleEl);
+        info.appendChild(timeEl);
+        const badge = document.createElement('span');
+        badge.className = 'easyai-reminder-history-badge' + (item.status === 'done' ? ' easyai-reminder-history-badge--done' : '');
+        badge.textContent = item.status === 'done' ? translate('reminderStatusDone') : translate('reminderStatusPending');
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'easyai-reminder-history-del';
+        delBtn.title = translate('reminderDelete');
+        delBtn.textContent = '×';
+        delBtn.onclick = () => {
+          chrome.runtime.sendMessage({ type: 'EASYAI_REMINDER_DELETE', alarmName: item.alarmName }, () => {
+            loadHistory();
+          });
+        };
+        row.appendChild(info);
+        row.appendChild(badge);
+        row.appendChild(delBtn);
+        historyList.appendChild(row);
+      });
+    }
+
+    function loadHistory() {
+      chrome.runtime.sendMessage({ type: 'EASYAI_REMINDER_LIST' }, (res) => {
+        if (chrome.runtime.lastError || !res || !res.ok) { renderHistory([]); return; }
+        renderHistory(res.history);
+      });
+    }
+    loadHistory();
+
     root.appendChild(backdrop);
     root.appendChild(panel);
     document.body.appendChild(root);
@@ -2348,12 +3131,20 @@ if (!window.__miniGptAgentInjected) {
     if (msg.type === 'MINI_GPT_ANSWER') {
       window.postMessage({ type: 'MINI_GPT_ANSWER', answer: msg.answer }, '*');
     }
+    if (msg.type === 'EASYAI_APIKEY_UPDATED') {
+      updateProviderDropdown();
+      updateBubbleVisibility();
+      updateProviderUI();
+    }
     if (msg.type === 'EASYAI_REMINDER_SHOW') {
       showEasyAiReminderCard(msg.title || '', msg.note || '');
     }
     // Sync dark mode from popup toggle
     if (msg.type === 'EASYAI_DARKMODE_UPDATED') {
       applyDarkMode(msg.darkMode === true);
+    }
+    if (msg.type === 'EASYAI_SET_BUBBLE_SIZE') {
+      applyBubbleSize(msg.size);
     }
     // Toggle via keyboard shortcut: hide bubble + chat until user shows again (shortcut or popup)
     if (msg.type === 'EASYAI_TOGGLE_CHAT') {
@@ -2367,9 +3158,12 @@ if (!window.__miniGptAgentInjected) {
         chatContainer.style.display = 'none';
         chatContainer.style.visibility = 'hidden';
         chatContainer.style.opacity = '0';
+        chatContainer.style.pointerEvents = 'none';
+        chatContainer.hidden = true;
         bubble.style.display = 'none';
         bubble.style.visibility = 'hidden';
         bubble.style.opacity = '0';
+        applyVoiceMicVisibility();
         if (isChatVisible) trySaveCurrentSession();
       } else {
         easyaiUiSuppressed = false;
@@ -2386,9 +3180,12 @@ if (!window.__miniGptAgentInjected) {
         chatContainer.style.display = 'none';
         chatContainer.style.visibility = 'hidden';
         chatContainer.style.opacity = '0';
+        chatContainer.style.pointerEvents = 'none';
+        chatContainer.hidden = true;
         bubble.style.display = 'none';
         bubble.style.visibility = 'hidden';
         bubble.style.opacity = '0';
+        applyVoiceMicVisibility();
         if (chatWasOpen) trySaveCurrentSession();
       } else {
         updateBubbleVisibility();
@@ -2399,7 +3196,7 @@ if (!window.__miniGptAgentInjected) {
   // --- Chat Resize Handle (top-left corner) ---
   const resizeHandle = document.createElement('div');
   resizeHandle.id = 'easyai-resize-handle';
-  resizeHandle.title = 'Drag to resize';
+  resizeHandle.title = translate('dragResize');
   resizeHandle.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="11" y1="1" x2="1" y2="11"/><line x1="11" y1="5" x2="5" y2="11"/><line x1="11" y1="9" x2="9" y2="11"/></svg>`;
   chatContainer.appendChild(resizeHandle);
 
@@ -2516,95 +3313,76 @@ if (!window.__miniGptAgentInjected) {
   overflowMenu.setAttribute('role', 'menu');
   overflowMenu.style.display = 'none';
 
-  const historyBtn = document.createElement('button');
-  historyBtn.className = 'mini-gpt-action-btn';
-  historyBtn.id = 'mini-gpt-history-btn';
-  historyBtn.type = 'button';
-  historyBtn.title = translate('showHistoryTooltip');
-  historyBtn.setAttribute('aria-label', translate('showHistoryAria'));
-  historyBtn.setAttribute('role', 'menuitem');
-  historyBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 9 9"/><polyline points="3 12 3 16 7 16"/></svg>`;
-  historyBtn.style.background = 'none';
-  historyBtn.style.border = 'none';
-  historyBtn.style.padding = '6px';
-  historyBtn.style.borderRadius = '8px';
-  historyBtn.style.cursor = 'pointer';
-  historyBtn.style.transition = 'background 0.18s';
-  historyBtn.onmouseenter = () => historyBtn.style.background = '#e8f0fe';
-  historyBtn.onmouseleave = () => historyBtn.style.background = 'none';
+  function createOverflowMenuItem({ id, title, aria, label, iconSvg }) {
+    const btn = document.createElement('button');
+    btn.className = 'mini-gpt-overflow-menu-item mini-gpt-action-btn';
+    btn.id = id;
+    btn.type = 'button';
+    btn.title = title;
+    btn.setAttribute('aria-label', aria || title || label || '');
+    btn.setAttribute('role', 'menuitem');
+    btn.innerHTML = `
+      <span class="mini-gpt-overflow-menu-icon">${iconSvg || ''}</span>
+      <span class="mini-gpt-overflow-menu-label">${label || ''}</span>
+    `;
+    return btn;
+  }
+
+  const historyBtn = createOverflowMenuItem({
+    id: 'mini-gpt-history-btn',
+    title: translate('showHistoryTooltip'),
+    aria: translate('showHistoryAria'),
+    label: translate('showHistory'),
+    iconSvg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 9 9"/><polyline points="3 12 3 16 7 16"/></svg>`
+  });
   overflowMenu.appendChild(historyBtn);
 
-  const reminderBtn = document.createElement('button');
-  reminderBtn.className = 'mini-gpt-action-btn';
-  reminderBtn.id = 'mini-gpt-reminder-btn';
-  reminderBtn.type = 'button';
-  reminderBtn.title = translate('reminderBtnTitle');
-  reminderBtn.setAttribute('aria-label', translate('reminderBtnAria'));
-  reminderBtn.setAttribute('role', 'menuitem');
-  reminderBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
-  reminderBtn.style.background = 'none';
-  reminderBtn.style.border = 'none';
-  reminderBtn.style.padding = '6px';
-  reminderBtn.style.borderRadius = '8px';
-  reminderBtn.style.cursor = 'pointer';
-  reminderBtn.style.transition = 'background 0.18s';
-  reminderBtn.onmouseenter = () => reminderBtn.style.background = '#e8f0fe';
-  reminderBtn.onmouseleave = () => reminderBtn.style.background = 'none';
+  const reminderBtn = createOverflowMenuItem({
+    id: 'mini-gpt-reminder-btn',
+    title: translate('reminderBtnTitle'),
+    aria: translate('reminderBtnAria'),
+    label: translate('reminderBtnTitle'),
+    iconSvg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`
+  });
   overflowMenu.appendChild(reminderBtn);
 
-  const settingsBtn = document.createElement('button');
-  settingsBtn.className = 'mini-gpt-action-btn';
-  settingsBtn.id = 'mini-gpt-settings-btn';
-  settingsBtn.type = 'button';
-  settingsBtn.title = translate('menuSettings');
-  settingsBtn.setAttribute('aria-label', translate('menuSettingsAria'));
-  settingsBtn.setAttribute('role', 'menuitem');
-  settingsBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>`;
-  settingsBtn.style.background = 'none';
-  settingsBtn.style.border = 'none';
-  settingsBtn.style.padding = '6px';
-  settingsBtn.style.borderRadius = '8px';
-  settingsBtn.style.cursor = 'pointer';
-  settingsBtn.style.transition = 'background 0.18s';
-  settingsBtn.onmouseenter = () => settingsBtn.style.background = '#e8f0fe';
-  settingsBtn.onmouseleave = () => settingsBtn.style.background = 'none';
+  const settingsBtn = createOverflowMenuItem({
+    id: 'mini-gpt-settings-btn',
+    title: translate('menuSettings'),
+    aria: translate('menuSettingsAria'),
+    label: translate('menuSettings'),
+    iconSvg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>`
+  });
   overflowMenu.appendChild(settingsBtn);
 
-  const copyConversationBtn = document.createElement('button');
-  copyConversationBtn.className = 'mini-gpt-action-btn';
-  copyConversationBtn.id = 'mini-gpt-copy-conversation-btn';
-  copyConversationBtn.type = 'button';
-  copyConversationBtn.title = translate('menuCopyConversation');
-  copyConversationBtn.setAttribute('aria-label', translate('menuCopyConversationAria'));
-  copyConversationBtn.setAttribute('role', 'menuitem');
-  copyConversationBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/><path d="M8 12h.01M12 12h.01M16 12h.01M8 16h.01"/></svg>`;
-  copyConversationBtn.style.background = 'none';
-  copyConversationBtn.style.border = 'none';
-  copyConversationBtn.style.padding = '6px';
-  copyConversationBtn.style.borderRadius = '8px';
-  copyConversationBtn.style.cursor = 'pointer';
-  copyConversationBtn.style.transition = 'background 0.18s';
-  copyConversationBtn.onmouseenter = () => copyConversationBtn.style.background = '#e8f0fe';
-  copyConversationBtn.onmouseleave = () => copyConversationBtn.style.background = 'none';
+  const copyConversationBtn = createOverflowMenuItem({
+    id: 'mini-gpt-copy-conversation-btn',
+    title: translate('menuCopyConversation'),
+    aria: translate('menuCopyConversationAria'),
+    label: translate('menuCopyConversation'),
+    iconSvg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/><path d="M8 12h.01M12 12h.01M16 12h.01M8 16h.01"/></svg>`
+  });
   overflowMenu.appendChild(copyConversationBtn);
 
-  const darkModeBtn = document.createElement('button');
-  darkModeBtn.className = 'mini-gpt-action-btn';
-  darkModeBtn.id = 'mini-gpt-darkmode-btn';
-  darkModeBtn.type = 'button';
-  darkModeBtn.title = 'Toggle dark mode';
-  darkModeBtn.setAttribute('aria-label', 'Toggle dark mode');
-  darkModeBtn.setAttribute('role', 'menuitem');
   const sunIcon = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
   const moonIcon = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
-  darkModeBtn.innerHTML = moonIcon;
-  darkModeBtn.style.background = 'none';
-  darkModeBtn.style.border = 'none';
-  darkModeBtn.style.padding = '6px';
-  darkModeBtn.style.borderRadius = '8px';
-  darkModeBtn.style.cursor = 'pointer';
-  darkModeBtn.style.transition = 'background 0.18s';
+  const darkModeBtn = createOverflowMenuItem({
+    id: 'mini-gpt-darkmode-btn',
+    title: translate('toggleDarkMode'),
+    aria: translate('toggleDarkMode'),
+    label: translate('toggleDarkMode'),
+    iconSvg: moonIcon
+  });
   overflowMenu.appendChild(darkModeBtn);
+
+  const supportBtn = createOverflowMenuItem({
+    id: 'mini-gpt-support-btn',
+    title: translate('menuSupport'),
+    aria: translate('menuSupportAria'),
+    label: translate('menuSupport'),
+    iconSvg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.716-4.353-9.193-8.12C1.15 10.22 2.056 6.5 5.64 5.252c2.04-.71 4.107.04 5.36 1.78 1.252-1.74 3.319-2.49 5.359-1.78 3.585 1.248 4.49 4.968 2.834 7.628C18.716 16.647 12 21 12 21z"/></svg>`
+  });
+  overflowMenu.appendChild(supportBtn);
 
   function closeOverflowMenu() {
     overflowMenu.style.display = 'none';
@@ -2680,7 +3458,7 @@ if (!window.__miniGptAgentInjected) {
   }
 
   // Keyboard accessibility
-  [historyBtn, newChatBtn, reminderBtn, settingsBtn, copyConversationBtn, darkModeBtn, closeBtn, overflowBtn].forEach(btn => {
+  [historyBtn, newChatBtn, reminderBtn, settingsBtn, supportBtn, copyConversationBtn, darkModeBtn, closeBtn, overflowBtn].forEach(btn => {
     btn.tabIndex = 0;
     btn.onkeydown = (e) => {
       if (e.key === 'Enter' || e.key === ' ') btn.click();
@@ -2748,21 +3526,46 @@ if (!window.__miniGptAgentInjected) {
       chatContainer.classList.add('mini-gpt-dark');
       bubble.classList.add('mini-gpt-dark');
       if (typeof selToolbar !== 'undefined' && selToolbar) selToolbar.classList.add('mini-gpt-dark');
-      darkModeBtn.innerHTML = sunIcon;
+      const icon = darkModeBtn.querySelector('.mini-gpt-overflow-menu-icon');
+      if (icon) icon.innerHTML = sunIcon;
+      else darkModeBtn.innerHTML = sunIcon;
     } else {
       chatContainer.classList.remove('mini-gpt-dark');
       bubble.classList.remove('mini-gpt-dark');
       if (typeof selToolbar !== 'undefined' && selToolbar) selToolbar.classList.remove('mini-gpt-dark');
-      darkModeBtn.innerHTML = moonIcon;
+      const icon = darkModeBtn.querySelector('.mini-gpt-overflow-menu-icon');
+      if (icon) icon.innerHTML = moonIcon;
+      else darkModeBtn.innerHTML = moonIcon;
     }
+    // Panels/modals are created later; query by id so this is safe at startup.
+    try {
+      const hp = document.getElementById('mini-gpt-history-panel');
+      if (hp) hp.classList.toggle('mini-gpt-dark', dark);
+      const ho = document.getElementById('mini-gpt-history-overlay');
+      if (ho) ho.classList.toggle('mini-gpt-dark', dark);
+      const cm = document.getElementById('mini-gpt-clear-modal');
+      if (cm) cm.classList.toggle('mini-gpt-dark', dark);
+    } catch (_) {}
     // Update button icon colors after mode change
-    [historyBtn, newChatBtn, reminderBtn, settingsBtn, copyConversationBtn, darkModeBtn, closeBtn, overflowBtn].forEach(btn => {
+    [historyBtn, newChatBtn, reminderBtn, settingsBtn, supportBtn, copyConversationBtn, darkModeBtn, closeBtn, overflowBtn].forEach(btn => {
       const svg = btn.querySelector('svg');
       if (svg) svg.style.stroke = dark ? '#e8f0fe' : '#23272f';
     });
+
+    // Overflow menu item should describe the action (switch to the other mode).
+    try {
+      const lbl = darkModeBtn.querySelector('.mini-gpt-overflow-menu-label');
+      if (lbl) lbl.textContent = dark ? (translate('toggleLightMode') || 'Light mode') : (translate('toggleDarkMode') || 'Dark mode');
+      darkModeBtn.title = dark ? (translate('toggleLightMode') || 'Light mode') : (translate('toggleDarkMode') || 'Dark mode');
+      darkModeBtn.setAttribute('aria-label', darkModeBtn.title);
+    } catch (_) {}
+
     // Save preference
     chrome.storage.local.set({ darkMode: dark });
     syncReminderUiTheme(dark);
+    if (quickActionsDropdown) {
+      quickActionsDropdown.classList.toggle('mini-gpt-dark', dark);
+    }
   }
 
   chrome.storage.onChanged.addListener((changes, area) => {
@@ -2793,9 +3596,20 @@ if (!window.__miniGptAgentInjected) {
   };
   settingsBtn.onclick = () => {
     closeOverflowMenu();
-    chrome.runtime.openOptionsPage(() => {
+    // Send message to background to open the popup
+    chrome.runtime.sendMessage({ type: 'EASYAI_OPEN_EXTENSION_POPUP' }, (res) => {
+      if (chrome.runtime.lastError || !res || !res.ok) {
+        // Fallback: try to open popup URL directly
+        const popupUrl = chrome.runtime.getURL('popup/popup.html');
+        chrome.runtime.sendMessage({ type: 'EASYAI_OPEN_EXTENSION_POPUP' });
+      }
+    });
+  };
+  supportBtn.onclick = () => {
+    closeOverflowMenu();
+    chrome.runtime.sendMessage({ type: 'EASYAI_OPEN_EXTERNAL_URL', url: 'https://ko-fi.com/amibouri' }, () => {
       if (chrome.runtime.lastError) {
-        showVoiceNotice(chrome.runtime.lastError.message, 'error');
+        window.open('https://ko-fi.com/amibouri', '_blank', 'noopener');
       }
     });
   };
@@ -2820,10 +3634,13 @@ if (!window.__miniGptAgentInjected) {
     
     // Ensure chat stays visible when starting new chat
     if (chatContainer.style.display === 'none') {
+      chatContainer.hidden = false;
       chatContainer.style.display = 'flex';
       chatContainer.style.visibility = 'visible';
       chatContainer.style.opacity = '1';
+      chatContainer.style.pointerEvents = 'auto';
     }
+    applyVoiceMicVisibility();
     
     // New chat started: context cleared
   };
@@ -2833,12 +3650,15 @@ if (!window.__miniGptAgentInjected) {
     chatContainer.style.display = 'none';
     chatContainer.style.visibility = 'hidden';
     chatContainer.style.opacity = '0';
+    chatContainer.style.pointerEvents = 'none';
+    chatContainer.hidden = true;
+    destroyQuickActionsDropdown();
+    applyVoiceMicVisibility();
   };
 
   // After chatContainer.innerHTML is set up
   // --- Quick Actions Dropdown ---
   const quickActionsBtn = chatContainer.querySelector('#mini-gpt-quick-actions-btn');
-  let quickActionsDropdown = null;
 
   // Helper to check if page is suitable for quick actions
   function isPageContentValid() {
@@ -2954,8 +3774,14 @@ if (!window.__miniGptAgentInjected) {
       userMsg = translate('explain');
       prompt = `Explain the key idea of the following page in 3 to 5 short sentences. Be brief:\n\n${pageText}`;
     }
-    // Show only the short user message in chat, but send the full prompt
+    // Show only the short user message in chat, but keep the full page prompt in
+    // conversationContext so follow-ups ("what else on the page?") stay grounded.
     appendMessage(userMsg, 'user');
+    try {
+      const last = conversationContext[conversationContext.length - 1];
+      if (last && last.role === 'user') last.content = prompt;
+      manageConversationContext();
+    } catch (_) {}
     // Add animated loader as bot message
     const loader = document.createElement('div');
     loader.className = 'mini-gpt-msg-bot mini-gpt-msg-loader-bubble';
@@ -2978,143 +3804,101 @@ if (!window.__miniGptAgentInjected) {
         appendMessage(translate('pleaseSetApiKey'), 'bot');
         return;
       }
-      window.postMessage({ type: 'MINI_GPT_ASK', question: prompt, provider, model, apiKey }, '*');
+      const ctxBeforeTurn = conversationContext.length > 0 ? conversationContext.slice(0, -1) : [];
+      const payload = {
+        type: 'MINI_GPT_ASK',
+        question: prompt,
+        provider,
+        model,
+        apiKey,
+        conversationContext: ctxBeforeTurn
+      };
+      if (provider === 'huggingface') payload.hfModels = HF_MODELS;
+      window.postMessage(payload, '*');
     });
   }
-  function showQuickActionsDropdown() {
-    if (quickActionsDropdown) { 
-      quickActionsDropdown.remove(); 
-      quickActionsDropdown = null; 
-      return; 
+  function positionQuickActionsDropdown() {
+    if (!quickActionsDropdown || !quickActionsBtn) return;
+    const pad = 8;
+    const btnRect = quickActionsBtn.getBoundingClientRect();
+    const chatRect = chatContainer.getBoundingClientRect();
+    const w = quickActionsDropdown.offsetWidth || 168;
+    const h = quickActionsDropdown.offsetHeight || 96;
+    let left = btnRect.left + btnRect.width / 2 - w / 2;
+    let top = btnRect.top - h - 8;
+    if (top < chatRect.top + pad) {
+      top = btnRect.bottom + 8;
     }
-    
+    left = Math.max(chatRect.left + pad, Math.min(left, chatRect.right - w - pad));
+    top = Math.max(chatRect.top + pad, Math.min(top, chatRect.bottom - h - pad));
+    quickActionsDropdown.style.position = 'fixed';
+    quickActionsDropdown.style.left = `${Math.round(left)}px`;
+    quickActionsDropdown.style.top = `${Math.round(top)}px`;
+    quickActionsDropdown.style.right = 'auto';
+    quickActionsDropdown.style.bottom = 'auto';
+    quickActionsDropdown.style.zIndex = '10000000';
+  }
+
+  function showQuickActionsDropdown() {
+    if (quickActionsBtn.disabled) return;
+    if (quickActionsDropdown) {
+      destroyQuickActionsDropdown();
+      return;
+    }
+
     quickActionsDropdown = document.createElement('div');
     quickActionsDropdown.id = 'mini-gpt-quick-actions-dropdown';
     quickActionsDropdown.className = 'mini-gpt-quick-actions-dropdown';
-    
-    // Create the dropdown content without icons for cleaner look
+    quickActionsDropdown.setAttribute('role', 'menu');
+    if (chatContainer.classList.contains('mini-gpt-dark')) {
+      quickActionsDropdown.classList.add('mini-gpt-dark');
+    }
+
     quickActionsDropdown.innerHTML = `
-      <button class="mini-gpt-quick-action-item" data-action="summarize">
+      <button type="button" class="mini-gpt-quick-action-item" data-action="summarize" role="menuitem">
         <span class="action-text">${translate('summarizePage')}</span>
       </button>
-      <button class="mini-gpt-quick-action-item" data-action="explain">
+      <button type="button" class="mini-gpt-quick-action-item" data-action="explain" role="menuitem">
         <span class="action-text">${translate('explainPage')}</span>
       </button>
     `;
-    
-    // Add event listeners with enhanced interactions
-    Array.from(quickActionsDropdown.querySelectorAll('.mini-gpt-quick-action-item')).forEach(btn => {
+
+    Array.from(quickActionsDropdown.querySelectorAll('.mini-gpt-quick-action-item')).forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        
-        // Add click animation
-        btn.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-          btn.style.transform = '';
-        }, 150);
-        
         sendSpeedPrompt(btn.dataset.action);
-        quickActionsDropdown.remove();
-        quickActionsDropdown = null;
+        destroyQuickActionsDropdown();
       });
     });
-    
+
     document.body.appendChild(quickActionsDropdown);
-    
-    // Position the dropdown properly within chat container bounds
-    const rect = quickActionsBtn.getBoundingClientRect();
-    const chatContainer = document.getElementById('mini-gpt-chat-container');
-    const chatRect = chatContainer.getBoundingClientRect();
-    const dropdownWidth = 120; // Match CSS width
-    const dropdownHeight = 80; // Approximate height
-    
-    // Calculate available space
-    const spaceToRight = window.innerWidth - rect.right;
-    const spaceToLeft = rect.left;
-    const spaceAbove = rect.top;
-    const spaceBelow = window.innerHeight - rect.bottom;
-    
-    // Position logic: prefer right side, fallback to left, then above/below
-    let left, top;
-    
-    if (spaceToRight >= dropdownWidth + 8) {
-      // Position to the right of the button
-      left = rect.right + 8;
-      top = rect.top - dropdownHeight/2;
-    } else if (spaceToLeft >= dropdownWidth + 8) {
-      // Position to the left of the button
-      left = rect.left - dropdownWidth - 8;
-      top = rect.top - dropdownHeight/2;
-    } else {
-      // Position above or below the button
-      if (spaceAbove >= dropdownHeight + 8) {
-        left = rect.left - dropdownWidth/2 + rect.width/2;
-        top = rect.top - dropdownHeight - 8;
-      } else {
-        left = rect.left - dropdownWidth/2 + rect.width/2;
-        top = rect.bottom + 8;
+    positionQuickActionsDropdown();
+    requestAnimationFrame(() => positionQuickActionsDropdown());
+
+    const reposition = () => positionQuickActionsDropdown();
+    quickActionsDropdown._easyaiReposition = reposition;
+    window.addEventListener('scroll', reposition, true);
+    window.addEventListener('resize', reposition);
+
+    const onEscape = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        destroyQuickActionsDropdown();
       }
-    }
-    
-    // Ensure dropdown stays within viewport bounds
-    left = Math.max(8, Math.min(left, window.innerWidth - dropdownWidth - 8));
-    top = Math.max(8, Math.min(top, window.innerHeight - dropdownHeight - 8));
-    
-    quickActionsDropdown.style.left = left + 'px';
-    quickActionsDropdown.style.top = top + 'px';
-    quickActionsDropdown.style.right = 'auto';
-    quickActionsDropdown.style.bottom = 'auto';
-    
-    // Add entrance animation class
+    };
+    quickActionsDropdown._easyaiEscape = onEscape;
+    document.addEventListener('keydown', onEscape, true);
+
     quickActionsDropdown.classList.add('mini-gpt-dropdown-visible');
-    
-    // Add arrow based on position relative to button
-    const arrowElement = document.createElement('div');
-    arrowElement.className = 'mini-gpt-dropdown-arrow';
-    arrowElement.style.position = 'absolute';
-    arrowElement.style.width = '0';
-    arrowElement.style.height = '0';
-    arrowElement.style.border = '6px solid transparent';
-    
-    // Position arrow based on dropdown position relative to button
-    if (left > rect.right) {
-      // Dropdown is to the right of button
-      arrowElement.style.left = '-12px';
-      arrowElement.style.top = '50%';
-      arrowElement.style.transform = 'translateY(-50%)';
-      arrowElement.style.borderRightColor = 'rgba(37,99,235,0.08)';
-    } else if (left < rect.left) {
-      // Dropdown is to the left of button
-      arrowElement.style.right = '-12px';
-      arrowElement.style.top = '50%';
-      arrowElement.style.transform = 'translateY(-50%)';
-      arrowElement.style.borderLeftColor = 'rgba(37,99,235,0.08)';
-    } else if (top < rect.top) {
-      // Dropdown is above button
-      arrowElement.style.bottom = '-12px';
-      arrowElement.style.left = '50%';
-      arrowElement.style.transform = 'translateX(-50%)';
-      arrowElement.style.borderTopColor = 'rgba(37,99,235,0.08)';
-    } else {
-      // Dropdown is below button
-      arrowElement.style.top = '-12px';
-      arrowElement.style.left = '50%';
-      arrowElement.style.transform = 'translateX(-50%)';
-      arrowElement.style.borderBottomColor = 'rgba(37,99,235,0.08)';
-    }
-    
-    quickActionsDropdown.appendChild(arrowElement);
-    
-    // Close on outside click
+
     setTimeout(() => {
       document.addEventListener('mousedown', quickActionsOutsideClick, { once: true });
     }, 0);
   }
   function quickActionsOutsideClick(e) {
     if (quickActionsDropdown && !quickActionsDropdown.contains(e.target) && e.target !== quickActionsBtn) {
-      quickActionsDropdown.remove();
-      quickActionsDropdown = null;
+      destroyQuickActionsDropdown();
     }
   }
   quickActionsBtn.onclick = showQuickActionsDropdown;
@@ -3301,10 +4085,14 @@ if (!window.__miniGptAgentInjected) {
     
     // Show the chat if it's hidden
     if (chatContainer.style.display === 'none') {
+      chatContainer.hidden = false;
       chatContainer.style.display = 'flex';
       chatContainer.style.visibility = 'visible';
       chatContainer.style.opacity = '1';
+      chatContainer.style.pointerEvents = 'auto';
     }
+    applyVoiceMicVisibility();
+    hideBubble();
     
     // Hide history panel
     hideHistoryPanel();
@@ -3461,21 +4249,34 @@ if (!window.__miniGptAgentInjected) {
       document.msFullscreenElement
     ) {
       bubble.style.display = 'none';
-      chatContainer.style.display = 'none'; // Optionally hide chat too
+      chatContainer.style.display = 'none';
+      chatContainer.style.visibility = 'hidden';
+      chatContainer.style.opacity = '0';
+      chatContainer.style.pointerEvents = 'none';
+      chatContainer.hidden = true;
+      applyVoiceMicVisibility();
     } else if (!easyaiUiSuppressed) {
-      // Use instant show when exiting fullscreen for better UX, but only if API key is available
-      getProviderKeys((data) => {
-        const hasKey = hasAnyApiKey(data);
-        if (hasKey) {
-          showBubbleInstant();
-        }
-      });
+      // Use instant show when exiting fullscreen for better UX.
+      showBubbleInstant();
     }
   }
   document.addEventListener('fullscreenchange', handleFullscreenChange);
   document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
   document.addEventListener('mozfullscreenchange', handleFullscreenChange);
   document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+  // Ensure mic/voice UI never “sticks” across refresh/navigation.
+  window.addEventListener('pagehide', () => {
+    try { stopAllVoiceActivity(); } catch (_) {}
+  });
+  window.addEventListener('beforeunload', () => {
+    try { stopAllVoiceActivity(); } catch (_) {}
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') {
+      try { stopAllVoiceActivity(); } catch (_) {}
+    }
+  });
 
   // Always inject bubble and chat, but control their visibility based on API key presence
   function updateBubbleVisibility() {
@@ -3488,47 +4289,48 @@ if (!window.__miniGptAgentInjected) {
         chat.style.display = 'none';
         chat.style.visibility = 'hidden';
         chat.style.opacity = '0';
+        chat.style.pointerEvents = 'none';
+        chat.hidden = true;
       }
+      applyVoiceMicVisibility();
       return;
     }
     
-    getProviderKeys((data) => {
-      const hasKey = hasAnyApiKey(data);
-      const bubble = document.getElementById('mini-gpt-bubble');
-      const chat = document.getElementById('mini-gpt-chat-container');
-      if (hasKey) {
-        if (easyaiUiSuppressed) {
-          if (bubble) {
-            bubble.style.display = 'none';
-            bubble.style.visibility = 'hidden';
-            bubble.style.opacity = '0';
-          }
-          if (chat) {
-            chat.style.display = 'none';
-            chat.style.visibility = 'hidden';
-            chat.style.opacity = '0';
-          }
-        } else if (bubble) {
-          showBubbleInstant();
-          if (chat) {
-            chat.style.display = 'none';
-            chat.style.visibility = 'hidden';
-            chat.style.opacity = '0';
-          }
-        }
-      } else {
-        if (bubble) bubble.style.display = 'none';
-        if (chat) {
-          chat.style.display = 'none';
-          chat.style.visibility = 'hidden';
-          chat.style.opacity = '0';
-        }
+    const bubble = document.getElementById('mini-gpt-bubble');
+    const chat = document.getElementById('mini-gpt-chat-container');
+    if (easyaiUiSuppressed) {
+      if (bubble) {
+        bubble.style.display = 'none';
+        bubble.style.visibility = 'hidden';
+        bubble.style.opacity = '0';
       }
-    });
+      if (chat) {
+        chat.style.display = 'none';
+        chat.style.visibility = 'hidden';
+        chat.style.opacity = '0';
+        chat.style.pointerEvents = 'none';
+        chat.hidden = true;
+      }
+      applyVoiceMicVisibility();
+      return;
+    }
+
+    if (bubble) {
+      showBubbleInstant();
+    }
+    if (chat) {
+      chat.style.display = 'none';
+      chat.style.visibility = 'hidden';
+      chat.style.opacity = '0';
+      chat.style.pointerEvents = 'none';
+      chat.hidden = true;
+    }
+    applyVoiceMicVisibility();
   }
-  // Initial check: read suppression flag first so we do not flash the bubble
-  chrome.storage.local.get(['easyaiUiSuppressed'], (s) => {
+  // Initial check: read suppression flag and saved bubble size first so we do not flash.
+  chrome.storage.local.get(['easyaiUiSuppressed', 'bubbleSize'], (s) => {
     easyaiUiSuppressed = s.easyaiUiSuppressed === true;
+    applyBubbleSize(s.bubbleSize);
     updateBubbleVisibility();
   });
   // Listen for storage changes
@@ -3542,8 +4344,11 @@ if (!window.__miniGptAgentInjected) {
         chatContainer.style.display = 'none';
         chatContainer.style.visibility = 'hidden';
         chatContainer.style.opacity = '0';
+        chatContainer.style.pointerEvents = 'none';
+        chatContainer.hidden = true;
         hideBubble();
         bubble.style.opacity = '0';
+        applyVoiceMicVisibility();
         if (chatWasOpen) trySaveCurrentSession();
       } else {
         updateBubbleVisibility();
@@ -3551,6 +4356,9 @@ if (!window.__miniGptAgentInjected) {
     }
     if (changes.apiKey_openai || changes.apiKey_gemini || changes.apiKey_huggingface) {
       updateBubbleVisibility();
+    }
+    if (changes.bubbleSize) {
+      applyBubbleSize(changes.bubbleSize.newValue);
     }
   });
   
@@ -3745,4 +4553,5 @@ if (!window.__miniGptAgentInjected) {
     }
   });
 
+  })();
 } 

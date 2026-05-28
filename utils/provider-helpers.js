@@ -39,9 +39,21 @@
     return provider;
   }
 
+  /** BYOK-only mode. */
+  function isAdvancedApiMode(_settings) {
+    return true;
+  }
+
+  /** BYOK-only: chat access requires at least one API key. */
+  function hasChatAccess(settings) {
+    return hasAnyApiKey(settings);
+  }
+
   globalScope.EASYAI_PROVIDER_HELPERS = {
     getApiKeyFields,
     hasAnyApiKey,
+    isAdvancedApiMode,
+    hasChatAccess,
     getDefaultModelForProvider,
     getDefaultVisionModelForProvider,
     getHfVisionModels,

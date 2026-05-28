@@ -5,6 +5,7 @@
     const url = window.location.href.toLowerCase();
     const hostname = window.location.hostname.toLowerCase();
     const pathname = window.location.pathname.toLowerCase();
+    const search = window.location.search.toLowerCase();
 
     const loginDomains = [
       'login.microsoftonline.com',
@@ -72,8 +73,8 @@
       return true;
     }
 
-    const loginFormSelectors = [
-      'input[type="password"]',
+    const hasPasswordInput = !!document.querySelector('input[type="password"]');
+    const hasAuthFormMarker = [
       'form[action*="login"]',
       'form[action*="signin"]',
       'form[action*="auth"]',
@@ -83,13 +84,22 @@
       '#login',
       '#signin',
       '#auth'
-    ];
+    ].some((selector) => document.querySelector(selector));
 
-    if (loginFormSelectors.some((selector) => document.querySelector(selector))) {
+    if (hasPasswordInput) {
       if (hostname.includes('google.com') && !pathname.includes('/signin') && !pathname.includes('/oauth')) {
         return false;
       }
-      return true;
+
+      // A lone password field is too broad and hides the bubble on normal account/settings pages.
+      const hasAuthUrlSignal = loginPaths.some((path) => pathname.includes(path)) ||
+        loginKeywords.some((keyword) => pathname.includes(keyword) || search.includes(keyword));
+      const title = document.title.toLowerCase();
+      const hasAuthTitleSignal = loginKeywords.some((keyword) => title.includes(keyword));
+
+      if (hasAuthFormMarker || hasAuthUrlSignal || hasAuthTitleSignal) {
+        return true;
+      }
     }
 
     return false;

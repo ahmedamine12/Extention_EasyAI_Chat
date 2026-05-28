@@ -56,8 +56,10 @@
       huggingface: hfModels
     },
     hfModels,
-    defaultPromptPrefix: 'Give a short, direct answer. Be concise. ',
+    /** Shown as placeholder in popup; stored prefix is user-controlled. Wording avoids “resume” (CV vs brief). */
+    defaultPromptPrefix: 'Keep answers brief and direct.',
     /** Max longest side (px) after client resize; JPEG quality applied in content script. */
-    visionMaxImageSide: 1280
+    visionMaxImageSide: 1280,
+    /** BYOK-only build: no hosted trial relay. */
   };
 })(globalThis);
