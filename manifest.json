@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BrowseMate",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Floating AI chat for OpenAI, Gemini, Hugging Face. Voice, screenshots, reminders. Your API keys stay on your device.",
   "author": "BrowseMate Team",
   "homepage_url": "https://ahmedamine12.github.io/Extention_EasyAI_Chat/homepage.html",
