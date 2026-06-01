@@ -62,7 +62,8 @@ const messagesEn = {
   bubbleSize: 'Bubble size',
   privacyFooter: 'Keys local · on-device',
   dashboardProHint: 'Pick a provider, then open API Keys to connect it.',
-  advancedPickProvider: 'Pick a provider, then open API Keys to paste a key.',
+  advancedPickProvider: 'Connect your first provider in API Keys to start chatting.',
+  noProviderConnected: 'Not connected yet',
   toastKeysAllInvalid: 'Keys saved — check errors above',
   toastKeysSomeInvalid: 'Saved — some keys invalid'
 };
@@ -120,7 +121,8 @@ const messagesFr = {
   privacyFooter: 'Clés locales · sur l’appareil',
   dashboardProHint: 'Choisissez un service, puis ouvrez « Clés API » pour l’activer.',
   advancedPickProvider:
-    'Choisissez un service, puis ouvrez « Clés API » pour ajouter votre clé.',
+    'Connectez votre premier service dans « Clés API » pour commencer à discuter.',
+  noProviderConnected: 'Aucun service connecté',
   toastKeysAllInvalid: 'Clés enregistrées — vérifiez les erreurs',
   toastKeysSomeInvalid: 'Enregistré — certaines clés invalides'
 };
@@ -177,10 +179,16 @@ document.addEventListener('DOMContentLoaded', () => {
     return Math.max(48, Math.min(96, Math.round(n)));
   }
 
+  function bubbleSizeToPercent(size) {
+    const normalized = clampBubbleSize(size);
+    const maxSize = 96;
+    return Math.round((normalized / maxSize) * 100);
+  }
+
   function renderBubbleSize(v) {
     const size = clampBubbleSize(v);
     if (bubbleSizeRange) bubbleSizeRange.value = String(size);
-    if (bubbleSizeValue) bubbleSizeValue.textContent = `${size}px`;
+    if (bubbleSizeValue) bubbleSizeValue.textContent = `${bubbleSizeToPercent(size)}%`;
     return size;
   }
 
@@ -303,28 +311,40 @@ document.addEventListener('DOMContentLoaded', () => {
           (data.apiKey_gemini && data.apiKey_gemini.trim()) ||
           (data.apiKey_huggingface && data.apiKey_huggingface.trim())
         );
+        const activeConnected = hasAnyKey
+          ? ((active && data[`apiKey_${active}`])
+              ? active
+              : (data.apiKey_openai ? 'openai' : data.apiKey_gemini ? 'gemini' : data.apiKey_huggingface ? 'huggingface' : active))
+          : '';
 
         if (voiceAdvancedBlock) {
           voiceAdvancedBlock.classList.toggle('hidden', false);
         }
 
-        // Simplified dashboard: show only the active provider
-        if (activeProviderName) activeProviderName.textContent = providerNames[active] || active;
+        // Simplified dashboard: show only the active provider when connected.
+        if (activeProviderName) {
+          activeProviderName.textContent = activeConnected ? (providerNames[activeConnected] || activeConnected) : t.noProviderConnected;
+        }
         if (activeProviderIcon) {
-          activeProviderIcon.textContent = active === 'huggingface' ? 'HF' : active === 'gemini' ? 'G' : 'O';
-          activeProviderIcon.setAttribute('data-provider', active);
+          activeProviderIcon.textContent = activeConnected === 'huggingface' ? 'HF' : activeConnected === 'gemini' ? 'G' : activeConnected === 'openai' ? 'O' : '•';
+          if (activeConnected) activeProviderIcon.setAttribute('data-provider', activeConnected);
+          else activeProviderIcon.removeAttribute('data-provider');
         }
         if (activeProviderDot) {
-          const key = data[`apiKey_${active}`];
+          const key = activeConnected ? data[`apiKey_${activeConnected}`] : '';
           activeProviderDot.classList.toggle('has-key', !!(key && String(key).trim()));
         }
+
+        if (dashboardProSection) dashboardProSection.classList.toggle('onboarding-empty', !hasAnyKey);
+        if (openApiKeysBtn) openApiKeysBtn.classList.toggle('onboarding-cta', !hasAnyKey);
 
         if (!hasAnyKey) {
           activeInfo.textContent = t.advancedPickProvider;
         } else {
+          const connectedProvider = activeConnected || active;
           const defaults = providerConfig.defaultModels || {};
-          const model = (defaults[active] || '').split('/').pop();
-          activeInfo.textContent = `${t.using}: ${providerNames[active]}${model ? ' · ' + model : ''}`;
+          const model = (defaults[connectedProvider] || '').split('/').pop();
+          activeInfo.textContent = `${t.using}: ${providerNames[connectedProvider] || connectedProvider}${model ? ' · ' + model : ''}`;
         }
 
         const isDark = data.darkMode === true || data.darkMode === 'true';

@@ -76,6 +76,7 @@ if (!window.__miniGptAgentInjected) {
       
       // Provider
       currentProvider: 'Current provider: ',
+      providerNotConnected: 'No provider connected',
       setApiKeyTooltip: 'Set your API key in Settings to enable this provider.',
       
       // Copy
@@ -216,6 +217,7 @@ if (!window.__miniGptAgentInjected) {
       
       // Provider
       currentProvider: 'Fournisseur actuel : ',
+      providerNotConnected: 'Aucun service connecté',
       setApiKeyTooltip: 'Ajoutez votre clé API dans les paramètres pour activer ce service.',
       
       // Copy
@@ -604,7 +606,6 @@ if (!window.__miniGptAgentInjected) {
   const DEFAULT_BUBBLE_SIZE = 64;
   const MIN_BUBBLE_SIZE = 48;
   const MAX_BUBBLE_SIZE = 96;
-  const BUBBLE_RESIZE_ANIM_MS = 190;
 
   function normalizeBubbleSize(v) {
     const n = Number(v);
@@ -632,11 +633,9 @@ if (!window.__miniGptAgentInjected) {
   
   const originalBubblePosition = { bottom: '32px', right: '32px' };
   let currentBubbleSize = DEFAULT_BUBBLE_SIZE;
-  let bubbleResizeAnimTimer = null;
 
   function applyBubbleSize(sizeRaw) {
     const size = normalizeBubbleSize(sizeRaw);
-    const sizeChanged = size !== currentBubbleSize;
     currentBubbleSize = size;
 
     bubble.style.setProperty('width', `${size}px`, 'important');
@@ -645,20 +644,9 @@ if (!window.__miniGptAgentInjected) {
     const bubbleImg = bubble.querySelector('img');
     if (bubbleImg) {
       const imgSize = Math.max(40, Math.round(size * 0.9));
-      bubbleImg.style.transition = 'width 0.14s ease-out, height 0.14s ease-out, filter 0.2s ease';
+      bubbleImg.style.transition = 'width 0.24s cubic-bezier(0.22, 1, 0.36, 1), height 0.24s cubic-bezier(0.22, 1, 0.36, 1), filter 0.24s ease';
       bubbleImg.style.width = `${imgSize}px`;
       bubbleImg.style.height = `${imgSize}px`;
-    }
-
-    if (sizeChanged) {
-      bubble.classList.remove('easyai-resize-live');
-      // Restart class-based animation on each step while slider moves.
-      void bubble.offsetWidth;
-      bubble.classList.add('easyai-resize-live');
-      if (bubbleResizeAnimTimer) clearTimeout(bubbleResizeAnimTimer);
-      bubbleResizeAnimTimer = setTimeout(() => {
-        bubble.classList.remove('easyai-resize-live');
-      }, BUBBLE_RESIZE_ANIM_MS);
     }
 
     // Keep chat anchored above bubble only when chat is still at the default anchor.
@@ -680,7 +668,7 @@ if (!window.__miniGptAgentInjected) {
   bubble.style.justifyContent = 'center';
   bubble.style.cursor = 'pointer';
   bubble.style.userSelect = 'none';
-  bubble.style.transition = 'box-shadow 0.2s, transform 0.3s ease-out, opacity 0.2s, width 0.14s ease-out, height 0.14s ease-out';
+  bubble.style.transition = 'box-shadow 0.2s ease, transform 0.3s ease-out, opacity 0.2s ease, width 0.24s cubic-bezier(0.22, 1, 0.36, 1), height 0.24s cubic-bezier(0.22, 1, 0.36, 1)';
   bubble.style.opacity = '0';
   bubble.style.transform = 'scale(0.8) translateY(20px)';
   bubble.style.display = 'none';
@@ -701,6 +689,37 @@ if (!window.__miniGptAgentInjected) {
   chatContainer.style.visibility = 'hidden';
   chatContainer.style.opacity = '0';
   chatContainer.style.pointerEvents = 'none';
+
+  let easyaiTabZoomFactor = 1;
+
+  function normalizeTabZoom(zoomRaw) {
+    const z = Number(zoomRaw);
+    if (!Number.isFinite(z) || z <= 0) return 1;
+    return Math.max(0.25, Math.min(5, z));
+  }
+
+  function applyUiZoomNeutralization(zoomRaw) {
+    easyaiTabZoomFactor = normalizeTabZoom(zoomRaw);
+    const inverse = 1 / easyaiTabZoomFactor;
+    const neutralScale = String(Math.round(inverse * 10000) / 10000);
+    const targets = [
+      bubble,
+      chatContainer,
+      document.getElementById('mini-gpt-history-panel'),
+      document.getElementById('mini-gpt-history-overlay')
+    ];
+    targets.forEach((el) => {
+      if (!el) return;
+      el.style.setProperty('zoom', neutralScale);
+    });
+  }
+
+  function requestAndApplyCurrentTabZoom() {
+    chrome.runtime.sendMessage({ type: 'EASYAI_GET_TAB_ZOOM' }, (res) => {
+      if (chrome.runtime.lastError || !res || !res.ok) return;
+      applyUiZoomNeutralization(res.zoom);
+    });
+  }
   
   // Draggable functionality variables
   let isDragging = false;
@@ -739,7 +758,7 @@ if (!window.__miniGptAgentInjected) {
 
     // Re-enable transitions after a brief moment for future interactions
     requestAnimationFrame(() => {
-      bubble.style.transition = 'box-shadow 0.2s, background 0.3s, color 0.3s, transform 0.3s ease-out, opacity 0.2s, width 0.14s ease-out, height 0.14s ease-out';
+      bubble.style.transition = 'box-shadow 0.2s ease, background 0.3s ease, color 0.3s ease, transform 0.3s ease-out, opacity 0.2s ease, width 0.24s cubic-bezier(0.22, 1, 0.36, 1), height 0.24s cubic-bezier(0.22, 1, 0.36, 1)';
     });
   }
   
@@ -853,21 +872,29 @@ if (!window.__miniGptAgentInjected) {
   const providerList = providerRow.querySelector('#miniGptProviderList');
   const providerLabel = providerRow.querySelector('#miniGptProviderLabel');
   const providerIcon = providerRow.querySelector('#miniGptProviderIcon');
-  let currentProvider = 'openai';
+  let currentProvider = '';
 
   function setProviderUI(provider) {
-    currentProvider = provider;
+    currentProvider = provider || '';
     const providerNames = {
       'openai': 'OpenAI',
       'gemini': 'Gemini',
       'huggingface': 'Hugging Face'
     };
-    providerLabel.textContent = providerNames[provider] || provider;
-    providerIcon.className = 'mini-gpt-provider-icon ' + provider;
-    providerBtn.setAttribute('aria-label', translate('currentProvider') + providerLabel.textContent);
+    if (!currentProvider) {
+      providerLabel.textContent = translate('providerNotConnected');
+      providerIcon.className = 'mini-gpt-provider-icon empty';
+      providerBtn.classList.add('is-empty');
+      providerBtn.setAttribute('aria-label', translate('providerNotConnected'));
+    } else {
+      providerLabel.textContent = providerNames[currentProvider] || currentProvider;
+      providerIcon.className = 'mini-gpt-provider-icon ' + currentProvider;
+      providerBtn.classList.remove('is-empty');
+      providerBtn.setAttribute('aria-label', translate('currentProvider') + providerLabel.textContent);
+    }
     // Highlight selected in list
     providerList.querySelectorAll('.mini-gpt-provider-option').forEach(opt => {
-      opt.setAttribute('aria-selected', opt.dataset.provider === provider ? 'true' : 'false');
+      opt.setAttribute('aria-selected', currentProvider && opt.dataset.provider === currentProvider ? 'true' : 'false');
     });
     queueMicrotask(() => {
       if (typeof syncVisionScreenshotAvailability === 'function') syncVisionScreenshotAvailability();
@@ -880,6 +907,11 @@ if (!window.__miniGptAgentInjected) {
       const openaiKey = data.apiKey_openai;
       const geminiKey = data.apiKey_gemini;
       const huggingfaceKey = data.apiKey_huggingface;
+      const hasAnyKey = !!(
+        (openaiKey && String(openaiKey).trim()) ||
+        (geminiKey && String(geminiKey).trim()) ||
+        (huggingfaceKey && String(huggingfaceKey).trim())
+      );
       // Disable options without API key
       const openaiOption = providerList.querySelector('.mini-gpt-provider-option[data-provider="openai"]');
       const geminiOption = providerList.querySelector('.mini-gpt-provider-option[data-provider="gemini"]');
@@ -894,11 +926,16 @@ if (!window.__miniGptAgentInjected) {
         translate('setApiKeyTooltip');
       huggingfaceOption.title = huggingfaceKey ? '' : translate('setApiKeyTooltip');
       // Set current provider
-      let provider = data.provider || (openaiKey ? 'openai' : geminiKey ? 'gemini' : huggingfaceKey ? 'huggingface' : 'openai');
-      if (!data[`apiKey_${provider}`]) provider = openaiKey ? 'openai' : geminiKey ? 'gemini' : huggingfaceKey ? 'huggingface' : 'openai';
+      let provider = '';
+      if (hasAnyKey) {
+        const preferred = data.provider;
+        provider = preferred && data[`apiKey_${preferred}`]
+          ? preferred
+          : (openaiKey ? 'openai' : geminiKey ? 'gemini' : huggingfaceKey ? 'huggingface' : '');
+      }
       setProviderUI(provider);
-      // Disable button if no key
-      providerBtn.disabled = !data[`apiKey_${provider}`];
+      // Disable selector until at least one key is configured.
+      providerBtn.disabled = !hasAnyKey;
     });
   }
 
@@ -2323,12 +2360,13 @@ if (!window.__miniGptAgentInjected) {
   async function updateProviderUI() {
     const settings = await getSettings();
     const provider = currentProvider;
-    form.querySelector('button[type="submit"]').disabled = !settings[`apiKey_${provider}`];
-    input.disabled = !settings[`apiKey_${provider}`];
-    if (!settings[`apiKey_${provider}`]) {
-      input.placeholder = 'Set your API key in the extension popup.';
+    const hasKey = !!(provider && settings[`apiKey_${provider}`]);
+    form.querySelector('button[type="submit"]').disabled = !hasKey;
+    input.disabled = !hasKey;
+    if (!hasKey) {
+      input.placeholder = translate('pleaseSetApiKey');
     } else {
-      input.placeholder = 'Ask anything...';
+      input.placeholder = translate('placeholder');
     }
   }
 
@@ -2700,6 +2738,10 @@ if (!window.__miniGptAgentInjected) {
     if (!question && !hasVision) return;
 
     const provider = currentProvider;
+    if (!provider) {
+      appendMessage(translate('pleaseSetApiKey'), 'bot');
+      return;
+    }
     if (hasVision && provider === 'huggingface') {
       appendMessage(translate('visionProviderOnly'), 'bot');
       return;
@@ -3145,6 +3187,9 @@ if (!window.__miniGptAgentInjected) {
     }
     if (msg.type === 'EASYAI_SET_BUBBLE_SIZE') {
       applyBubbleSize(msg.size);
+    }
+    if (msg.type === 'EASYAI_SET_TAB_ZOOM') {
+      applyUiZoomNeutralization(msg.zoom);
     }
     // Toggle via keyboard shortcut: hide bubble + chat until user shows again (shortcut or popup)
     if (msg.type === 'EASYAI_TOGGLE_CHAT') {
@@ -3797,6 +3842,10 @@ if (!window.__miniGptAgentInjected) {
     streamingBotBodyEl = null;
     // Send to backend directly — quick actions have their own length instruction, no prefix needed
     const provider = currentProvider;
+    if (!provider) {
+      appendMessage(translate('pleaseSetApiKey'), 'bot');
+      return;
+    }
     const model = DEFAULT_MODELS[provider];
     chrome.storage.local.get([`apiKey_${provider}`], (settings) => {
       const apiKey = settings[`apiKey_${provider}`] || '';
@@ -3937,6 +3986,7 @@ if (!window.__miniGptAgentInjected) {
   historyOverlay.id = 'mini-gpt-history-overlay';
   document.body.appendChild(historyOverlay);
   document.body.appendChild(historyPanel);
+  requestAndApplyCurrentTabZoom();
 
   // 3. History logic (update selectors)
   let allHistory = [];

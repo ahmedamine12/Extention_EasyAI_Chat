@@ -156,30 +156,6 @@ function reconcileEasyAiReminderAlarms() {
 }
 reconcileEasyAiReminderAlarms();
 
-/** First-time setup: open the extension popup UI once if no API keys (toolbar UI is where keys are configured). */
-const BM_API_KEY_FIELDS = ['apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface'];
-const BM_ONBOARDING_SETUP_KEY = 'browseMate_v2_setupUiOpenedOnce';
-
-function bmHasAnyApiKey(data) {
-  return BM_API_KEY_FIELDS.some((k) => data[k] && String(data[k]).trim());
-}
-
-chrome.runtime.onInstalled.addListener((details) => {
-  chrome.storage.local.get(
-    [...BM_API_KEY_FIELDS, BM_ONBOARDING_SETUP_KEY],
-    (data) => {
-      if (chrome.runtime.lastError) return;
-      if (bmHasAnyApiKey(data)) return;
-      if (data[BM_ONBOARDING_SETUP_KEY]) return;
-      const url = chrome.runtime.getURL('popup/popup.html');
-      chrome.tabs.create({ url }, () => {
-        if (chrome.runtime.lastError) return;
-        chrome.storage.local.set({ [BM_ONBOARDING_SETUP_KEY]: true });
-      });
-    }
-  );
-});
-
 // Helper function to safely access chrome APIs
 function isExtensionContextValid() {
   try {
@@ -1669,15 +1645,45 @@ function syncBubbleSizeToTab(tabId) {
   });
 }
 
+function syncUiZoomToTab(tabId) {
+  if (tabId == null) return;
+  chrome.tabs.getZoom(tabId, (zoom) => {
+    if (chrome.runtime.lastError) return;
+    const zoomValue = Number(zoom);
+    if (!Number.isFinite(zoomValue) || zoomValue <= 0) return;
+    chrome.tabs.sendMessage(tabId, { type: 'EASYAI_SET_TAB_ZOOM', zoom: zoomValue }, () => {
+      // Ignore tabs without a receiver (restricted pages or not yet injected).
+      void chrome.runtime.lastError;
+    });
+  });
+}
+
+function syncUiStateToTab(tabId) {
+  if (tabId == null) return;
+  syncBubbleSizeToTab(tabId);
+  syncUiZoomToTab(tabId);
+}
+
 // Keep bubble size consistent when users switch tabs/pages.
 chrome.tabs.onActivated.addListener((activeInfo) => {
-  syncBubbleSizeToTab(activeInfo && activeInfo.tabId);
+  syncUiStateToTab(activeInfo && activeInfo.tabId);
 });
 
 // Re-apply saved bubble size when a tab finishes loading.
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (!changeInfo || changeInfo.status !== 'complete') return;
-  syncBubbleSizeToTab(tabId);
+  syncUiStateToTab(tabId);
+});
+
+// Keep injected UI scale stable when browser page zoom changes.
+chrome.tabs.onZoomChange.addListener((zoomChangeInfo) => {
+  const tabId = zoomChangeInfo && zoomChangeInfo.tabId;
+  const zoom = zoomChangeInfo && zoomChangeInfo.newZoomFactor;
+  const zoomValue = Number(zoom);
+  if (tabId == null || !Number.isFinite(zoomValue) || zoomValue <= 0) return;
+  chrome.tabs.sendMessage(tabId, { type: 'EASYAI_SET_TAB_ZOOM', zoom: zoomValue }, () => {
+    void chrome.runtime.lastError;
+  });
 });
 
 // Listen for messages from content script
@@ -1732,6 +1738,22 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     } catch (e) {
       sendResponse({ ok: false, error: e.message || 'Capture failed' });
     }
+    return true;
+  }
+
+  if (msg.type === 'EASYAI_GET_TAB_ZOOM') {
+    const tabId = sender.tab && sender.tab.id;
+    if (tabId == null) {
+      sendResponse({ ok: false, error: 'NO_TAB' });
+      return true;
+    }
+    chrome.tabs.getZoom(tabId, (zoom) => {
+      if (chrome.runtime.lastError) {
+        sendResponse({ ok: false, error: chrome.runtime.lastError.message || 'GET_ZOOM_FAILED' });
+        return;
+      }
+      sendResponse({ ok: true, zoom: Number(zoom) || 1 });
+    });
     return true;
   }
 

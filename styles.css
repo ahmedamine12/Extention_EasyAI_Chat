@@ -69,6 +69,9 @@
   font-size: 15px !important;
   color: #23272f !important;
   margin: 0 !important;
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: isolate !important;
 }
 
 :root {
@@ -204,16 +207,6 @@
 
 #mini-gpt-bubble:hover img {
   filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
-}
-
-#mini-gpt-bubble.easyai-resize-live img {
-  animation: mini-gpt-bubble-resize-pulse 0.18s ease-out;
-}
-
-@keyframes mini-gpt-bubble-resize-pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.06); }
-  100% { transform: scale(1); }
 }
 
 /* Instant bubble visibility for better UX */
@@ -406,6 +399,19 @@
   color: var(--mini-gpt-provider-pill-text-active);
   box-shadow: 0 2px 8px rgba(var(--browsemate-browse-rgb),0.10);
 }
+.mini-gpt-provider-selected.is-empty {
+  background: #f8fafc;
+  color: #475569;
+  border: 1px dashed #cbd5e1;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+}
+.mini-gpt-provider-selected.is-empty:focus,
+.mini-gpt-provider-selected.is-empty:hover {
+  background: #eef2ff;
+  color: #334155;
+  border-color: #94a3b8;
+  box-shadow: 0 2px 10px rgba(71, 85, 105, 0.14);
+}
 .mini-gpt-provider-arrow {
   margin-left: 8px;
   pointer-events: none;
@@ -485,6 +491,21 @@
   border-radius: 50%;
   background: #eee;
   margin-right: 2px;
+}
+.mini-gpt-provider-icon.empty {
+  background: #e2e8f0;
+  position: relative;
+}
+.mini-gpt-provider-icon.empty::after {
+  content: '!';
+  color: #64748b;
+  font-weight: 800;
+  font-size: 13px;
+  font-family: Arial, sans-serif;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%,-53%);
 }
 .mini-gpt-provider-icon.openai {
   background: var(--browsemate-mate);
@@ -622,6 +643,7 @@
   scrollbar-color: var(--mini-gpt-scrollbar) var(--mini-gpt-bg);
   background: transparent;
   transition: background 0.3s;
+  direction: ltr !important;
 }
 #mini-gpt-messages::-webkit-scrollbar {
   width: 8px;
@@ -666,6 +688,8 @@
 .mini-gpt-msg-body {
   flex: 1 1 0%;
   min-width: 0;
+  text-align: start !important;
+  unicode-bidi: plaintext !important;
 }
 
 /* Option A: Bot actions are a small toolbar BELOW bubble */
@@ -876,6 +900,9 @@
   min-height: 38px;
   max-height: 120px;
   transition: box-shadow 0.2s, background 0.2s;
+  text-align: start !important;
+  direction: auto !important;
+  unicode-bidi: plaintext !important;
 }
 #mini-gpt-input:focus {
   box-shadow: 0 0 0 2px rgba(var(--browsemate-browse-rgb), 0.2);

@@ -275,6 +275,10 @@ body.dark .hero-card {
 .active-provider-icon[data-provider="openai"] { background: var(--browsemate-mate); }
 .active-provider-icon[data-provider="gemini"] { background: var(--browsemate-browse); }
 .active-provider-icon[data-provider="huggingface"] { background: #FFD21E; color:#111827; }
+.active-provider-icon:not([data-provider]) {
+  background: color-mix(in srgb, var(--p-border) 78%, var(--p-card));
+  color: color-mix(in srgb, var(--p-text2) 84%, var(--p-text));
+}
 .active-provider-text { min-width: 0; }
 .active-provider-label {
   font-size: 11px;
@@ -319,6 +323,33 @@ body.dark .hero-card {
 .dash-btn:hover { transform: translateY(-1px); box-shadow: var(--p-hover); border-color: var(--p-accent); }
 .dash-btn--secondary {
   background: color-mix(in srgb, var(--p-bg) 60%, var(--p-card));
+}
+
+.dashboard-pro.onboarding-empty .hero-card {
+  box-shadow: 0 8px 26px rgba(37, 99, 235, 0.12), var(--p-shadow);
+}
+
+.dash-btn.onboarding-cta {
+  border-color: color-mix(in srgb, var(--p-accent) 52%, var(--p-border));
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10), var(--p-shadow);
+  animation: dashCtaPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes dashCtaPulse {
+  0%, 100% {
+    transform: translateY(0);
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.16), var(--p-shadow);
+  }
+  50% {
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.0), var(--p-hover);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-btn.onboarding-cta {
+    animation: none;
+  }
 }
 
 /* Active info */
