@@ -15,6 +15,8 @@ const resolveProviderFromSettings = providerHelpers.resolveProviderFromSettings 
     if (settings.apiKey_openai) provider = 'openai';
     else if (settings.apiKey_gemini) provider = 'gemini';
     else if (settings.apiKey_huggingface) provider = 'huggingface';
+    else if (settings.apiKey_nvidia) provider = 'nvidia';
+    else if (settings.apiKey_groq) provider = 'groq';
     else provider = 'openai';
   }
   return provider;
@@ -201,17 +203,23 @@ function formatErrorMessage(errorMsg, provider = 'openai') {
   const providerNames = {
     openai: 'OpenAI',
     gemini: 'Gemini',
-    huggingface: 'Hugging Face'
+    huggingface: 'Hugging Face',
+    nvidia: 'NVIDIA NIM',
+    groq: 'Groq'
   };
   const providerLinks = {
     openai: 'https://platform.openai.com/account/billing',
     gemini: 'https://ai.google.dev/pricing',
-    huggingface: 'https://huggingface.co/pricing'
+    huggingface: 'https://huggingface.co/pricing',
+    nvidia: 'https://build.nvidia.com/',
+    groq: 'https://console.groq.com/settings/billing'
   };
   const apiKeyHints = {
     openai: 'Make sure it starts with "sk-".',
     gemini: 'Create a key in Google AI Studio and paste it in BrowseMate API Keys.',
-    huggingface: 'Make sure it starts with "hf_" and has Inference Providers enabled.'
+    huggingface: 'Make sure it starts with "hf_" and has Inference Providers enabled.',
+    nvidia: 'Make sure it starts with "nvapi-" (create one at build.nvidia.com).',
+    groq: 'Make sure it starts with "gsk_" (create one at console.groq.com/keys).'
   };
 
   const providerName = providerNames[provider] || provider;
@@ -222,8 +230,7 @@ function formatErrorMessage(errorMsg, provider = 'openai') {
   if (isLikelyNetworkError(raw)) {
     return appendSettingsHint(
       '⚠️ Connection problem\n\n' +
-        'BrowseMate could not reach the AI service. Check your internet connection, VPN, or firewall, then try again.'
-    );
+        'BrowseMate could not reach the AI service. Check your internet connection, VPN, or firewall, then try again.');
   }
 
   let userFriendlyError = '';
@@ -233,18 +240,17 @@ function formatErrorMessage(errorMsg, provider = 'openai') {
     raw.includes('Invalid API key') ||
     raw.includes('Incorrect API key') ||
     (raw.includes('API key') && raw.includes('invalid')) ||
-    raw.includes('401') ||
+    /\b401\b/.test(raw) ||
     raw.includes('Unauthorized')
   ) {
     userFriendlyError = appendSettingsHint(
-      `❌ Invalid API key\n\nPlease check your ${providerName} key in BrowseMate. ${apiKeyHint}`
-    );
+      `❌ Invalid API key\n\nPlease check your ${providerName} key in BrowseMate. ${apiKeyHint}`);
   } else if (
     raw.includes('quota') ||
     raw.includes('Quota exceeded') ||
     raw.includes('rate limit') ||
     raw.includes('rate-limits') ||
-    raw.includes('429') ||
+    /\b429\b/.test(raw) ||
     raw.includes('Rate limit') ||
     raw.includes('too many requests')
   ) {
@@ -253,21 +259,18 @@ function formatErrorMessage(errorMsg, provider = 'openai') {
         `Your ${providerName} quota or rate limit was hit.\n\n` +
         `• Wait a few minutes and retry\n` +
         `• Switch provider in the chat header if you have another key\n` +
-        `• Billing / limits: ${providerLink}`
-    );
+        `• Billing / limits: ${providerLink}`);
   } else if (
     raw.includes('billing') ||
     raw.includes('payment') ||
-    raw.includes('402') ||
+    /\b402\b/.test(raw) ||
     raw.includes('insufficient_quota')
   ) {
     userFriendlyError = appendSettingsHint(
-      `❌ Billing or account limit\n\n${raw}\n\nCheck your ${providerName} account: ${providerLink}`
-    );
-  } else if (raw.includes('403') && !raw.includes('429')) {
+      `❌ Billing or account limit\n\n${raw}\n\nCheck your ${providerName} account: ${providerLink}`);
+  } else if (/\b403\b/.test(raw) && !/\b429\b/.test(raw)) {
     userFriendlyError = appendSettingsHint(
-      `❌ Access denied (403)\n\n${providerName} rejected the request. This is often a billing or permissions issue.\n\nAccount: ${providerLink}`
-    );
+      `❌ Access denied (403)\n\n${providerName} rejected the request. This is often a billing or permissions issue.\n\nAccount: ${providerLink}`);
   } else {
     userFriendlyError = appendSettingsHint(`❌ Something went wrong\n\n${raw}`);
   }
@@ -556,10 +559,10 @@ async function askGemini({ apiKey, model, modelCandidates, prompt, tabId, conver
     const candidates = safeUniqueModels(modelCandidates && modelCandidates.length ? modelCandidates : [model]);
     for (let i = 0; i < candidates.length; i++) {
       const currentModel = candidates[i];
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent`;
       const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] }), // Include conversation context
         signal: controller.signal
       });
@@ -771,7 +774,7 @@ async function askOpenAIVision({ apiKey, model, prompt, imageBase64, imageMime, 
 
 /** Gemini generateContent with inline image (non-streaming). */
 async function askGeminiVision({ apiKey, model, prompt, imageBase64, imageMime, tabId, conversationContext = [] }) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   const controller = new AbortController();
   if (tabId) abortControllers[tabId] = controller;
 
@@ -786,7 +789,7 @@ async function askGeminiVision({ apiKey, model, prompt, imageBase64, imageMime, 
   try {
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({
         contents: [
           {
@@ -932,13 +935,7 @@ async function askHuggingFaceVision({ apiKey, model, prompt, imageBase64, imageM
 
       if (!res.ok) {
         const errorText = await res.text().catch(() => '');
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = {};
-        }
-        lastError = errorData.error?.message || errorText.slice(0, 300) || `HTTP ${res.status}`;
+        lastError = `${currentModel} → ${hfErrorText(errorText, res.status)}`;
         continue;
       }
 
@@ -1021,10 +1018,8 @@ async function askHuggingFaceVision({ apiKey, model, prompt, imageBase64, imageM
 // Predefined Hugging Face models for auto-switching
 const HF_MODELS = providerConfig.hfModels || [
   'meta-llama/Llama-3.1-8B-Instruct',
-  'mistralai/Mistral-7B-Instruct-v0.3',
-  'Qwen/Qwen2.5-7B-Instruct',
-  'google/gemma-2-9b-it',
-  'microsoft/Phi-3-mini-4k-instruct'
+  'meta-llama/Llama-3.3-70B-Instruct',
+  'openai/gpt-oss-20b'
 ];
 
 function normalizeTier(v) {
@@ -1037,20 +1032,14 @@ function getHfTierModels(tier, fallbackList) {
   const t = normalizeTier(tier);
   // Prefer an order that roughly matches speed/quality tradeoffs.
   const fast = [
-    'microsoft/Phi-3-mini-4k-instruct',
-    'google/gemma-7b-it',
-    'mistralai/Mistral-7B-Instruct-v0.2',
-    'mistralai/Mistral-7B-Instruct-v0.3',
-    'Qwen/Qwen2.5-7B-Instruct',
-    'meta-llama/Llama-3.1-8B-Instruct'
+    'meta-llama/Llama-3.1-8B-Instruct',
+    'openai/gpt-oss-20b',
+    'google/gemma-3-27b-it'
   ];
   const best = [
-    'meta-llama/Llama-3.1-8B-Instruct',
-    'Qwen/Qwen2.5-7B-Instruct',
-    'mistralai/Mistral-7B-Instruct-v0.3',
-    'mistralai/Mistral-7B-Instruct-v0.2',
-    'google/gemma-7b-it',
-    'microsoft/Phi-3-mini-4k-instruct'
+    'meta-llama/Llama-3.3-70B-Instruct',
+    'Qwen/Qwen2.5-72B-Instruct',
+    'openai/gpt-oss-20b'
   ];
   const desired = t === 'fast' ? fast : t === 'best' ? best : base;
   const ordered = [];
@@ -1071,9 +1060,24 @@ function getHfTierModels(tier, fallbackList) {
   return ordered;
 }
 
-async function askHuggingFace({ apiKey, model, prompt, tabId, conversationContext = [], hfModels = HF_MODELS }) {
-  const controller = new AbortController();
+// Hugging Face returns `error` as a string OR an object ({message, type, code}); never print it raw.
+function hfErrorText(errorText, status) {
+  let data = {};
+  try { data = JSON.parse(errorText); } catch (_) {}
+  const e = data && data.error;
+  const msg = (typeof e === 'string' ? e : e && (e.message || JSON.stringify(e))) || String(errorText || '').slice(0, 200);
+  return `HTTP ${status}: ${msg || 'no details'}`;
+}
+
+const COMPAT = providerConfig.compatProviders || {};
+const PROVIDER_LABELS = { huggingface: 'Hugging Face', nvidia: 'NVIDIA NIM', groq: 'Groq' };
+const HF_ENDPOINT = 'https://router.huggingface.co/v1/chat/completions';
+
+// Also serves NVIDIA NIM and Groq: any OpenAI-compatible streaming chat endpoint, with per-model fallback.
+async function askHuggingFace({ apiKey, model, prompt, tabId, conversationContext = [], hfModels = HF_MODELS, endpoint = HF_ENDPOINT, providerId = 'huggingface' }) {
+  let controller = new AbortController();
   if (tabId) abortControllers[tabId] = controller;
+  let timedOut = false;
 
   // Build messages array (OpenAI-compatible chat format)
   const messages = [
@@ -1099,10 +1103,12 @@ async function askHuggingFace({ apiKey, model, prompt, tabId, conversationContex
   for (let i = 0; i < modelsToTry.length; i++) {
     const currentModel = modelsToTry[i];
     // Use OpenAI-compatible chat completions endpoint with streaming
-    const url = `https://router.huggingface.co/v1/chat/completions`;
+    const url = endpoint;
 
     try {
+      timedOut = false;
       const timeoutId = setTimeout(() => {
+        timedOut = true;
         controller.abort();
       }, 30000);
 
@@ -1126,13 +1132,14 @@ async function askHuggingFace({ apiKey, model, prompt, tabId, conversationContex
 
       // Check for auth errors before trying to read stream
       if (res.status === 401 || res.status === 403) {
-        const authError = appendSettingsHint(
-          `⚠️ Hugging Face authentication\n\n` +
-            `Your token is not valid or lacks permissions.\n\n` +
-            `1. https://huggingface.co/settings/tokens — create a Fine-grained token\n` +
-            `2. Enable "Make calls to Inference Providers"\n` +
-            `3. Copy the hf_ token into BrowseMate → API Keys`
-        );
+        const authError = providerId === 'huggingface'
+          ? appendSettingsHint(
+              `⚠️ Hugging Face authentication\n\n` +
+                `Your token is not valid or lacks permissions.\n\n` +
+                `1. https://huggingface.co/settings/tokens — create a Fine-grained token\n` +
+                `2. Enable "Make calls to Inference Providers"\n` +
+                `3. Copy the hf_ token into BrowseMate → API Keys`)
+          : formatErrorMessage('401 Unauthorized', providerId);
 
         if (isExtensionContextValid() && tabId) {
           try {
@@ -1143,6 +1150,19 @@ async function askHuggingFace({ apiKey, model, prompt, tabId, conversationContex
         return { ok: false, answer: authError };
       }
 
+      // Out of credits (402) affects every model: stop here instead of cycling through the list.
+      if (res.status === 402) {
+        const msg = formatErrorMessage(
+          `${PROVIDER_LABELS[providerId] || providerId}: no remaining credits (HTTP 402). Add credits or switch provider in BrowseMate.`,
+          providerId
+        );
+        if (isExtensionContextValid() && tabId) {
+          try { chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: msg, done: true }); } catch (e) {}
+        }
+        if (tabId) delete abortControllers[tabId];
+        return { ok: false, answer: msg };
+      }
+
       // Model loading (503) — try next model
       if (res.status === 503) {
         lastError = `Model ${currentModel} is loading`;
@@ -1150,7 +1170,8 @@ async function askHuggingFace({ apiKey, model, prompt, tabId, conversationContex
           try {
             chrome.tabs.sendMessage(tabId, {
               type: 'MINI_GPT_ANSWER_PART',
-              answerPart: `⏳ Model loading, trying next model...\n`,
+              answerPart: 'Model is loading, trying the next one…',
+              status: true,
               done: false
             });
           } catch (e) {}
@@ -1167,15 +1188,14 @@ async function askHuggingFace({ apiKey, model, prompt, tabId, conversationContex
       // Other non-OK status — try to read error
       if (!res.ok) {
         const errorText = await res.text().catch(() => '');
-        let errorData;
-        try { errorData = JSON.parse(errorText); } catch { errorData = {}; }
-        lastError = errorData.error || `HTTP ${res.status}: ${errorText.slice(0, 200)}`;
+        lastError = `${currentModel} → ${hfErrorText(errorText, res.status)}`;
         continue;
       }
 
       // Stream the response (SSE format, same as OpenAI)
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
+      let sentThinking = false;
       let fullAnswer = '';
       let buffer = '';
 
@@ -1195,7 +1215,15 @@ async function askHuggingFace({ apiKey, model, prompt, tabId, conversationContex
 
           try {
             const parsed = JSON.parse(data);
-            const delta = parsed.choices?.[0]?.delta?.content;
+            const d0 = parsed.choices?.[0]?.delta;
+            // Reasoning models stream "thinking" tokens first: tell the UI instead of looking frozen.
+            if (!fullAnswer && !sentThinking && d0 && (d0.reasoning_content || d0.reasoning)) {
+              sentThinking = true;
+              if (isExtensionContextValid() && tabId) {
+                try { chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: 'Thinking…', status: true, done: false }); } catch (e) {}
+              }
+            }
+            const delta = d0?.content;
             if (delta) {
               fullAnswer += delta;
               if (isExtensionContextValid() && tabId) {
@@ -1236,6 +1264,13 @@ async function askHuggingFace({ apiKey, model, prompt, tabId, conversationContex
       continue;
 
     } catch (e) {
+      if (e.name === 'AbortError' && timedOut && i < modelsToTry.length - 1) {
+        // This model was too slow (not a user stop): move on with a fresh controller.
+        lastError = `${currentModel} timed out after 30s`;
+        controller = new AbortController();
+        if (tabId) abortControllers[tabId] = controller;
+        continue;
+      }
       if (e.name === 'AbortError') {
         if (isExtensionContextValid() && tabId) {
           try {
@@ -1252,7 +1287,8 @@ async function askHuggingFace({ apiKey, model, prompt, tabId, conversationContex
         try {
           chrome.tabs.sendMessage(tabId, {
             type: 'MINI_GPT_ANSWER_PART',
-            answerPart: `⏳ Model ${i + 1} failed, trying next model...\n`,
+            answerPart: 'That model failed, trying the next one…',
+            status: true,
             done: false
           });
         } catch (e) {}
@@ -1265,7 +1301,7 @@ async function askHuggingFace({ apiKey, model, prompt, tabId, conversationContex
   if (tabId) delete abortControllers[tabId];
   const finalError = formatErrorMessage(
     `All models failed. Last error: ${lastError || 'Unknown error'}. Please try again later.`,
-    'huggingface'
+    providerId
   );
 
   if (isExtensionContextValid() && tabId) {
@@ -1427,6 +1463,8 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
         'apiKey_openai',
         'apiKey_gemini',
         'apiKey_huggingface',
+        'apiKey_nvidia',
+        'apiKey_groq',
         'systemInstruction',
         'promptPrefix',
         'modelTier',
@@ -1455,14 +1493,14 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
       const tierCandidates = (() => {
         const t = tier === 'fast' || tier === 'best' ? tier : 'balanced';
         if (provider === 'openai') {
-          if (t === 'fast') return ['gpt-4o-mini', 'gpt-3.5-turbo'];
-          if (t === 'best') return ['gpt-4o', 'o1-mini', 'gpt-4-turbo', 'gpt-4o-mini'];
-          return ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'];
+          if (t === 'fast') return ['gpt-4o-mini', 'gpt-4.1-mini'];
+          if (t === 'best') return ['gpt-4.1', 'gpt-4o', 'gpt-4o-mini'];
+          return ['gpt-4o-mini', 'gpt-4.1-mini', 'gpt-4o', 'gpt-4.1'];
         }
         if (provider === 'gemini') {
-          if (t === 'fast') return ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash'];
-          if (t === 'best') return ['gemini-1.5-pro', 'gemini-2.0-flash', 'gemini-1.5-flash'];
-          return ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+          if (t === 'fast') return ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-2.5-flash'];
+          if (t === 'best') return ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+          return ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-2.0-flash-lite', 'gemini-2.5-pro'];
         }
         return [];
       })();
@@ -1585,8 +1623,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
             ? [{ role: 'system', content: systemInstruction.trim() }]
             : [];
           const mc = Array.isArray(modelCandidates) && modelCandidates.length ? modelCandidates : null;
-          window.postMessage(
-            {
+          const payload = {
               type: 'MINI_GPT_ASK',
               question: q,
               provider,
@@ -1597,9 +1634,8 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
               hfModels: hfModels || undefined,
               __browseMateContextMenu: true,
               __browseMateUserDisplay: displayText
-            },
-            '*'
-          );
+            };
+          if (typeof window.__browsemateAsk === 'function') window.__browsemateAsk(payload);
         },
           args: [
             question,
@@ -1773,6 +1809,20 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     const modelCandidates = Array.isArray(msg.modelCandidates) ? msg.modelCandidates : null;
     const visionModelCandidates = Array.isArray(msg.visionModelCandidates) ? msg.visionModelCandidates : null;
 
+    const compatHandlers = Object.fromEntries(
+      Object.entries(COMPAT).map(([id, c]) => [id, () =>
+        askHuggingFace({
+          apiKey,
+          prompt: msg.question,
+          tabId,
+          conversationContext,
+          hfModels: c.models,
+          endpoint: c.endpoint,
+          providerId: id
+        })
+      ])
+    );
+
     const providerHandlers = hasImage
       ? {
           openai: () =>
@@ -1807,7 +1857,18 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
               tabId,
               conversationContext,
               hfVisionModels: hfVisionList
-            })
+            }),
+          ...Object.fromEntries(
+            Object.keys(COMPAT).map((id) => [id, async () => {
+              const m = formatErrorMessage(
+                `${COMPAT[id].label} does not support images in BrowseMate. Switch to Gemini, OpenAI or Hugging Face for screenshots.`,
+                id
+              );
+              if (isExtensionContextValid() && tabId) {
+                try { chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: m, done: true }); } catch (e) {}
+              }
+            }])
+          )
         }
       : {
           openai: () =>
@@ -1836,7 +1897,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
               tabId,
               conversationContext,
               hfModels
-            })
+            }),
+          ...compatHandlers
         };
 
     (async () => {

@@ -4,7 +4,7 @@
   const config = globalScope.EASYAI_PROVIDER_CONFIG || {};
 
   function getApiKeyFields() {
-    return config.apiKeyFields || ['apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface'];
+    return config.apiKeyFields || ['apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface', 'apiKey_nvidia', 'apiKey_groq'];
   }
 
   function hasAnyApiKey(settings) {
@@ -25,7 +25,7 @@
   function getHfVisionModels() {
     return config.hfVisionModels && config.hfVisionModels.length
       ? config.hfVisionModels
-      : ['Qwen/Qwen2.5-VL-7B-Instruct:fastest', 'Qwen/Qwen2-VL-7B-Instruct'];
+      : ['Qwen/Qwen3-VL-30B-A3B-Instruct', 'Qwen/Qwen2.5-VL-72B-Instruct'];
   }
 
   function resolveProviderFromSettings(settings) {
@@ -34,6 +34,8 @@
       if (settings.apiKey_openai) provider = 'openai';
       else if (settings.apiKey_gemini) provider = 'gemini';
       else if (settings.apiKey_huggingface) provider = 'huggingface';
+      else if (settings.apiKey_nvidia) provider = 'nvidia';
+      else if (settings.apiKey_groq) provider = 'groq';
       else provider = 'openai';
     }
     return provider;

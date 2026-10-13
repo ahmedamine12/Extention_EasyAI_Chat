@@ -275,6 +275,8 @@ body.dark .hero-card {
 .active-provider-icon[data-provider="openai"] { background: var(--browsemate-mate); }
 .active-provider-icon[data-provider="gemini"] { background: var(--browsemate-browse); }
 .active-provider-icon[data-provider="huggingface"] { background: #FFD21E; color:#111827; }
+.active-provider-icon[data-provider="nvidia"] { background: #76b900; color:#fff; }
+.active-provider-icon[data-provider="groq"] { background: #f55036; color:#fff; }
 .active-provider-icon:not([data-provider]) {
   background: color-mix(in srgb, var(--p-border) 78%, var(--p-card));
   color: color-mix(in srgb, var(--p-text2) 84%, var(--p-text));

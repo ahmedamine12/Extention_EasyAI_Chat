@@ -1,6 +1,6 @@
 # BrowseMate
 
-A privacy-focused AI companion for browsing: chat on any page with **OpenAI**, **Google Gemini**, or **Hugging Face** through a floating panel. **Version 2** adds voice input, reminders, clearer errors, and tighter BrowseMate branding.
+A privacy-focused AI companion for browsing: chat on any page with **OpenAI**, **Google Gemini**, **Hugging Face**, **NVIDIA NIM**, or **Groq** through a floating panel. **Version 2** adds voice input, reminders, clearer errors, and tighter BrowseMate branding.
 
 <p align="center">
   <img src="icons/easyChat.png" alt="BrowseMate — toolbar icon and floating bubble" width="120" />
@@ -10,8 +10,8 @@ A privacy-focused AI companion for browsing: chat on any page with **OpenAI**, *
 
 ## Features
 
-- **Floating chat** — Draggable, resizable panel on any site (hidden until you add at least one API key).
-- **Multiple providers** — OpenAI (GPT-4o family, o1, etc.), Gemini (Flash / Pro), Hugging Face Inference Router (several open models; vision when your token supports Inference Providers).
+- **Floating chat** — Draggable, resizable panel on any site (shows an onboarding prompt until you add at least one API key).
+- **Multiple providers** — OpenAI (GPT-4o family, o1, etc.), Gemini (Flash / Pro), NVIDIA NIM and Groq (free-tier friendly, text only), Hugging Face Inference Router (several open models; vision when your token supports Inference Providers).
 - **Vision & screenshots** — Send a viewport capture to vision-capable models where the provider allows it.
 - **Voice input** — Optional mic dictation and speech language preference (browser-dependent).
 - **Reminders** — Schedule reminders from the chat UI; delivered via notifications (and in-page when possible).

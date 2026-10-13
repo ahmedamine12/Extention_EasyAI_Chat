@@ -1,108 +1,52 @@
 (function initPageDetectionHelpers(globalScope) {
   if (globalScope.EASYAI_PAGE_HELPERS) return;
 
+  const LOGIN_DOMAINS = [
+    'login.microsoftonline.com',
+    'auth0.com',
+    'okta.com',
+    'onelogin.com',
+    'oauth.com',
+    'oauth2.com'
+  ];
+
+  // Whole path segments only: "/login" matches, "/author/jane" or "/connect-the-dots" do not.
+  const LOGIN_SEGMENTS = new Set([
+    'signin', 'sign-in', 'login', 'log-in', 'logon', 'auth', 'oauth', 'oauth2', 'authorize',
+    'authenticate', 'signup', 'sign-up', 'register', 'password', 'reset', 'reset-password',
+    'forgot', 'forgot-password', 'sso', 'connexion', 'connect', 'chooser', 'accountchooser'
+  ]);
+
+  const LOGIN_TITLE_RE = /\b(sign[ -]?in|log[ -]?in|log into|sign[ -]?up|connexion|se connecter|s'identifier|authentification)\b/;
+
+  const AUTH_FORM_SELECTORS = [
+    'form[action*="login"]', 'form[action*="signin"]', 'form[action*="auth"]',
+    '.login-form', '.signin-form', '.auth-form', '#login', '#signin', '#auth'
+  ];
+
   function isLoginOrAuthPage() {
-    const url = window.location.href.toLowerCase();
     const hostname = window.location.hostname.toLowerCase();
     const pathname = window.location.pathname.toLowerCase();
-    const search = window.location.search.toLowerCase();
+    const segments = pathname.split('/').filter(Boolean);
 
-    const loginDomains = [
-      'login.microsoftonline.com',
-      'auth0.com',
-      'okta.com',
-      'onelogin.com',
-      'sso.company.com',
-      'login.company.com',
-      'auth.company.com',
-      'oauth.com',
-      'oauth2.com'
-    ];
-
-    if (hostname.includes('accounts.google.com')) {
-      const googleLoginPaths = [
-        '/signin', '/signin/', '/login', '/login/', '/oauth', '/oauth/', '/oauth2', '/oauth2/',
-        '/authorize', '/authorize/', '/connect', '/connect/', '/authenticate', '/authenticate/',
-        '/signup', '/signup/', '/register', '/register/', '/password', '/password/', '/reset',
-        '/reset/', '/forgot', '/forgot/', '/chooser', '/chooser/', '/accountchooser', '/accountchooser/'
-      ];
-
-      if (googleLoginPaths.some((path) => pathname.includes(path))) {
-        return true;
-      }
-
-      if (url.includes('oauth') || url.includes('authorize') || url.includes('signin')) {
-        return true;
-      }
-
-      return false;
-    }
-
-    const loginPaths = [
-      '/signin', '/signin/', '/login', '/login/', '/auth', '/auth/', '/oauth', '/oauth/', '/oauth2',
-      '/oauth2/', '/authorize', '/authorize/', '/connect', '/connect/', '/authenticate', '/authenticate/',
-      '/signup', '/signup/', '/register', '/register/', '/password', '/password/', '/reset', '/reset/',
-      '/forgot', '/forgot/'
-    ];
-
-    const loginKeywords = [
-      'signin', 'login', 'auth', 'oauth', 'authorize', 'connect', 'authenticate', 'signup', 'register',
-      'password', 'reset', 'forgot', 'connexion', 'se connecter', 's\'identifier', 'authentification'
-    ];
-
-    if (loginDomains.some((domain) => hostname.includes(domain))) {
+    if (LOGIN_DOMAINS.some((domain) => hostname === domain || hostname.endsWith('.' + domain))) {
       return true;
     }
 
-    if (loginPaths.some((path) => pathname.includes(path))) {
-      return true;
+    const pathLooksLikeAuth = segments.some((seg) => LOGIN_SEGMENTS.has(seg));
+
+    if (hostname === 'accounts.google.com' || hostname.endsWith('.accounts.google.com')) {
+      // Every Google account page is an auth surface except the account home itself.
+      return pathLooksLikeAuth || /oauth|authorize|signin/.test(pathname + window.location.search.toLowerCase());
     }
 
-    if (loginKeywords.some((keyword) => url.includes(keyword))) {
-      if (hostname.includes('google.com') && !pathname.includes('/signin') && !pathname.includes('/oauth')) {
-        return false;
-      }
-      return true;
-    }
+    if (pathLooksLikeAuth) return true;
 
-    const title = document.title.toLowerCase();
-    if (loginKeywords.some((keyword) => title.includes(keyword))) {
-      if (hostname.includes('google.com') && !pathname.includes('/signin') && !pathname.includes('/oauth')) {
-        return false;
-      }
-      return true;
-    }
-
-    const hasPasswordInput = !!document.querySelector('input[type="password"]');
-    const hasAuthFormMarker = [
-      'form[action*="login"]',
-      'form[action*="signin"]',
-      'form[action*="auth"]',
-      '.login-form',
-      '.signin-form',
-      '.auth-form',
-      '#login',
-      '#signin',
-      '#auth'
-    ].some((selector) => document.querySelector(selector));
-
-    if (hasPasswordInput) {
-      if (hostname.includes('google.com') && !pathname.includes('/signin') && !pathname.includes('/oauth')) {
-        return false;
-      }
-
-      // A lone password field is too broad and hides the bubble on normal account/settings pages.
-      const hasAuthUrlSignal = loginPaths.some((path) => pathname.includes(path)) ||
-        loginKeywords.some((keyword) => pathname.includes(keyword) || search.includes(keyword));
-      const title = document.title.toLowerCase();
-      const hasAuthTitleSignal = loginKeywords.some((keyword) => title.includes(keyword));
-
-      if (hasAuthFormMarker || hasAuthUrlSignal || hasAuthTitleSignal) {
-        return true;
-      }
-    }
-
-    return false;
+    // Softer signals (page title, form markers) only count when a password field is present,
+    // so a blog post titled "How to log in to X" keeps its chat bubble.
+    if (!document.querySelector('input[type="password"]')) return false;
+    const title = String(document.title || '').toLowerCase();
+    return LOGIN_TITLE_RE.test(title) || AUTH_FORM_SELECTORS.some((selector) => document.querySelector(selector));
   }
 
   globalScope.EASYAI_PAGE_HELPERS = {

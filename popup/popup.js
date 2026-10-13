@@ -131,7 +131,11 @@ let t = messagesEn;
 
 const providerConfig = globalThis.EASYAI_PROVIDER_CONFIG || {};
 const providerHelpers = globalThis.EASYAI_PROVIDER_HELPERS || {};
-const providerNames = { openai: 'OpenAI', gemini: 'Gemini', huggingface: 'Hugging Face' };
+const providerNames = { openai: 'OpenAI', gemini: 'Gemini', huggingface: 'Hugging Face', nvidia: 'NVIDIA NIM', groq: 'Groq' };
+const PROVIDER_IDS = Object.keys(providerNames);
+const API_KEY_FIELDS = PROVIDER_IDS.map((id) => `apiKey_${id}`);
+const LAST_MODEL_FIELDS = PROVIDER_IDS.map((id) => `lastWorkingModel_${id}`);
+const PROVIDER_BADGES = { openai: 'O', gemini: 'G', huggingface: 'HF', nvidia: 'NV', groq: 'Gq' };
 
 document.addEventListener('DOMContentLoaded', () => {
   try {
@@ -165,12 +169,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const metaStatusEls = {
     openai: document.getElementById('meta-status-openai'),
     gemini: document.getElementById('meta-status-gemini'),
-    huggingface: document.getElementById('meta-status-huggingface')
+    huggingface: document.getElementById('meta-status-huggingface'),
+    nvidia: document.getElementById('meta-status-nvidia'),
+    groq: document.getElementById('meta-status-groq')
   };
   const metaModelEls = {
     openai: document.getElementById('meta-model-openai'),
     gemini: document.getElementById('meta-model-gemini'),
-    huggingface: document.getElementById('meta-model-huggingface')
+    huggingface: document.getElementById('meta-model-huggingface'),
+    nvidia: document.getElementById('meta-model-nvidia'),
+    groq: document.getElementById('meta-model-groq')
   };
 
   function clampBubbleSize(v) {
@@ -291,9 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.local.get(
       [
         'provider',
-        'apiKey_openai',
-        'apiKey_gemini',
-        'apiKey_huggingface',
+        ...API_KEY_FIELDS,
         'darkMode',
         'voiceInputEnabled',
         'browseMateUiLocale',
@@ -306,15 +312,11 @@ document.addEventListener('DOMContentLoaded', () => {
         applyPopupTexts(lpref);
 
         const active = data.provider || 'openai';
-        const hasAnyKey = !!(
-          (data.apiKey_openai && data.apiKey_openai.trim()) ||
-          (data.apiKey_gemini && data.apiKey_gemini.trim()) ||
-          (data.apiKey_huggingface && data.apiKey_huggingface.trim())
-        );
+        const hasAnyKey = PROVIDER_IDS.some((id) => safeTrim(data[`apiKey_${id}`]));
         const activeConnected = hasAnyKey
           ? ((active && data[`apiKey_${active}`])
               ? active
-              : (data.apiKey_openai ? 'openai' : data.apiKey_gemini ? 'gemini' : data.apiKey_huggingface ? 'huggingface' : active))
+              : (PROVIDER_IDS.find((id) => data[`apiKey_${id}`]) || active))
           : '';
 
         if (voiceAdvancedBlock) {
@@ -326,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
           activeProviderName.textContent = activeConnected ? (providerNames[activeConnected] || activeConnected) : t.noProviderConnected;
         }
         if (activeProviderIcon) {
-          activeProviderIcon.textContent = activeConnected === 'huggingface' ? 'HF' : activeConnected === 'gemini' ? 'G' : activeConnected === 'openai' ? 'O' : '•';
+          activeProviderIcon.textContent = PROVIDER_BADGES[activeConnected] || '•';
           if (activeConnected) activeProviderIcon.setAttribute('data-provider', activeConnected);
           else activeProviderIcon.removeAttribute('data-provider');
         }
@@ -362,22 +364,16 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.local.get(
       [
         'provider',
-        'apiKey_openai',
-        'apiKey_gemini',
-        'apiKey_huggingface',
+        ...API_KEY_FIELDS,
         'modelTier',
-        'lastWorkingModel_openai',
-        'lastWorkingModel_gemini',
-        'lastWorkingModel_huggingface',
+        ...LAST_MODEL_FIELDS,
         'systemInstruction',
         'promptPrefix',
         'bubbleSize',
         'browseMateDevMode'
       ],
       (data) => {
-        document.getElementById('key-openai').value = data.apiKey_openai || '';
-        document.getElementById('key-gemini').value = data.apiKey_gemini || '';
-        document.getElementById('key-huggingface').value = data.apiKey_huggingface || '';
+        PROVIDER_IDS.forEach((id) => { const el = document.getElementById(`key-${id}`); if (el) el.value = data[`apiKey_${id}`] || ''; });
         const systemInstructionEl = document.getElementById('systemInstruction');
         const promptPrefixEl = document.getElementById('promptPrefix');
         if (systemInstructionEl) systemInstructionEl.value = data.systemInstruction || '';
@@ -408,8 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateProviderMetaFromData(data, validationResults) {
     const tier = getSelectedTier();
-    const providers = ['openai', 'gemini', 'huggingface'];
-    providers.forEach((p) => {
+    PROVIDER_IDS.forEach((p) => {
       const key = safeTrim(data && data[`apiKey_${p}`]);
       if (!key) {
         setMeta(p, { state: 'missing', statusText: 'Not set', modelText: '' });
@@ -444,11 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
     card.addEventListener('click', () => {
       const provider = card.dataset.provider;
       chrome.storage.local.get(
-        [
-          'apiKey_openai',
-          'apiKey_gemini',
-          'apiKey_huggingface'
-        ],
+        API_KEY_FIELDS,
         (data) => {
           const key = data[`apiKey_${provider}`];
           if (!key || !key.trim()) {
@@ -545,7 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function validateGemini(apiKey) {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models', { headers: { 'x-goog-api-key': apiKey } });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error?.message || `HTTP ${res.status}`);
@@ -563,6 +554,26 @@ document.addEventListener('DOMContentLoaded', () => {
     return true;
   }
 
+  async function validateGroq(apiKey) {
+    const res = await fetch('https://api.groq.com/openai/v1/models', {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return true;
+  }
+
+  // NVIDIA's /v1/models is public, so it cannot prove a key: send a 1-token completion instead.
+  async function validateNvidia(apiKey) {
+    const cfg = (providerConfig.compatProviders || {}).nvidia;
+    const res = await fetch(cfg.endpoint, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: cfg.models[0], messages: [{ role: 'user', content: 'hi' }], max_tokens: 1 })
+    });
+    if (res.status === 401 || res.status === 403) throw new Error(`HTTP ${res.status}`);
+    return true;
+  }
+
   function setKeyStatus(provider, state, message) {
     const el = document.getElementById(`status-${provider}`);
     if (!el) return;
@@ -571,7 +582,7 @@ document.addEventListener('DOMContentLoaded', () => {
     el.textContent = message || '';
   }
 
-  const keyStatusClearTimers = { openai: null, gemini: null, huggingface: null };
+  const keyStatusClearTimers = Object.fromEntries(PROVIDER_IDS.map((id) => [id, null]));
   function scheduleClearKeyStatus(provider, ms) {
     if (!provider) return;
     try {
@@ -588,19 +599,15 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const saveBtn = document.getElementById('saveBtn');
 
-    const keys = {
-      openai: document.getElementById('key-openai').value.trim(),
-      gemini: document.getElementById('key-gemini').value.trim(),
-      huggingface: document.getElementById('key-huggingface').value.trim()
-    };
+    const keys = Object.fromEntries(PROVIDER_IDS.map((id) => [id, getKeyFromInputs(id)]));
     const modelTier = String(modelTierEl ? modelTierEl.value : 'balanced') || 'balanced';
     const systemInstruction = (document.getElementById('systemInstruction')?.value || '').trim();
     const promptPrefix = (document.getElementById('promptPrefix')?.value || '').trim();
 
     // Clear previous statuses
-    ['openai', 'gemini', 'huggingface'].forEach(p => setKeyStatus(p, '', ''));
+    PROVIDER_IDS.forEach(p => setKeyStatus(p, '', ''));
 
-    const hasAnyKey = !!(keys.openai || keys.gemini || keys.huggingface);
+    const hasAnyKey = PROVIDER_IDS.some((id) => keys[id]);
 
     if (!hasAnyKey) {
       toast.textContent = t.noKeysToSave;
@@ -617,7 +624,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const validators = {
       openai: validateOpenAI,
       gemini: validateGemini,
-      huggingface: validateHuggingFace
+      huggingface: validateHuggingFace,
+      nvidia: validateNvidia,
+      groq: validateGroq
     };
 
     const results = {};
@@ -646,9 +655,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Save all keys (even invalid ones — user might fix later)
     chrome.storage.local.set({
-      apiKey_openai: keys.openai,
-      apiKey_gemini: keys.gemini,
-      apiKey_huggingface: keys.huggingface,
+      ...Object.fromEntries(PROVIDER_IDS.map((id) => [`apiKey_${id}`, keys[id]])),
       modelTier,
       systemInstruction,
       promptPrefix,
@@ -676,20 +683,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Update "Valid/Invalid" + planned model line per provider
       const dataForMeta = {
-        apiKey_openai: keys.openai,
-        apiKey_gemini: keys.gemini,
-        apiKey_huggingface: keys.huggingface,
-        modelTier,
-        lastWorkingModel_openai: undefined,
-        lastWorkingModel_gemini: undefined,
-        lastWorkingModel_huggingface: undefined
+        ...Object.fromEntries(PROVIDER_IDS.map((id) => [`apiKey_${id}`, keys[id]])),
+        modelTier
       };
       updateProviderMetaFromData(dataForMeta, results);
     });
   });
 
   // Clear status immediately when the user edits a key.
-  ['openai', 'gemini', 'huggingface'].forEach((p) => {
+  PROVIDER_IDS.forEach((p) => {
     const el = document.getElementById(`key-${p}`);
     if (!el) return;
     el.addEventListener('input', () => {
@@ -713,14 +715,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const models = (config && config.models && config.models[provider]) ? config.models[provider] : [];
     const pick = (ids) => ids.filter((x) => models.includes(x));
     if (provider === 'openai') {
-      if (t === 'fast') return pick(['gpt-4o-mini', 'gpt-3.5-turbo']);
-      if (t === 'best') return pick(['gpt-4o', 'o1-mini', 'gpt-4-turbo', 'gpt-4o-mini']);
-      return pick(['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo']);
+      if (t === 'fast') return pick(['gpt-4o-mini', 'gpt-4.1-mini']);
+      if (t === 'best') return pick(['gpt-4.1', 'gpt-4o', 'gpt-4o-mini']);
+      return pick(['gpt-4o-mini', 'gpt-4.1-mini', 'gpt-4o', 'gpt-4.1']);
     }
     if (provider === 'gemini') {
-      if (t === 'fast') return pick(['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash']);
-      if (t === 'best') return pick(['gemini-1.5-pro', 'gemini-2.0-flash', 'gemini-1.5-flash']);
-      return pick(['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-1.5-pro']);
+      if (t === 'fast') return pick(['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-2.5-flash']);
+      if (t === 'best') return pick(['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash']);
+      return pick(['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-2.0-flash-lite', 'gemini-2.5-pro']);
     }
     return models.slice(0, 3);
   }
@@ -739,7 +741,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return candidates.find((c) => ids.includes(c)) || null;
     }
     if (provider === 'gemini') {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models', { headers: { 'x-goog-api-key': apiKey } });
       if (!res.ok) return null;
       const data = await res.json().catch(() => ({}));
       const ids = Array.isArray(data.models)
@@ -770,21 +772,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (provider === 'huggingface') {
       const base = (providerConfig.models && providerConfig.models.huggingface) ? providerConfig.models.huggingface : [];
       const t = tier === 'fast' || tier === 'best' ? tier : 'balanced';
-      const fast = [
-        'microsoft/Phi-3-mini-4k-instruct',
-        'google/gemma-7b-it',
-        'mistralai/Mistral-7B-Instruct-v0.2',
-        'Qwen/Qwen2.5-7B-Instruct',
-        'meta-llama/Llama-3.1-8B-Instruct'
-      ];
-      const best = [
-        'meta-llama/Llama-3.1-8B-Instruct',
-        'Qwen/Qwen2.5-7B-Instruct',
-        'mistralai/Mistral-7B-Instruct-v0.2',
-        'google/gemma-7b-it',
-        'microsoft/Phi-3-mini-4k-instruct'
-      ];
-      const desired = t === 'fast' ? fast : t === 'best' ? best : base;
+      const desired = t === 'best' ? ['meta-llama/Llama-3.3-70B-Instruct'] : base;
       const first = desired.find((m) => base.includes(m));
       const d = (providerConfig.defaultModels || {}).huggingface;
       return safeTrim(first || d) || 'Hugging Face router';
@@ -799,14 +787,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (modelTierEl) {
     modelTierEl.addEventListener('change', () => {
       chrome.storage.local.get(
-        [
-          'apiKey_openai',
-          'apiKey_gemini',
-          'apiKey_huggingface',
-          'lastWorkingModel_openai',
-          'lastWorkingModel_gemini',
-          'lastWorkingModel_huggingface'
-        ],
+        [...API_KEY_FIELDS, ...LAST_MODEL_FIELDS],
         (data) => updateProviderMetaFromData(data)
       );
     });

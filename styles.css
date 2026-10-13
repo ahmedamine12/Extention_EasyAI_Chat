@@ -552,6 +552,21 @@
   top: 50%;
   transform: translate(-50%,-50%);
 }
+.mini-gpt-provider-icon.nvidia, .mini-gpt-provider-icon.groq { position: relative; }
+.mini-gpt-provider-icon.nvidia { background: #76b900; }
+.mini-gpt-provider-icon.groq { background: #f55036; }
+.mini-gpt-provider-icon.nvidia::after, .mini-gpt-provider-icon.groq::after {
+  color: #fff;
+  font-weight: bold;
+  font-size: 10px;
+  font-family: Arial, sans-serif;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%,-50%);
+}
+.mini-gpt-provider-icon.nvidia::after { content: 'NV'; }
+.mini-gpt-provider-icon.groq::after { content: 'Gq'; }
 .mini-gpt-provider-icon.byok {
   background: linear-gradient(135deg, #475569, #334155);
   position: relative;

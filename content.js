@@ -394,6 +394,7 @@ if (!window.__miniGptAgentInjected) {
     window.addEventListener('message', (event) => {
       const d = event && event.data;
       if (!d || d.type !== 'EASYAI_REPLACE_IN_FRAME') return;
+      if (event.source !== window.parent) return;
       const reqId = d.reqId;
       const target = window.__easyaiEditableTarget;
       if (!target || !target.el) {
@@ -583,7 +584,7 @@ if (!window.__miniGptAgentInjected) {
   const pageHelpers = globalThis.EASYAI_PAGE_HELPERS || {};
   const API_KEY_FIELDS = providerHelpers.getApiKeyFields
     ? providerHelpers.getApiKeyFields()
-    : (providerConfig.apiKeyFields || ['apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface']);
+    : (providerConfig.apiKeyFields || ['apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface', 'apiKey_nvidia', 'apiKey_groq']);
 
   function isLoginOrAuthPage() {
     if (pageHelpers.isLoginOrAuthPage) {
@@ -862,6 +863,14 @@ if (!window.__miniGptAgentInjected) {
           <span class="mini-gpt-provider-icon huggingface"></span>
           <span>Hugging Face</span>
         </li>
+        <li class="mini-gpt-provider-option" data-provider="nvidia" role="option">
+          <span class="mini-gpt-provider-icon nvidia"></span>
+          <span>NVIDIA NIM</span>
+        </li>
+        <li class="mini-gpt-provider-option" data-provider="groq" role="option">
+          <span class="mini-gpt-provider-icon groq"></span>
+          <span>Groq</span>
+        </li>
       </ul>
     </div>
   `;
@@ -879,7 +888,9 @@ if (!window.__miniGptAgentInjected) {
     const providerNames = {
       'openai': 'OpenAI',
       'gemini': 'Gemini',
-      'huggingface': 'Hugging Face'
+      'huggingface': 'Hugging Face',
+      'nvidia': 'NVIDIA NIM',
+      'groq': 'Groq'
     };
     if (!currentProvider) {
       providerLabel.textContent = translate('providerNotConnected');
@@ -903,35 +914,29 @@ if (!window.__miniGptAgentInjected) {
 
   // API key check and enable/disable
   function updateProviderDropdown() {
-    chrome.storage.local.get(['apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface', 'provider'], (data) => {
-      const openaiKey = data.apiKey_openai;
-      const geminiKey = data.apiKey_gemini;
-      const huggingfaceKey = data.apiKey_huggingface;
-      const hasAnyKey = !!(
-        (openaiKey && String(openaiKey).trim()) ||
-        (geminiKey && String(geminiKey).trim()) ||
-        (huggingfaceKey && String(huggingfaceKey).trim())
-      );
+    chrome.storage.local.get([...API_KEY_FIELDS, 'provider'], (data) => {
+      const hasKey = (id) => !!(data[`apiKey_${id}`] && String(data[`apiKey_${id}`]).trim());
+      const ids = ['openai', 'gemini', 'huggingface', 'nvidia', 'groq'];
+      const hasAnyKey = ids.some(hasKey);
       // Disable options without API key
-      const openaiOption = providerList.querySelector('.mini-gpt-provider-option[data-provider="openai"]');
-      const geminiOption = providerList.querySelector('.mini-gpt-provider-option[data-provider="gemini"]');
-      const huggingfaceOption = providerList.querySelector('.mini-gpt-provider-option[data-provider="huggingface"]');
-      openaiOption.classList.toggle('disabled', !openaiKey);
-      geminiOption.classList.toggle('disabled', !geminiKey);
-      huggingfaceOption.classList.toggle('disabled', !huggingfaceKey);
-      openaiOption.title = openaiKey ? '' : translate('setApiKeyTooltip');
-      // Add warning for Gemini free tier limits
-      geminiOption.title = geminiKey ? 
-        'Gemini free tier has strict rate limits. Consider OpenAI for better reliability.' : 
-        translate('setApiKeyTooltip');
-      huggingfaceOption.title = huggingfaceKey ? '' : translate('setApiKeyTooltip');
+      ids.forEach((id) => {
+        const opt = providerList.querySelector(`.mini-gpt-provider-option[data-provider="${id}"]`);
+        if (!opt) return;
+        opt.classList.toggle('disabled', !hasKey(id));
+        opt.title = hasKey(id) ? '' : translate('setApiKeyTooltip');
+      });
+      if (hasKey('gemini')) {
+        // Add warning for Gemini free tier limits
+        providerList.querySelector('.mini-gpt-provider-option[data-provider="gemini"]').title =
+          'Gemini free tier has strict rate limits. Consider OpenAI for better reliability.';
+      }
       // Set current provider
       let provider = '';
       if (hasAnyKey) {
         const preferred = data.provider;
         provider = preferred && data[`apiKey_${preferred}`]
           ? preferred
-          : (openaiKey ? 'openai' : geminiKey ? 'gemini' : huggingfaceKey ? 'huggingface' : '');
+          : (ids.find(hasKey) || '');
       }
       setProviderUI(provider);
       // Disable selector until at least one key is configured.
@@ -990,7 +995,7 @@ if (!window.__miniGptAgentInjected) {
   });
   updateProviderDropdown();
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && (changes.apiKey_openai || changes.apiKey_gemini || changes.apiKey_huggingface || changes.provider)) {
+    if (area === 'local' && (API_KEY_FIELDS.some((f) => changes[f]) || changes.provider)) {
       updateProviderDropdown();
     }
   });
@@ -2217,8 +2222,14 @@ if (!window.__miniGptAgentInjected) {
   }
 
   // Enhanced markdown to HTML converter with paragraph and spacing support
+  // Model output is untrusted (it can echo page content): escape it before adding the markdown tags below.
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
   function convertMarkdownToHTML(text) {
     if (!text) return '';
+    text = escapeHtml(text);
 
     // Convert double newlines to paragraphs (but not inside lists)
     let html = text
@@ -2328,7 +2339,7 @@ if (!window.__miniGptAgentInjected) {
 
   function getSettings() {
     return new Promise(resolve => {
-      chrome.storage.local.get(['provider', 'apiKey_openai', 'apiKey_gemini', 'apiKey_huggingface'], resolve);
+      chrome.storage.local.get(['provider', ...API_KEY_FIELDS], resolve);
     });
   }
   function setSettings(settings) {
@@ -2338,24 +2349,14 @@ if (!window.__miniGptAgentInjected) {
   }
 
   const DEFAULT_MODELS = providerConfig.defaultModels || {
-    openai: 'gpt-3.5-turbo',
+    openai: 'gpt-4o-mini',
     gemini: 'gemini-2.0-flash',
     huggingface: 'meta-llama/Llama-3.1-8B-Instruct'
   };
 
-  const HF_MODELS = providerConfig.hfModels || [
-    'meta-llama/Llama-3.1-8B-Instruct',
-    'mistralai/Mistral-7B-Instruct-v0.2',
-    'google/gemma-7b-it',
-    'microsoft/Phi-3-mini-4k-instruct',
-    'Qwen/Qwen2.5-7B-Instruct'
-  ];
+  const HF_MODELS = providerConfig.hfModels || ['meta-llama/Llama-3.1-8B-Instruct'];
 
-  const HF_VISION_MODELS = providerConfig.hfVisionModels || [
-    'Qwen/Qwen2.5-VL-7B-Instruct:fastest',
-    'Qwen/Qwen2.5-VL-7B-Instruct',
-    'Qwen/Qwen2-VL-7B-Instruct'
-  ];
+  const HF_VISION_MODELS = providerConfig.hfVisionModels || ['Qwen/Qwen3-VL-30B-A3B-Instruct'];
 
   async function updateProviderUI() {
     const settings = await getSettings();
@@ -2742,7 +2743,7 @@ if (!window.__miniGptAgentInjected) {
       appendMessage(translate('pleaseSetApiKey'), 'bot');
       return;
     }
-    if (hasVision && provider === 'huggingface') {
+    if (hasVision && provider !== 'openai' && provider !== 'gemini') {
       appendMessage(translate('visionProviderOnly'), 'bot');
       return;
     }
@@ -2751,7 +2752,7 @@ if (!window.__miniGptAgentInjected) {
       : ((providerConfig.visionDefaultModels || {})[provider] || DEFAULT_MODELS[provider]);
     const model = hasVision
       ? visionModelDefault
-      : (provider === 'huggingface' ? HF_MODELS[0] : DEFAULT_MODELS[provider]);
+      : (provider === 'huggingface' ? HF_MODELS[0] : DEFAULT_MODELS[provider] || '');
 
     chrome.storage.local.get([`apiKey_${provider}`], (settings) => {
       const apiKey = settings[`apiKey_${provider}`] || '';
@@ -2815,6 +2816,7 @@ if (!window.__miniGptAgentInjected) {
 
   // Listen for answers from window and update UI
   window.addEventListener('message', (event) => {
+    if (event.source !== window) return;
     if (event.data && event.data.type === 'MINI_GPT_ANSWER') {
       removeLoader();
       appendMessage(event.data.answer, 'bot');
@@ -2836,6 +2838,7 @@ if (!window.__miniGptAgentInjected) {
 
   // Relay MINI_GPT_ASK from window to background
   window.addEventListener('message', (event) => {
+    if (event.source !== window) return;
     if (event.data && event.data.type === 'MINI_GPT_ASK') {
       const d = event.data;
       let ctxForApi = Array.isArray(d.conversationContext) ? d.conversationContext.slice() : [];
@@ -4404,7 +4407,7 @@ if (!window.__miniGptAgentInjected) {
         updateBubbleVisibility();
       }
     }
-    if (changes.apiKey_openai || changes.apiKey_gemini || changes.apiKey_huggingface) {
+    if (API_KEY_FIELDS.some((f) => changes[f])) {
       updateBubbleVisibility();
     }
     if (changes.bubbleSize) {
