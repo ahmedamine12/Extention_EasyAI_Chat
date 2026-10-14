@@ -359,11 +359,210 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   }
 
+  // --- Provider card order: drag to reorder, newly keyed provider floats to the top ---
+  const keysSection = document.getElementById('settingsSectionKeys');
+  let savedKeys = {}; // keys as last loaded/saved, to detect a newly added key
+
+  function keyBlockOf(id) {
+    const input = document.getElementById(`key-${id}`);
+    return input ? input.closest('.key-block') : null;
+  }
+
+  function applyProviderOrder(order) {
+    if (!keysSection) return;
+    const ids = [...(Array.isArray(order) ? order.filter((id) => PROVIDER_IDS.includes(id)) : []),
+      ...PROVIDER_IDS.filter((id) => !(order || []).includes(id))];
+    const anchor = document.getElementById('modelTierBlock');
+    ids.forEach((id) => {
+      const block = keyBlockOf(id);
+      if (block) keysSection.insertBefore(block, anchor);
+    });
+  }
+
+  function currentProviderOrder() {
+    return PROVIDER_IDS.map((id) => ({ id, block: keyBlockOf(id) }))
+      .filter((x) => x.block)
+      .sort((a, b) => (a.block.compareDocumentPosition(b.block) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1))
+      .map((x) => x.id);
+  }
+
+  function persistProviderOrder() {
+    chrome.storage.local.set({ providerOrder: currentProviderOrder() });
+  }
+
+  function moveProviderToTop(id) {
+    const block = keyBlockOf(id);
+    if (!block || !keysSection) return;
+    keysSection.insertBefore(block, keysSection.querySelector('.key-block'));
+    persistProviderOrder();
+  }
+
+  function setupProviderDrag() {
+    if (!keysSection) return;
+    PROVIDER_IDS.forEach((id) => {
+      const block = keyBlockOf(id);
+      const identity = block && block.querySelector('.key-identity');
+      if (!block || !identity || identity.querySelector('.drag-handle')) return;
+      const handle = document.createElement('span');
+      handle.className = 'drag-handle';
+      handle.title = 'Drag to reorder';
+      handle.setAttribute('aria-label', 'Drag to reorder');
+      handle.textContent = '⠿';
+      identity.insertBefore(handle, identity.firstChild);
+      // Only draggable from the handle, so selecting/typing in the key input keeps working.
+      handle.addEventListener('mousedown', () => { block.draggable = true; });
+      block.addEventListener('dragstart', (e) => {
+        if (!block.draggable) { e.preventDefault(); return; }
+        block.classList.add('dragging');
+        // Fold every card after the drag image is captured, so reordering is a short list.
+        setTimeout(() => keysSection.classList.add('is-reordering'), 0);
+        e.dataTransfer.effectAllowed = 'move';
+        try { e.dataTransfer.setData('text/plain', id); } catch (_) {}
+      });
+      block.addEventListener('dragend', () => {
+        block.classList.remove('dragging');
+        keysSection.classList.remove('is-reordering');
+        block.draggable = false;
+        persistProviderOrder();
+      });
+    });
+    document.addEventListener('mouseup', () => {
+      keysSection.querySelectorAll('.key-block[draggable="true"]:not(.dragging)').forEach((b) => { b.draggable = false; });
+    });
+    keysSection.addEventListener('dragover', (e) => {
+      const dragging = keysSection.querySelector('.key-block.dragging');
+      if (!dragging) return;
+      e.preventDefault();
+      const others = [...keysSection.querySelectorAll('.key-block:not(.key-block--prompt):not(.dragging)')];
+      const next = others.find((b) => e.clientY < b.getBoundingClientRect().top + b.offsetHeight / 2);
+      keysSection.insertBefore(dragging, next || document.getElementById('modelTierBlock'));
+    });
+    keysSection.addEventListener('drop', (e) => e.preventDefault());
+  }
+  setupProviderDrag();
+
+  // --- Provider "deck": compact brand cards that expand to the key field ---
+  const PROVIDER_BRANDS = {
+    openai: { c: '#0d9488', fg: '#ffffff' },
+    gemini: { c: '#4285f4', fg: '#ffffff' },
+    huggingface: { c: '#ffd21e', fg: '#1a1a1a' },
+    nvidia: { c: '#76b900', fg: '#0b1200' },
+    groq: { c: '#f55036', fg: '#ffffff' }
+  };
+  const CHEVRON_SVG = '<svg class="pc-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
+
+  function setCardOpen(block, open, focusInput) {
+    if (!block) return;
+    block.classList.toggle('is-open', open);
+    const head = block.querySelector('.key-top');
+    if (head) head.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open && focusInput) {
+      const input = block.querySelector('.key-input');
+      if (input) setTimeout(() => input.focus({ preventScroll: true }), 200);
+    }
+  }
+
+  function refreshProviderCards() {
+    let connected = 0;
+    PROVIDER_IDS.forEach((id) => {
+      const block = keyBlockOf(id);
+      const input = document.getElementById(`key-${id}`);
+      if (!block || !input) return;
+      const filled = !!safeTrim(input.value);
+      if (filled) connected += 1;
+      block.classList.toggle('is-empty', !filled);
+    });
+    const count = document.getElementById('pcCount');
+    if (count) count.textContent = String(connected);
+    const pips = document.getElementById('pcPips');
+    if (pips) {
+      pips.textContent = '';
+      currentProviderOrder().forEach((id) => {
+        const input = document.getElementById(`key-${id}`);
+        const pip = document.createElement('span');
+        pip.className = 'pc-pip' + (input && safeTrim(input.value) ? ' on' : '');
+        pip.style.setProperty('--brand', PROVIDER_BRANDS[id].c);
+        pip.title = providerNames[id];
+        pips.appendChild(pip);
+      });
+    }
+  }
+
+  function setupProviderCards() {
+    if (!keysSection || document.getElementById('providerStrip')) return;
+    const strip = document.createElement('div');
+    strip.className = 'pc-strip';
+    strip.id = 'providerStrip';
+    strip.innerHTML =
+      `<div class="pc-strip-text"><span class="pc-strip-main"><strong id="pcCount">0</strong> of ${PROVIDER_IDS.length} providers connected</span>` +
+      '<span class="pc-strip-sub">Drag \u283f to choose your preferred order</span></div><div class="pc-pips" id="pcPips" aria-hidden="true"></div>';
+    keysSection.insertBefore(strip, keysSection.firstChild);
+
+    PROVIDER_IDS.forEach((id) => {
+      const block = keyBlockOf(id);
+      const head = block && block.querySelector('.key-top');
+      const identity = head && head.querySelector('.key-identity');
+      if (!block || !head || !identity) return;
+      const brand = PROVIDER_BRANDS[id];
+      block.classList.add('pc', 'is-empty');
+      block.dataset.provider = id;
+      block.style.setProperty('--brand', brand.c);
+      block.style.setProperty('--brand-fg', brand.fg);
+
+      // Logo tile replaces the flat circle SVG; it "powers on" when the card has a key.
+      const logo = document.createElement('span');
+      logo.className = 'pc-logo';
+      logo.setAttribute('aria-hidden', 'true');
+      logo.textContent = PROVIDER_BADGES[id] || id[0].toUpperCase();
+      const svg = identity.querySelector('svg');
+      if (svg) svg.replaceWith(logo); else identity.appendChild(logo);
+
+      // Name on top, "Will use: model" underneath (no more truncated right-hand column).
+      const name = identity.querySelector('.key-provider');
+      const sub = document.getElementById(`meta-model-${id}`);
+      const text = document.createElement('div');
+      text.className = 'pc-text';
+      if (name) text.appendChild(name);
+      if (sub) { sub.classList.add('pc-sub'); text.appendChild(sub); }
+      identity.appendChild(text);
+
+      // Everything after the header folds into a collapsible body.
+      const body = document.createElement('div');
+      body.className = 'pc-body';
+      const inner = document.createElement('div');
+      inner.className = 'pc-body-inner';
+      body.appendChild(inner);
+      while (head.nextSibling) inner.appendChild(head.nextSibling);
+      block.appendChild(body);
+
+      head.insertAdjacentHTML('beforeend', CHEVRON_SVG);
+      head.classList.add('pc-head');
+      head.setAttribute('role', 'button');
+      head.setAttribute('tabindex', '0');
+      head.setAttribute('aria-expanded', 'false');
+      head.addEventListener('click', (e) => {
+        if (e.target.closest('.drag-handle')) return;
+        setCardOpen(block, !block.classList.contains('is-open'), true);
+      });
+      head.addEventListener('keydown', (e) => {
+        if (e.target !== head || (e.key !== 'Enter' && e.key !== ' ')) return;
+        e.preventDefault();
+        setCardOpen(block, !block.classList.contains('is-open'), true);
+      });
+
+      const input = document.getElementById(`key-${id}`);
+      if (input) input.addEventListener('input', refreshProviderCards);
+    });
+    refreshProviderCards();
+  }
+  setupProviderCards();
+
   // Load settings view
   function loadSettings() {
     chrome.storage.local.get(
       [
         'provider',
+        'providerOrder',
         ...API_KEY_FIELDS,
         'modelTier',
         ...LAST_MODEL_FIELDS,
@@ -374,6 +573,9 @@ document.addEventListener('DOMContentLoaded', () => {
       ],
       (data) => {
         PROVIDER_IDS.forEach((id) => { const el = document.getElementById(`key-${id}`); if (el) el.value = data[`apiKey_${id}`] || ''; });
+        savedKeys = Object.fromEntries(PROVIDER_IDS.map((id) => [id, safeTrim(data[`apiKey_${id}`])]));
+        applyProviderOrder(data.providerOrder);
+        refreshProviderCards();
         const systemInstructionEl = document.getElementById('systemInstruction');
         const promptPrefixEl = document.getElementById('promptPrefix');
         if (systemInstructionEl) systemInstructionEl.value = data.systemInstruction || '';
@@ -397,8 +599,10 @@ document.addEventListener('DOMContentLoaded', () => {
       s.textContent = statusText || '';
     }
     if (m) {
-      m.textContent = modelText || '';
-      if (modelText) m.title = modelText;
+      // Show the short model name ("nemotron-3-super-120b-a12b") so it fits; full id stays in the tooltip.
+      const full = String(modelText || '').replace(/^Will use:\s*/, '');
+      m.textContent = full ? `Uses ${full.split('/').pop()}` : '';
+      if (full) m.title = `Will use: ${full}`; else m.removeAttribute('title');
     }
   }
 
@@ -580,6 +784,16 @@ document.addEventListener('DOMContentLoaded', () => {
     el.className = 'key-status';
     if (state) el.classList.add(state);
     el.textContent = message || '';
+    // Card-level feedback, visible even while the card is folded.
+    const block = keyBlockOf(provider);
+    if (block) {
+      block.classList.toggle('is-validating', state === 'validating');
+      if (state === 'invalid') setCardOpen(block, true, false);
+      if (state === 'valid') {
+        block.classList.add('just-saved');
+        setTimeout(() => block.classList.remove('just-saved'), 1400);
+      }
+    }
   }
 
   const keyStatusClearTimers = Object.fromEntries(PROVIDER_IDS.map((id) => [id, null]));
@@ -680,6 +894,11 @@ document.addEventListener('DOMContentLoaded', () => {
       saveBtn.disabled = false;
       saveBtn.textContent = t.save;
       notifyTabs();
+
+      // A provider that just got its first key moves to the top of the list.
+      const newlyKeyed = PROVIDER_IDS.filter((id) => keys[id] && !savedKeys[id]);
+      newlyKeyed.reverse().forEach(moveProviderToTop);
+      savedKeys = { ...keys };
 
       // Update "Valid/Invalid" + planned model line per provider
       const dataForMeta = {

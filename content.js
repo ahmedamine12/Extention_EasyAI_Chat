@@ -2398,6 +2398,26 @@ if (!window.__miniGptAgentInjected) {
   // Instead, use the form's submit button for both send and stop
 
   let requestInProgress = false;
+  // Set when the user clicks stop: late stream parts / abort notices from the background are dropped
+  // until the next request starts, so they don't show up as a second "[Request timeout or stopped]" bubble.
+  let ignoreStaleParts = false;
+  // Auto-follow the streaming answer, unless the user scrolls up to read; resumes at the bottom.
+  let stickToBottom = true;
+  const STICK_THRESHOLD_PX = 40;
+  function followStream() {
+    if (stickToBottom) messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+  messagesDiv.addEventListener('scroll', () => {
+    stickToBottom = messagesDiv.scrollHeight - messagesDiv.scrollTop - messagesDiv.clientHeight <= STICK_THRESHOLD_PX;
+  });
+  // Wheel/touch up is detected immediately: growing content could otherwise outrun the scroll event.
+  messagesDiv.addEventListener('wheel', (e) => { if (e.deltaY < 0) stickToBottom = false; }, { passive: true });
+  let lastTouchY = 0;
+  messagesDiv.addEventListener('touchstart', (e) => { lastTouchY = e.touches[0].clientY; }, { passive: true });
+  messagesDiv.addEventListener('touchmove', (e) => {
+    if (e.touches[0].clientY > lastTouchY) stickToBottom = false;
+    lastTouchY = e.touches[0].clientY;
+  }, { passive: true });
   let lastUserRetryText = '';
   let lastUserRetryWasVision = false;
   let lastUserRetryVision = null; // { base64, mime } snapshot for retry
@@ -2426,10 +2446,13 @@ if (!window.__miniGptAgentInjected) {
   const sendBtn = form.querySelector('button[type="submit"]');
   // SVGs for send and stop
   const sendSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
-  const stopSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+  const stopSVG = `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>`;
 
   function updateSendStopBtn() {
     if (requestInProgress) {
+      ignoreStaleParts = false; // a new request is running
+      stickToBottom = true;
+      sendBtn.disabled = false; // stop must stay clickable for the whole generation
       sendBtn.innerHTML = stopSVG;
       sendBtn.title = translate('stopAria');
       sendBtn.setAttribute('aria-label', translate('stopAria'));
@@ -2531,6 +2554,7 @@ if (!window.__miniGptAgentInjected) {
   // Listen for streaming answer parts from background
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === 'MINI_GPT_ANSWER_PART') {
+      if (ignoreStaleParts) return;
       // Ensure chat is visible when receiving messages
       if (chatContainer.style.display === 'none' || chatContainer.style.visibility === 'hidden') {
         chatContainer.hidden = false;
@@ -2619,6 +2643,7 @@ if (!window.__miniGptAgentInjected) {
           streamingBotText = '';
           streamingBotBodyEl = null;
         }
+        followStream();
         requestInProgress = false;
         input.disabled = false;
         updateSendStopBtn();
@@ -2639,15 +2664,23 @@ if (!window.__miniGptAgentInjected) {
         streamingBotMsg = streamEl;
         streamingBotBodyEl = body;
         messagesDiv.appendChild(streamEl);
-        setTimeout(() => {
-          safeScrollIntoView(streamEl, { behavior: 'smooth', block: 'start' });
-        }, 100);
       }
       if (msg.answerPart) {
+        const el = streamingBotBodyEl || streamingBotMsg.querySelector('.mini-gpt-msg-body') || streamingBotMsg;
+        if (msg.status) {
+          // Transient status ("Thinking…", "trying the next model…"): show it, but keep it out of the answer text.
+          if (!streamingBotText) {
+            el.textContent = '';
+            const st = document.createElement('em');
+            st.style.opacity = '0.7';
+            st.textContent = msg.answerPart;
+            el.appendChild(st);
+          }
+          return;
+        }
         streamingBotText += msg.answerPart;
-        const el = streamingBotBodyEl || streamingBotMsg.querySelector('.mini-gpt-msg-body');
-        if (el) el.innerHTML = convertMarkdownToHTML(streamingBotText);
-        else streamingBotMsg.innerHTML = convertMarkdownToHTML(streamingBotText);
+        el.innerHTML = convertMarkdownToHTML(streamingBotText);
+        followStream();
       }
     }
   });
@@ -2669,6 +2702,7 @@ if (!window.__miniGptAgentInjected) {
   
   // Enhanced stop response function
   function stopResponse() {
+    ignoreStaleParts = true;
     stopSpeechRecognition();
     stopAllVoiceOutput();
     chrome.runtime.sendMessage({ type: 'MINI_GPT_STOP' }, () => {
@@ -2692,6 +2726,17 @@ if (!window.__miniGptAgentInjected) {
           streamingBotMsg.innerHTML = convertMarkdownToHTML(streamingBotText);
           streamingBotMsg.appendChild(incompleteIndicator);
         }
+        // Keep the partial answer in history/context so follow-ups and reloads see it.
+        currentSession.messages.push({ role: 'bot', text: streamingBotText });
+        conversationContext.push({ role: 'assistant', content: streamingBotText });
+        manageConversationContext();
+        addCopyBtnToMsg(streamingBotMsg, streamingBotText);
+        streamingBotMsg = null;
+        streamingBotText = '';
+        streamingBotBodyEl = null;
+      } else if (streamingBotMsg) {
+        // Stopped while only a status line ("Thinking…") was showing: drop the empty bubble.
+        streamingBotMsg.remove();
         streamingBotMsg = null;
         streamingBotText = '';
         streamingBotBodyEl = null;
@@ -2836,11 +2881,10 @@ if (!window.__miniGptAgentInjected) {
     }
   });
 
-  // Relay MINI_GPT_ASK from window to background
-  window.addEventListener('message', (event) => {
-    if (event.source !== window) return;
-    if (event.data && event.data.type === 'MINI_GPT_ASK') {
-      const d = event.data;
+  // Relay a MINI_GPT_ASK payload to the background. Also called directly by the right-click handler
+  // (background.js injects a script that invokes window.__browsemateAsk in this isolated world).
+  function relayAsk(d) {
+    {
       let ctxForApi = Array.isArray(d.conversationContext) ? d.conversationContext.slice() : [];
 
       if (d.__browseMateContextMenu === true) {
@@ -2886,8 +2930,22 @@ if (!window.__miniGptAgentInjected) {
       lastUserRetryWasVision = false;
       lastUserRetryVision = null;
       updateLatestRetryButtonState();
+      // Right-click actions don't go through sendPrompt(): flip send -> stop and reset stream state here.
+      if (d.__browseMateContextMenu === true) {
+        requestInProgress = true;
+        input.disabled = true;
+        streamingBotMsg = null;
+        streamingBotText = '';
+        streamingBotBodyEl = null;
+        updateSendStopBtn();
+      }
       chrome.runtime.sendMessage(relay);
     }
+  }
+  window.__browsemateAsk = relayAsk;
+  window.addEventListener('message', (event) => {
+    if (event.source !== window) return;
+    if (event.data && event.data.type === 'MINI_GPT_ASK') relayAsk(event.data);
   });
 
   function formatDatetimeLocal(d) {

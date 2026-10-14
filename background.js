@@ -559,7 +559,7 @@ async function askGemini({ apiKey, model, modelCandidates, prompt, tabId, conver
     const candidates = safeUniqueModels(modelCandidates && modelCandidates.length ? modelCandidates : [model]);
     for (let i = 0; i < candidates.length; i++) {
       const currentModel = candidates[i];
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:streamGenerateContent?alt=sse`;
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
@@ -567,12 +567,11 @@ async function askGemini({ apiKey, model, modelCandidates, prompt, tabId, conver
         signal: controller.signal
       });
 
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok || data.error) {
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
         const errorMsg =
           (data && data.error && data.error.message) ||
-          (!res.ok ? `HTTP ${res.status}: ${res.statusText}` : 'Unknown error');
+          `HTTP ${res.status}: ${res.statusText}`;
 
         if (i < candidates.length - 1 && isGeminiModelAccessError(data, res.status)) {
           continue;
@@ -588,24 +587,55 @@ async function askGemini({ apiKey, model, modelCandidates, prompt, tabId, conver
         return { ok: false, answer: userFriendlyError };
       }
 
-      let answer = '';
-      if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-        answer = data.candidates[0].content.parts[0].text;
-      } else {
-        answer = 'No answer from Gemini.';
+      if (i > 0 && isExtensionContextValid() && tabId) {
+        try {
+          chrome.tabs.sendMessage(tabId, {
+            type: 'MINI_GPT_ANSWER_PART',
+            answerPart: `\n[Model unavailable — using ${currentModel}]\n\n`,
+            done: false
+          });
+        } catch (e) {}
       }
 
+      // Stream SSE chunks: each "data:" line is a partial generateContent response.
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let answer = '';
+      const handleLine = (line) => {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith('data:')) return;
+        try {
+          const parsed = JSON.parse(trimmed.slice(5).trim());
+          const parts = parsed.candidates?.[0]?.content?.parts || [];
+          const delta = parts.map((p) => (p && !p.thought && p.text) || '').join('');
+          if (!delta) return;
+          answer += delta;
+          if (isExtensionContextValid() && tabId) {
+            try {
+              chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: delta, done: false, modelUsed: currentModel });
+            } catch (e) {}
+          }
+        } catch (e) {
+          // Skip malformed chunks
+        }
+      };
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        lines.forEach(handleLine);
+      }
+      if (buffer) handleLine(buffer);
+
+      if (!answer) answer = 'No answer from Gemini.';
       if (tabId) delete abortControllers[tabId];
       if (isExtensionContextValid() && tabId) {
         try {
-          if (i > 0) {
-            chrome.tabs.sendMessage(tabId, {
-              type: 'MINI_GPT_ANSWER_PART',
-              answerPart: `\n[Model unavailable — using ${currentModel}]\n\n`,
-              done: false
-            });
-          }
-          chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: answer, done: true });
+          // Full text on done so the tab always ends with the complete reply.
+          chrome.tabs.sendMessage(tabId, { type: 'MINI_GPT_ANSWER_PART', answerPart: answer, done: true, modelUsed: currentModel });
         } catch (e) {}
       }
       return { ok: true, answer, modelUsed: currentModel };
